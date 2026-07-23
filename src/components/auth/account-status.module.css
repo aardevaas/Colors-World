@@ -1,0 +1,28 @@
+.form {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-tight);
+}
+
+.email {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--text-primary);
+}

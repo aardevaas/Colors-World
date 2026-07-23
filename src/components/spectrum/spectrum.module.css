@@ -1,0 +1,326 @@
+.shell {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-wide);
+  flex-wrap: wrap;
+  padding: var(--space-base) var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.wordmark {
+  font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.wordmarkDim {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.navGroup {
+  display: flex;
+  gap: var(--space-base);
+}
+
+.navLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: var(--text-primary);
+}
+
+.specLine {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.empty {
+  padding: var(--space-wide);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
+}
+
+/* ── Browser shell ────────────────────────────────────────── */
+
+.browser {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 0;
+}
+
+.filterBar {
+  display: flex;
+  gap: var(--space-tight);
+  padding: var(--space-tight) var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+  background: var(--surface-panel);
+}
+
+.filterSelect {
+  background: var(--surface-raised);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.3rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-secondary);
+}
+
+.trayButton {
+  margin-left: auto;
+  background: transparent;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.trayButton:hover {
+  border-color: var(--hairline-bright);
+}
+
+.stickyHeader {
+  padding: var(--space-hair) var(--space-wide);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: var(--rule-width) solid var(--hairline);
+  background: var(--surface-void);
+}
+
+.scrollArea {
+  overflow-y: auto;
+  overflow-anchor: none;
+  min-height: 0;
+}
+
+.grid {
+  display: grid;
+}
+
+.loadingMore {
+  padding: var(--space-tight) var(--space-wide);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* ── Swatch cell ──────────────────────────────────────────── */
+
+.cell {
+  position: relative;
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+
+.heart {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 2px;
+  opacity: 0;
+  color: inherit;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
+  transition: opacity var(--duration-fast) var(--ease-out-expo);
+}
+
+.cell:hover .heart,
+.heart[data-collected='true'] {
+  opacity: 0.85;
+}
+
+/* ── Detail panel ─────────────────────────────────────────── */
+
+.detail {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(22rem, 90vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-panel);
+  border-left: var(--rule-width) solid var(--hairline);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+}
+
+.detailSwatch {
+  height: 8rem;
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.detailBody {
+  position: relative;
+  padding: var(--space-wide);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+  overflow-y: auto;
+}
+
+.detailClose {
+  position: absolute;
+  top: var(--space-tight);
+  right: var(--space-tight);
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.detailClose:hover {
+  color: var(--text-primary);
+}
+
+.detailName {
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.detailMeta {
+  margin-top: calc(-1 * var(--space-tight));
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detailActions {
+  display: flex;
+  gap: var(--space-tight);
+}
+
+.tab {
+  background: transparent;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text-secondary);
+  border-color: var(--hairline-bright);
+}
+
+.tab[aria-pressed='true'] {
+  color: var(--surface-void);
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+/* ── Collect tray ─────────────────────────────────────────── */
+
+.tray {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 40vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-panel);
+  border-top: var(--rule-width) solid var(--hairline);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+}
+
+.trayHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-tight) var(--space-wide);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.trayEmpty {
+  padding: var(--space-wide);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
+}
+
+.trayGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+  gap: 2px;
+  padding: var(--space-tight);
+  overflow-y: auto;
+}
+
+.trayItem {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.trayPinButton {
+  margin: 0 var(--space-tight) var(--space-tight);
+  padding: 0.5rem 0.75rem;
+  background: var(--text-primary);
+  color: var(--surface-void);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.trayPinButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.trayPinnedNote {
+  margin: 0 var(--space-tight) var(--space-tight);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+}

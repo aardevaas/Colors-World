@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# env — real credentials live only in .env.local, never committed
+.env
+.env.local
+.env.*.local
+
+# test / build artifacts
+coverage/
+*.tsbuildinfo
+
+# local tool logs — contain absolute local file paths
+logs/
+
+# OS
+.DS_Store
+
+# editor
+.vscode/*
+!.vscode/extensions.json

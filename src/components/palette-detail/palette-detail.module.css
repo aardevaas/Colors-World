@@ -1,0 +1,198 @@
+.shell {
+  min-height: 100dvh;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-wide);
+  flex-wrap: wrap;
+  padding: var(--space-base) var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.wordmark {
+  font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.wordmarkDim {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.navLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: var(--text-primary);
+}
+
+.body {
+  padding: var(--space-wide);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-vast);
+}
+
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-base);
+}
+
+/* ── Branch panel ─────────────────────────────────────────── */
+
+.branch {
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface-panel);
+  margin-bottom: var(--space-wide);
+}
+
+.branchHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-base);
+  padding: var(--space-snug) var(--space-base);
+  border-bottom: var(--rule-width) solid var(--hairline);
+  flex-wrap: wrap;
+}
+
+.branchName {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--text-primary);
+}
+
+.forkForm {
+  display: flex;
+  gap: var(--space-hair);
+  align-items: center;
+}
+
+.input {
+  background: var(--surface-raised);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.3rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-primary);
+  width: 8rem;
+}
+
+.smallButton {
+  background: transparent;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.smallButton:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--hairline-bright);
+}
+
+.smallButton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.swatchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+}
+
+.swatch {
+  height: 3.5rem;
+  border: none;
+  border-right: var(--rule-width) solid var(--hairline);
+  border-bottom: var(--rule-width) solid var(--hairline);
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-hair) var(--space-tight);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+}
+
+.swatchEditing {
+  padding: var(--space-tight);
+  background: var(--surface-raised);
+  display: flex;
+  align-items: center;
+}
+
+.swatchInput {
+  width: 100%;
+  background: var(--surface-void);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 0.2rem 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--text-primary);
+}
+
+/* ── Merge picker ─────────────────────────────────────────── */
+
+.mergePicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-tight);
+  flex-wrap: wrap;
+}
+
+.select {
+  background: var(--surface-raised);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.4rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--text-primary);
+}
+
+.mergeButton {
+  padding: 0.4rem 0.9rem;
+  background: var(--accent);
+  color: var(--surface-void);
+  border: none;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.mergeButton[aria-disabled='true'] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.error {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--warn);
+  margin-top: var(--space-tight);
+}

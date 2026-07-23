@@ -1,0 +1,88 @@
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-wide);
+}
+
+.card {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-tight);
+  padding: var(--space-vast) var(--space-wide);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 4px;
+  background: var(--surface-panel);
+}
+
+.wordmark {
+  font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.tagline {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
+  margin: 0 0 var(--space-tight);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-tight);
+}
+
+.input {
+  background: var(--surface-raised);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.6rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
+
+.button {
+  background: var(--text-primary);
+  color: var(--surface-void);
+  border: none;
+  border-radius: 3px;
+  padding: 0.6rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.error {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--warn);
+}
+
+.success {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}

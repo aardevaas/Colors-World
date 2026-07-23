@@ -1,0 +1,71 @@
+.shell {
+  min-height: 100dvh;
+  padding: var(--space-wide);
+}
+
+.masthead {
+  padding-bottom: var(--space-base);
+  margin-bottom: var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.wordmark {
+  font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.wordmarkDim {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.empty {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+}
+
+.link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-tight);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-base);
+  padding: var(--space-tight) 0;
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.rowName {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.rowName:hover {
+  color: var(--accent);
+}
+
+.rowMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+}

@@ -1,0 +1,36 @@
+{
+  "name": "colors-world",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Colors World — an open-source studio for color, palettes, branding, and typography. Perceptual color engine (OKLCH), a 100,000-colour Spectrum, and a freeform Studio Wall for assembling a brand.",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.48.1",
+    "culori": "^4.0.1",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/culori": "^4.0.1",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitest/coverage-v8": "^3.0.4",
+    "hyparquet": "^1.26.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
+  }
+}
