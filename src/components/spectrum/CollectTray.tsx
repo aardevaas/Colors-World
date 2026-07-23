@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { pinColorAction } from '@/app/actions';
-import type { SpectrumRow } from '@/lib/supabase/colors';
+import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import styles from './spectrum.module.css';
 
 interface CollectTrayProps {
-  readonly rows: readonly SpectrumRow[];
-  readonly onRemove: (row: SpectrumRow) => void;
+  readonly swatches: readonly GeneratedSwatch[];
+  readonly onRemove: (swatch: GeneratedSwatch) => void;
   readonly onClose: () => void;
 }
 
@@ -17,7 +17,7 @@ interface CollectTrayProps {
  * bridge into the real per-project Studio Wall, where a colour becomes a
  * persistent card rather than something that evaporates when the tab closes.
  */
-export function CollectTray({ rows, onRemove, onClose }: CollectTrayProps) {
+export function CollectTray({ swatches, onRemove, onClose }: CollectTrayProps) {
   const [pinning, setPinning] = useState(false);
   const [pinnedCount, setPinnedCount] = useState<number | null>(null);
 
@@ -25,10 +25,10 @@ export function CollectTray({ rows, onRemove, onClose }: CollectTrayProps) {
     setPinning(true);
     setPinnedCount(null);
     try {
-      for (const row of rows) {
-        await pinColorAction(row.hex, row.name);
+      for (const swatch of swatches) {
+        await pinColorAction(swatch.hex);
       }
-      setPinnedCount(rows.length);
+      setPinnedCount(swatches.length);
     } finally {
       setPinning(false);
     }
@@ -37,25 +37,25 @@ export function CollectTray({ rows, onRemove, onClose }: CollectTrayProps) {
   return (
     <div className={styles.tray}>
       <div className={styles.trayHead}>
-        <span>{rows.length} collected</span>
+        <span>{swatches.length} collected</span>
         <button type="button" className={styles.detailClose} onClick={onClose} aria-label="Close tray">
           ×
         </button>
       </div>
-      {rows.length === 0 ? (
+      {swatches.length === 0 ? (
         <p className={styles.trayEmpty}>Heart a colour as you scroll to collect it here.</p>
       ) : (
         <>
           <div className={styles.trayGrid}>
-            {rows.map((row) => (
+            {swatches.map((swatch) => (
               <button
-                key={row.id}
+                key={swatch.index}
                 type="button"
                 className={styles.trayItem}
-                style={{ background: row.hex }}
-                onClick={() => onRemove(row)}
-                aria-label={`Remove ${row.name}`}
-                title={row.name}
+                style={{ background: swatch.hex }}
+                onClick={() => onRemove(swatch)}
+                aria-label={`Remove ${swatch.hex}`}
+                title={swatch.hex}
               />
             ))}
           </div>
@@ -65,7 +65,7 @@ export function CollectTray({ rows, onRemove, onClose }: CollectTrayProps) {
             onClick={() => void handlePinAll()}
             disabled={pinning}
           >
-            {pinning ? 'Pinning…' : `Pin ${rows.length === 1 ? 'colour' : 'all'} to Studio Wall`}
+            {pinning ? 'Pinning…' : `Pin ${swatches.length === 1 ? 'colour' : 'all'} to Studio Wall`}
           </button>
           {pinnedCount !== null && (
             <p className={styles.trayPinnedNote}>Pinned {pinnedCount} to the wall — see it at /</p>

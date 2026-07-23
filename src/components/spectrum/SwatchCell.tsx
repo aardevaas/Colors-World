@@ -1,30 +1,30 @@
 'use client';
 
-import type { SpectrumRow } from '@/lib/supabase/colors';
+import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import styles from './spectrum.module.css';
 
 interface SwatchCellProps {
-  readonly row: SpectrumRow;
+  readonly swatch: GeneratedSwatch;
   readonly collected: boolean;
-  readonly onSelect: (row: SpectrumRow) => void;
-  readonly onToggleCollect: (row: SpectrumRow) => void;
+  readonly onSelect: (swatch: GeneratedSwatch) => void;
+  readonly onToggleCollect: (swatch: GeneratedSwatch) => void;
 }
 
-export function SwatchCell({ row, collected, onSelect, onToggleCollect }: SwatchCellProps) {
+export function SwatchCell({ swatch, collected, onSelect, onToggleCollect }: SwatchCellProps) {
   return (
     <div
       className={styles.cell}
-      style={{ background: row.hex }}
+      style={{ background: swatch.hex }}
       role="button"
       tabIndex={0}
-      onClick={() => onSelect(row)}
+      onClick={() => onSelect(swatch)}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          onSelect(row);
+          onSelect(swatch);
         }
       }}
-      aria-label={row.name}
+      aria-label={swatch.hex}
     >
       <button
         type="button"
@@ -32,9 +32,9 @@ export function SwatchCell({ row, collected, onSelect, onToggleCollect }: Swatch
         data-collected={collected}
         onClick={(event) => {
           event.stopPropagation();
-          onToggleCollect(row);
+          onToggleCollect(swatch);
         }}
-        aria-label={collected ? `Remove ${row.name} from tray` : `Collect ${row.name}`}
+        aria-label={collected ? `Remove ${swatch.hex} from tray` : `Collect ${swatch.hex}`}
         aria-pressed={collected}
       >
         {collected ? '♥' : '♡'}

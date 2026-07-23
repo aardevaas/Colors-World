@@ -1,18 +1,9 @@
 import Link from 'next/link';
-import { countColors, getSpectrumWindow } from '@/lib/supabase/colors';
-import { createServerSupabaseClient } from '@/lib/supabase/server-client';
+import { TOTAL_SPECTRUM_SIZE } from '@/lib/spectrum/generate-color';
 import { SpectrumBrowser } from '@/components/spectrum/SpectrumBrowser';
 import styles from '@/components/spectrum/spectrum.module.css';
 
-const INITIAL_ROWS = 200;
-
-export default async function SpectrumPage() {
-  const supabase = await createServerSupabaseClient();
-  const [total, initialRows] = await Promise.all([
-    countColors(supabase),
-    getSpectrumWindow(0, INITIAL_ROWS, supabase),
-  ]);
-
+export default function SpectrumPage() {
   return (
     <div className={styles.shell}>
       <header className={styles.masthead}>
@@ -33,17 +24,13 @@ export default async function SpectrumPage() {
             assets
           </Link>
         </nav>
-        <p className={styles.specLine}>{total.toLocaleString()} colours, ordered by hue</p>
+        <p className={styles.specLine}>
+          {TOTAL_SPECTRUM_SIZE.toLocaleString()} colours — the full 8-bit-per-channel space,
+          generated, not stored
+        </p>
       </header>
 
-      {total === 0 ? (
-        <p className={styles.empty}>
-          The library is empty and there is nothing to browse — run the ingestion script, then
-          the spectrum_index backfill in supabase/schema.sql, first.
-        </p>
-      ) : (
-        <SpectrumBrowser total={total} initialRows={initialRows} />
-      )}
+      <SpectrumBrowser />
     </div>
   );
 }

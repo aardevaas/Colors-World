@@ -85,24 +85,28 @@ Two consequences:
 
 ---
 
-## Phase 2 — The Spectrum ⭐
+## Phase 2 — The Spectrum ⭐ rebuilt 2026-07-23: 100K curated → 16.7M computed
 
 _The signature feature. Nobody else has this._
 
-100,000 colours sorted perceptually — **hue → lightness → chroma** — as one continuous, infinite scroll. You don't query it, you **wander** it. Scrolling becomes a journey through the entire visible spectrum.
+**Rebuilt from the ground up.** The original version browsed the 100,000-row curated `colors` table via a precomputed `spectrum_index` DB column. Per direction from 2026-07-23: this is "purely a design/colours tool" — names and meaning tags don't matter here, only the values, and the ambition is the *entire* 8-bit-per-channel space (16,777,216 — "16.7 million" — colours), not a curated subset. Storing 16.7M rows would be pure redundancy (every value is 100% derivable from its own coordinates) and would make the app slow and expensive to host. **The fix: don't store it, compute it.** See `src/lib/spectrum/generate-color.ts` — the whole 16.7M-colour space is a pure function, zero database calls, zero storage, arithmetic that runs in microseconds.
 
-- **Sticky hue header** tells you where you are — "deep in the blues", "entering the ambers"
-- **Instant filters** collapse the field — pastels only, vivid only, one hue family, light or dark
-- **Heart as you go** — saved colours collect in a tray you drag onto a board
-- **Rich detail on click** — every space, its name, its meaning tags, its generated scale, its nearest neighbours, what reads against it
+- **Sticky header** tells you where you are — "violets — 8,438,518 of 16,777,216"
+- **Instant filters** collapse the field — pastels only, vivid only, one hue family, light or dark — now a plain in-memory predicate over generated colours, not a SQL query
+- **Heart as you go** — saved colours collect in a tray, pin-to-Studio-Wall from there
+- **Detail on click** — full HEX/RGB/OKLCH/CMYK values, gamut/print warnings — no name, no meaning tags, values only
+
+The 100K curated, named library (`/library`, with emotion/mood/category search) **still exists, untouched** — it's just no longer part of the Spectrum browsing experience.
 
 ### Technical approach
 
-Naive offset pagination degrades badly past a few thousand rows, and a scrollbar representing 100K items needs to jump to arbitrary positions instantly.
+The 16.7M-colour space is a 3-axis grid — lightness × hue × chroma, 256 steps each (256³ = 16,777,216, matching "16.7 million" exactly) — packed into a single 24-bit index, the same way RGB itself packs three 8-bit channels into 24 bits. `indexToSwatch(index)` decomposes the index and reuses the existing (tested) `maxChroma()` gamut logic to produce a real, displayable sRGB colour — O(1), no lookup table.
 
-**Solution: a precomputed `spectrum_index` integer column**, assigned once by ordering on hue → lightness → chroma. Then any window is `WHERE spectrum_index BETWEEN x AND y` — indexed, instant, and the scrollbar maps 1:1 to position. Rendering is virtualised so only the visible rows exist in the DOM.
+**Axis order was a deliberate design call, not the professional default.** Hue-major (the original ordering) reads as a colour-wheel — exactly the "for professionals, not marketing/design people" feel flagged as wrong. The rebuild makes **lightness the outer axis** (broad light→dark bands — "something light for the background," "something dark for the footer," which is how brand/marketing work actually thinks about colour), **hue the middle axis** (a recognisable rainbow sweep within each lightness band), **chroma the innermost axis** (muted→vivid). Changing the feel of the whole Spectrum later is changing which axis nests where in one formula — not a data migration, since nothing is stored.
 
-Compare: Coolors gives you five colours at a time. Radix gives you twelve hues, take them or leave them. **Nobody lets you browse a hundred thousand.**
+**Virtualization at this scale needed one real fix beyond the original 100K design**: a literal `totalRows * rowHeight` CSS height would be tens of millions of pixels — past Chromium's/Firefox's ~33.5M px max element height, past which layout silently breaks. The scrollable track is capped at a constant (6,000,000px) and scroll position is read back as a *fraction* of that track rather than a pixel-exact row index — the scrollbar becomes a coarse "jump to this general area" control at this scale, which is correct: nobody scrolls pixel-by-pixel through 16.7 million colours anyway.
+
+Compare: Coolors gives you five colours at a time. Radix gives you twelve hues, take them or leave them. Nobody lets you browse the entire colour space, computed, for free.
 
 ---
 
