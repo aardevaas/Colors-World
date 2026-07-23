@@ -1,18 +1,18 @@
-# PRISM — Roadmap v2 (reframed 2026-07-21)
+# Colors World — Roadmap v3 (reframed 2026-07-23)
 
-> **This document replaced an earlier version.** The first roadmap optimised for engineering rigour — design-system compilation, git-style version control, spec-driven token generation. That was the wrong product. This is the correction.
+> **This document replaced an earlier version.** The first roadmap optimised for engineering rigour — design-system compilation, git-style version control, spec-driven token generation. That was the wrong product. v2 corrected that. **v3 changes the audience and the ambition**: this is no longer a private tool for ~10 people — it's meant to become the best open-source, free website for color, palettes, branding, and typography, built in the open for the community to use and contribute to. Working name locked: **Colors World**.
 
 ---
 
 ## The vision
 
-**A creative studio for colour and brand — where 100,000 colours are a world you explore, and your dashboard is your studio wall.**
+**A creative studio for colour and brand — where 100,000 colours are a world you explore, and your dashboard is your studio wall.** Open-source, free, built for designers and marketers first — not color-tooling professionals.
 
 Exploratory, artistic, visual, inspiring. The rigour stays, but as *invisible infrastructure* that quietly stops you making mistakes — never as the thing you interact with.
 
 Reference points: the speed and joy of **Coolors**, the craft of **Radix**, the visual ambition of **opencolors.org** — fused, and then pushed past all three.
 
-**Who it's for:** ~10 people. Business and family. Private by default, shared deliberately.
+**Who it's for, and the thing this changes:** the app was designed and built through Phase 5 for "~10 people, private by default, shared deliberately" — real accounts, real project-scoped RLS, a handful of known users. The new goal (public, free, community-run, 10k GitHub stars) is a genuinely different shape: an *open-source codebase anyone can run* is not automatically the same thing as *a public multi-tenant service anyone can sign up to*. Those need different things from the accounts/RLS layer — self-hosting needs none of today's multi-tenancy at all, while a public hosted instance needs it to scale far past 10 known people (arbitrary public signups, abuse handling, quotas). **This hasn't been resolved yet — flagging it here rather than quietly picking one.** Worth an explicit call before Phase 6 goes much further: is the plan (a) primarily an open-source project people self-host, (b) a free hosted instance you run for the community, or (c) both? The Phase 6 items below are written assuming the codebase stays useful either way, but "both" has real design consequences (e.g. a mood-to-palette feature calling an external AI API needs a per-user key story if this is self-hosted, or your own quota/rate-limiting if it's a hosted public service).
 
 ---
 
@@ -177,15 +177,26 @@ _Mockups start as styled SVG/CSS templates recoloured by the palette. Photoreali
 
 ---
 
-## Phase 6 — Later
+## Phase 6 — revised for the open-source pivot (2026-07-23)
 
-Deliberately deprioritised, not deleted:
+Priorities changed now that the audience is "anyone," not ~10 known people:
 
-- **Mood → palette** — type a feeling, get five colours retrieved from the 100K, each arriving with real meaning tags. Runs locally on Ollama, £0
-- **Semantic tokens & contrast-first generation** — genuinely valuable for developer handoff, but this is a studio first and a compiler second. Demoted from "next" to "when handoff hurts"
-- **Deeper print** — metamerism, ΔE tolerances, textile references. Gated on print becoming more than occasional
-- **Ambient discovery** — daily colour, "colours you've never scrolled past", random walk
-- **Palette critique** — automated design review
+- **Mood → palette** — type a feeling, get five colours retrieved from the 100K, each arriving with real meaning tags. **Changed: Google AI Studio (Gemini) instead of local Ollama** — free tier, no local model to run or GPU to own, and it works identically for every visitor regardless of their own hardware, which local Ollama never could for a public/community tool. Needs: a `GEMINI_API_KEY`, a prompt that returns exactly 5 hex/name pairs (not freeform text), and a decision on the self-host-vs-hosted question above — a self-hoster brings their own key; a hosted public instance needs the app's own key plus rate-limiting so one visitor can't exhaust the shared quota.
+- **Semantic tokens & contrast-first generation** — **un-demoted.** Previously deprioritized as "studio first, compiler second" for a private tool; a real open-source dev-tooling audience makes this genuinely load-bearing again — token export/contrast-first generation is exactly the kind of feature that gets an OSS color tool used (and starred) by working developers, not just designers. Moving this back into active consideration for Phase 6 proper, not "later."
+- **Deeper print** — **elevated, not deprioritized.** Original gate was "when print becomes more than occasional" — for a public tool serving marketing/brand/print-adjacent users at scale, it already is. Perfecting this (metamerism awareness, real ΔE tolerances instead of the current pseudo-gamut approximation, textile reference data) is now a priority, not a someday item. The current `'print'` pseudo-gamut (a 12-hue chroma-retention table) is a reasonable first pass but was explicitly built as an approximation — worth revisiting with real press/textile reference data once prioritized.
+- **Ambient discovery** — daily colour, "colours you've never scrolled past", random walk. Unchanged, still later.
+- **Palette critique** — automated design review. Unchanged, still later.
+- **Bulk font upload** — see the licensing note below before any code gets written here.
+
+### ⚠️ Bulk font upload — needs a real answer before this gets built, not just code
+
+The ask: bulk-upload a large personal collection of downloaded fonts so typography pairing isn't limited to the 8 curated Google Fonts pairs. **This is the one item in this whole message I'm not just going to implement as asked**, and here's why: fonts you've "downloaded over the years" are, for the overwhelming majority of real-world font collections, **not freely redistributable** — most retail/commercial fonts (Adobe Fonts, most foundry-licensed faces, many "free download" sites hosting non-libre fonts) explicitly prohibit redistribution, and a good chunk of any large personal collection is typically fonts that were never properly licensed for that at all. For a *private, 10-person* tool this was a low-stakes personal risk. For a *public open-source repo aiming for 10k stars*, bulk-committing someone's personal font stash would put genuinely infringing files into a public git history from day one — the opposite of what an open, credible community project can survive.
+
+**What's safe and what isn't:**
+- **Safe to bulk-add:** fonts explicitly licensed for redistribution — SIL Open Font License (OFL) fonts (the license nearly all of Google Fonts uses), Apache-2.0-licensed fonts, public domain faces. [Fontsource](https://fontsource.org/) and the Google Fonts GitHub repo are good bulk sources of exactly these, with license metadata already attached per font.
+- **Not safe to bulk-add:** anything from a personal download folder without first checking each one's actual license — "I downloaded it" and "I'm allowed to redistribute it" are unrelated facts.
+
+If you want a much bigger font library than today's 8 pairs, tell me and I'll build proper support for it — but sourced from an OFL/Apache bulk set (hundreds of real options, zero legal risk), not your personal downloads folder as-is. If some fonts in your collection are ones you specifically know are OFL/Apache/public-domain (e.g. you downloaded them directly from Google Fonts or Fontsource), point me at those and they're fine.
 
 ---
 
@@ -201,12 +212,21 @@ Deliberately deprioritised, not deleted:
 
 ---
 
+## Resolved 2026-07-23
+
+- **The name.** **Colors World.** Repo live at [github.com/aardevaas/Colors-World](https://github.com/aardevaas/Colors-World), rebranded throughout the UI.
+- **Deploy target.** **Vercel**, confirmed. GitHub repo pushed; Vercel import is a manual step in the dashboard (see the SQL/deploy note further down) since it needs your own login and your Supabase secrets typed directly into Vercel's UI, not relayed through me.
+- **Mockup fidelity.** **Stylised SVG/CSS**, confirmed — no photorealistic composites for now.
+
 ## Still open
 
-- **The name.** PRISM remains a placeholder.
-- **Deploy target** — Vercel, presumably, since it's now multi-user and needs to be reachable. Confirm.
-- **Mockup fidelity** — stylised SVG/CSS to start, or invest in photorealistic composites?
-- **Spectrum ordering** — hue → lightness → chroma is my default. Alternatives worth trying: lightness-major (bands of tone), or chroma-major (muted → vivid).
+- **Spectrum ordering — needs a real rethink, not just a tweak.** Hue-major (today's default and only implementation) reads as a color-professional's ordering, not what a marketing/design person browsing for brand inspiration actually wants. Two paths, not mutually exclusive:
+  1. **Pick a better single default.** Candidates: lightness-major (light-to-dark bands, reads as "mood" more than "hue wheel"), chroma-major (muted → vivid, reads as "intensity"), or something more editorial entirely (e.g. grouped by the existing `emotion`/`mood`/`category` tags already in the color data, so browsing feels like exploring themes instead of a spectrum).
+  2. **Offer a picker between several precomputed orderings.** Technically: today there is exactly *one* `spectrum_index` column, computed once for hue-major. Supporting multiple orderings the user can switch between means either (a) one additional integer column per ordering, each independently backfilled and indexed the same way `spectrum_index` is today — cheap in storage, instant either way since it's still `WHERE index BETWEEN x AND y` — or (b) computing order on the fly with a live `ORDER BY`, which won't hold up at 100K rows with the same "jump anywhere instantly" guarantee the current design has. (a) is the right approach if multiple orderings ship.
+  
+  This needs your call on which ordering(s) actually feel right before I build multi-ordering support blind — happy to mock up 2-3 candidate orderings from the existing data for you to eyeball once you're back with testing notes.
+
+- **Open-source vs. hosted-service question** (see "The vision" above) — self-host-only, a hosted public instance, or both. Shapes the Gemini mood-to-palette design and any future rate-limiting/abuse-handling work.
 
 ### ⚠️ `sharing.sql` needs one more re-run — a security review added a constraint
 
