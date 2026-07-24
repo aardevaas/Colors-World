@@ -11,7 +11,7 @@ export default function SpectrumPage() {
           Colors World <span className={styles.wordmarkDim}>/ spectrum</span>
         </h1>
         <nav className={styles.navGroup}>
-          <Link href="/" className={styles.navLink}>
+          <Link href="/studio" className={styles.navLink}>
             studio
           </Link>
           <Link href="/scale-lab" className={styles.navLink}>

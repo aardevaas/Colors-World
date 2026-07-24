@@ -273,3 +273,30 @@ Also fixed from that same review, no SQL involved: the repository functions a re
 Creates the `brand_assets` table (RLS-scoped via the same `is_project_member()` everything else uses) that `/assets` depends on. Doesn't touch the RLS toggle. Run it in the Supabase SQL Editor whenever convenient — until then, `/assets` will error on upload (the table it writes to doesn't exist yet), though the rest of the app is unaffected.
 
 **Running order for a clean pass, if doing all three at once:** `schema.sql` → `storage.sql` → `sharing.sql` → `brand-assets.sql`. Each is independently idempotent; the order only matters because `sharing.sql` and `brand-assets.sql` both call `is_project_member()`, which `schema.sql`'s multi-user block + `enable-rls.sql` define.
+
+---
+
+## Phase 7 — UX/UI overhaul: the landing page (started 2026-07-23)
+
+**The problem this fixes:** there was no landing page. `/` was the Studio Wall app itself — a visitor's very first interaction with a brand-new, empty canvas, with nothing sold to them first. For a tool asking strangers to star a repo and stick around, that's backwards. First fix, structural, done immediately: **Studio Wall moves to `/studio`**; `/` is now reserved for a real marketing page, built independently in a `design/landing-page` branch so the live app isn't disrupted mid-redesign.
+
+Section build order (one at a time, reviewed before moving to the next):
+
+1. **Hero** — the reveal. Kinetic, colour-driven, built directly on top of the real 16.7M-colour arithmetic engine (not stock imagery) so the product's core differentiator is the first thing anyone sees moving.
+2. **Live showcase** — an embedded, genuinely interactive mini-demo, not a screenshot or video — try the color engine before signing up for anything.
+3. **Feature bento grid** — the pillars (colour engine, Studio Wall, Scale Lab, typography pairing, brand assets, sharing) as an editorial layout with real hierarchy, not a uniform card grid.
+4. **Open-source credibility strip** — live GitHub star count, MIT badge, contributor avatars. This is the section that actually matters for the 10k-star goal — social proof converts lurkers into stargazers faster than any feature copy does.
+5. **Scrollytelling deep-dive** — one flagship feature (likely the colour engine or Studio Wall) gets a scroll-driven animated walkthrough.
+6. **Closing CTA + footer.**
+
+### Why a separate visual language from the app shell
+
+The existing app (Studio Wall, Spectrum, Scale Lab) deliberately reads as a *quiet instrument* — near-black, no display font, hairline rules, numerics in mono — so computed colour is the only saturated thing on screen. That's correct for a tool you use for hours. It is the wrong register for a landing page whose entire job is to make a stranger stop scrolling in the first second. The landing page gets its own, louder visual identity (kinetic colour, a real display typeface, motion) that hands off into the calmer app once someone's actually in it — same product, two different jobs.
+
+### Section 1 — Hero, built
+
+- `Unbounded` (via `next/font/google`, self-hosted at build time — no extra runtime request) as the one display typeface for the oversized headline; body copy stays on the existing system stack, keeping the "max two font families" budget.
+- A cursor-reactive OKLCH gradient-blob field behind the copy — three blurred radial blobs whose position tracks the pointer via CSS custom properties updated on `mousemove`, animated only on `transform` (compositor-safe, no layout cost).
+- An infinite marquee of real, computed Spectrum swatches (`indexToSwatch` — the actual arithmetic engine, not a hardcoded palette) scrolling behind/below the headline — the product's core differentiator, visible in the first second, not explained in a bullet point three scrolls down.
+- A magnetic CTA button (nudges toward the cursor on hover, `transform` only) into `/studio`.
+- Full `prefers-reduced-motion` fallback — every animation freezes to its resting state; the marquee and blob field are decorative, never load-bearing for comprehension.

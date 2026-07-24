@@ -57,7 +57,7 @@ export default async function AssetsPage() {
           Colors World <span className={styles.wordmarkDim}>/ assets</span>
         </h1>
         <nav className={styles.navGroup}>
-          <Link href="/" className={styles.navLink}>
+          <Link href="/studio" className={styles.navLink}>
             studio
           </Link>
           <Link href="/scale-lab" className={styles.navLink}>

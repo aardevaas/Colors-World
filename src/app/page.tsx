@@ -1,56 +1,46 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { listBoardItems } from '@/lib/supabase/board';
-import { resolveDefaultProjectId } from '@/lib/supabase/projects';
-import { createServerSupabaseClient } from '@/lib/supabase/server-client';
-import { hydrateBoardCard } from '@/lib/board/hydrate-card';
-import { AccountStatus } from '@/components/auth/AccountStatus';
-import { StudioWallBoard } from '@/components/studio-wall/StudioWallBoard';
-import { ShareControl } from '@/components/studio-wall/ShareControl';
-import styles from '@/components/studio-wall/studio-wall.module.css';
+import { Unbounded } from 'next/font/google';
+import { Hero } from '@/components/landing/Hero';
+import {
+  composeIndex,
+  indexToSwatch,
+  SPECTRUM_STEPS,
+  type GeneratedSwatch,
+} from '@/lib/spectrum/generate-color';
 
-export default async function StudioWallPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const unbounded = Unbounded({
+  subsets: ['latin'],
+  weight: ['600', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
 
-  if (user === null) {
-    redirect('/login');
+// ~L 0.60 — vivid enough to read as "color" rather than pastel, dark enough
+// to hold up against the hero's near-black background.
+const MARQUEE_LIGHTNESS_STEP = 100;
+// Maximum chroma the sRGB gamut allows at that lightness/hue — full vividness.
+const MARQUEE_CHROMA_STEP = SPECTRUM_STEPS - 1;
+// One full sweep of the hue wheel in 32 swatches.
+const MARQUEE_HUE_INCREMENT = 8;
+
+function buildMarqueeSwatches(): GeneratedSwatch[] {
+  const swatches: GeneratedSwatch[] = [];
+  for (let hueStep = 0; hueStep < SPECTRUM_STEPS; hueStep += MARQUEE_HUE_INCREMENT) {
+    const index = composeIndex({
+      lightnessStep: MARQUEE_LIGHTNESS_STEP,
+      hueStep,
+      chromaStep: MARQUEE_CHROMA_STEP,
+    });
+    swatches.push(indexToSwatch(index));
   }
+  return swatches;
+}
 
-  const projectId = await resolveDefaultProjectId(user.id, supabase);
-  const items = await listBoardItems(projectId, supabase);
-  const cards = await Promise.all(items.map((item) => hydrateBoardCard(item, supabase)));
+export default function LandingPage() {
+  const marqueeSwatches = buildMarqueeSwatches();
 
   return (
-    <div className={styles.shell}>
-      <header className={styles.masthead}>
-        <h1 className={styles.wordmark}>
-          Colors World <span className={styles.wordmarkDim}>/ studio</span>
-        </h1>
-        <nav className={styles.navGroup}>
-          <Link href="/scale-lab" className={styles.navLink}>
-            scale lab
-          </Link>
-          <Link href="/spectrum" className={styles.navLink}>
-            spectrum
-          </Link>
-          <Link href="/library" className={styles.navLink}>
-            library
-          </Link>
-          <Link href="/palettes" className={styles.navLink}>
-            palettes
-          </Link>
-          <Link href="/assets" className={styles.navLink}>
-            assets
-          </Link>
-        </nav>
-        <ShareControl />
-        <AccountStatus />
-      </header>
-
-      <StudioWallBoard initialCards={cards} />
+    <div className={unbounded.variable}>
+      <Hero marqueeSwatches={marqueeSwatches} />
     </div>
   );
 }

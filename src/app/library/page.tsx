@@ -23,7 +23,7 @@ export default async function LibraryPage({ searchParams }: PageProps) {
           Colors World <span className={styles.wordmarkDim}>/ library</span>
         </h1>
         <nav>
-          <Link href="/" className={styles.navLink}>
+          <Link href="/studio" className={styles.navLink}>
             studio
           </Link>{' '}
           <Link href="/spectrum" className={styles.navLink}>
