@@ -87,10 +87,11 @@ one source of truth, identical result.
 - Canvas is **pinned** (`position: sticky`) — confirmed.
 - Scroll distance: **3 full screen-heights** (`300vh`), screen-dependent.
 - Scrolling back up **fully reverses** the whole sequence.
-- **OPEN — needs a decision by feel:** storm acceleration driven by scroll
-  *velocity* (flick fast → violent storm) vs. scroll *progress* (steady ramp).
-  A temporary `storm: velocity|progress` toggle sits in the HUD so both can be
-  compared live. **Delete the toggle once chosen.**
+- **RESOLVED (2026-07-24): velocity-driven.** Storm acceleration follows scroll
+  *velocity* — flick hard and it storms, ease off and it settles.
+  Progress-driven was tried and rejected as "too much" (relentless by
+  comparison). The temporary A/B toggle has been removed and the code path
+  deleted; `VELOCITY_DRIVE_GAIN` is the single knob.
 
 ---
 
@@ -263,8 +264,9 @@ shift during WebGL init, and zero extra dependencies.
 
 ### Sound
 **Wanted** — interaction SFX with a mute toggle, muted by default.
-> ⚠️ **Blocked:** the founder has reference inspirations but hasn't shared them
-> yet. Ask before implementing.
+> ⏸️ **Deferred by decision (2026-07-24): sound comes *after* the landing page
+> is finished.** The founder has reference inspirations but hasn't shared them.
+> **ACTION: remind them about sound once the landing page is signed off.**
 
 ### Performance
 - three.js sits behind a `dynamic(..., { ssr: false })` boundary. Measured:
@@ -283,6 +285,13 @@ R3F's `ResizeObserver` from firing. Consequences:
 
 - Screenshots can show a stale or black canvas even when the page is perfectly
   healthy. Forcing a viewport resize triggers a repaint and reveals the truth.
+- **Characterised precisely (2026-07-24): the sandbox can only capture at
+  `scrollY === 0`.** At the top of the page screenshots are accurate; at any
+  scrolled position they come back solid black *while the DOM reports the H1
+  on-screen with opacity 1 and the canvas holding a correct 2×-DPR drawing
+  buffer*. Consequence: **anything gated behind scroll — the morph, the globe,
+  the explosion — cannot be seen by the agent at all** and must be reviewed by
+  the founder. Verify such work by asserting on DOM/uniform/maths instead.
 - **Motion, feel, and pacing must be judged by the founder**, not the agent.
   The agent can verify code correctness, math, buffers, bundle size, absence of
   errors — not whether it *feels* good.
@@ -308,11 +317,30 @@ share `.next` and it produces `Cannot find module './XXX.js'`. Fix:
 - Reduced-motion fallback + skip link + motion override toggle
 - 270 tests green, typecheck clean, zero console errors
 
-**Next up:** Phase 3 (morph to globe) → Phase 4 (explosion + post-processing) →
-Phase 5 (feature cards).
+**Shipped — Phase 3, the gather:**
+- `uMorphProgress` ramps `smootherstep(0.42 → 0.72)` off scroll position, so
+  the globe assembles as you scroll and **unwinds back into rain on the way up**
+  — reversible by construction, not by a separate reverse animation
+- Spin and axial tilt are applied to the *sphere seat inside the shader*, not
+  to the object — so the rain stays upright and only the destination turns
+- Spin velocity fades in with the morph, so the globe is already turning as it
+  finishes forming instead of lurching into motion
+- Point size grows 1.0 → 1.5× across the morph so ~30k points close into one
+  continuous surface
+- Depth-based dimming of the far hemisphere: additive blending has no depth
+  sort, so without it the back of the shell sums through the front and the
+  globe blows out to a white ball. This is what makes it read as solid.
+- Storm locked to velocity-driven; A/B toggle removed
+- `useScrollProgress` now also syncs from native `scroll`/`resize`, not Lenis
+  alone — a scrollbar drag, keyboard paging, anchor jump, or restored scroll
+  position would otherwise leave progress stale, and progress is what decides
+  whether the globe is assembled
+
+**Next up:** Phase 4 (hover/click → explosion + post-processing → navigate to
+`/library?color=…`) → Phase 5 (feature cards).
 
 **Open items:**
-1. Storm drive: `velocity` vs `progress` — decide by feel, then delete the toggle
-2. Sound references — needed before audio work
-3. Route migration to the 5-tab structure (§8) — app work, not landing
-4. Confirm the dual-license choice (PolyForm vs AGPL+exception) and add LICENSE
+1. **Sound** — deferred until the landing page is signed off. *Remind the founder.*
+2. Route migration to the 5-tab structure (§8) — app work, not landing
+3. Confirm the dual-license choice (PolyForm vs AGPL+exception) and add LICENSE
+4. Phase 3 visuals are **unreviewed by the agent** (see §10) — needs a human look

@@ -17,11 +17,8 @@ import {
 } from '@/lib/landing/particle-shaders';
 import type { ScrollState } from '@/lib/landing/use-scroll-progress';
 
-export type StormDrive = 'velocity' | 'progress';
-
 interface ParticleStormProps {
   readonly scrollRef: RefObject<ScrollState>;
-  readonly drive: StormDrive;
   readonly reducedMotion: boolean;
 }
 
@@ -36,13 +33,27 @@ const HERO_PARTICLES = 50;
 /** Scroll fraction by which the storm is at full density (Phase 2 complete). */
 const STORM_FULL_AT = 0.4;
 
-/** How much a hard flick multiplies fall speed, in 'velocity' mode. */
+/** Phase 3: the storm gathers into the globe across this scroll window. */
+const MORPH_START = 0.42;
+const MORPH_END = 0.72;
+
+/** How much a hard flick multiplies fall speed. */
 const VELOCITY_DRIVE_GAIN = 0.7;
-/** How much depth-of-scroll multiplies fall speed, in 'progress' mode. */
-const PROGRESS_DRIVE_GAIN = 0.5;
 
 /** Frames-worth of smoothing on the speed term, so it never steps visibly. */
 const SPEED_SMOOTHING = 0.08;
+
+/** ~0.2 RPM — cinematic, closer to a slow pan than a spin. */
+const ROTATION_RADIANS_PER_SECOND = 0.09;
+/** Earth-like axial tilt, so the spin shows latitude as well as longitude. */
+const AXIAL_TILT_RADIANS = (20 * Math.PI) / 180;
+
+/** Smoothstep's smoother cousin — zero 1st and 2nd derivatives at both ends,
+ *  so the gather starts and settles without a perceptible kick. */
+function smootherstep(edge0: number, edge1: number, value: number): number {
+  const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
 
 /**
  * Held as a typed object rather than reached for through the material's
@@ -60,11 +71,15 @@ interface StormUniforms {
   readonly uSpeedBoost: { value: number };
   readonly uFieldHeight: { value: number };
   readonly uMorphProgress: { value: number };
+  readonly uRotation: { value: number };
+  readonly uTilt: { value: number };
+  readonly uSphereRadius: { value: number };
 }
 
-export function ParticleStorm({ scrollRef, drive, reducedMotion }: ParticleStormProps) {
+export function ParticleStorm({ scrollRef, reducedMotion }: ParticleStormProps) {
   const pointsRef = useRef<Points>(null);
   const smoothedBoost = useRef(0);
+  const rotation = useRef(0);
   const viewport = useThree((state) => state.viewport);
 
   const buffers = useMemo(
@@ -101,6 +116,9 @@ export function ParticleStorm({ scrollRef, drive, reducedMotion }: ParticleStorm
       uSpeedBoost: { value: 0 },
       uFieldHeight: { value: FIELD_HEIGHT },
       uMorphProgress: { value: 0 },
+      uRotation: { value: 0 },
+      uTilt: { value: AXIAL_TILT_RADIANS },
+      uSphereRadius: { value: SPHERE_RADIUS },
     }),
     []
   );
@@ -122,11 +140,14 @@ export function ParticleStorm({ scrollRef, drive, reducedMotion }: ParticleStorm
     uniforms.uPixelRatio.value = viewport.dpr;
 
     if (reducedMotion) {
-      // Serene, static, fully-formed field — no fall, no ramp, no flicker.
+      // Serene and static: the globe already assembled, held still. No fall,
+      // no ramp, no spin — the destination without the journey.
       uniforms.uTime.value = 0;
       uniforms.uScroll.value = 0;
       uniforms.uSpeedBoost.value = 0;
       uniforms.uVisibleFraction.value = 1;
+      uniforms.uMorphProgress.value = 1;
+      uniforms.uRotation.value = 0;
       return;
     }
 
@@ -140,17 +161,26 @@ export function ParticleStorm({ scrollRef, drive, reducedMotion }: ParticleStorm
     const ramp = Math.min(1, scroll.progress / STORM_FULL_AT);
     uniforms.uVisibleFraction.value = heroFraction + (1 - heroFraction) * ramp;
 
-    // The Q14 comparison, live: flick-driven vs depth-driven acceleration.
-    const target =
-      drive === 'velocity'
-        ? scroll.velocity * VELOCITY_DRIVE_GAIN
-        : scroll.progress * PROGRESS_DRIVE_GAIN;
+    // Flick-driven, not depth-driven: scrolling hard makes it storm, and
+    // easing off lets it settle. Depth-driven read as relentless by
+    // comparison, so it was dropped.
+    const target = scroll.velocity * VELOCITY_DRIVE_GAIN;
 
     // Frame-rate independent smoothing, so a 144Hz display doesn't converge
     // nearly twice as fast as a 60Hz one.
     const alpha = 1 - Math.pow(1 - SPEED_SMOOTHING, delta * 60);
     smoothedBoost.current += (target - smoothedBoost.current) * alpha;
     uniforms.uSpeedBoost.value = smoothedBoost.current;
+
+    // Phase 3 — the gather. Reversible by construction: this reads straight
+    // off scroll position, so scrolling back up unwinds the globe into rain.
+    const morph = smootherstep(MORPH_START, MORPH_END, scroll.progress);
+    uniforms.uMorphProgress.value = morph;
+
+    // Spin fades in with the gather, so the globe is already turning by the
+    // time it finishes forming rather than lurching into motion afterwards.
+    rotation.current += ROTATION_RADIANS_PER_SECOND * morph * delta;
+    uniforms.uRotation.value = rotation.current;
   });
 
   return (

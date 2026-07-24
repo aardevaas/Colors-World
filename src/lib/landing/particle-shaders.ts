@@ -15,7 +15,10 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
   uniform float uVisibleFraction; // ramps ~0.0017 (50 cubes) -> 1.0 (full storm)
   uniform float uSpeedBoost;      // scroll-velocity driven, 0 when idle
   uniform float uFieldHeight;
-  uniform float uMorphProgress;   // reserved for Phase 3; 0.0 for now
+  uniform float uMorphProgress;   // 0 = raining, 1 = fully assembled globe
+  uniform float uRotation;        // accumulated spin, radians
+  uniform float uTilt;            // fixed axial tilt, radians
+  uniform float uSphereRadius;
 
   attribute vec3 aRainStart;      // x,z = column; y = 0..1 fall phase
   attribute vec3 aSpherePos;
@@ -26,6 +29,18 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
 
   varying vec3 vColor;
   varying float vAlpha;
+
+  vec3 rotateY(vec3 p, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+  }
+
+  vec3 rotateZ(vec3 p, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec3(c * p.x - s * p.y, s * p.x + c * p.y, p.z);
+  }
 
   void main() {
     vColor = aColor;
@@ -45,11 +60,20 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
     // Lateral drift so the fall reads as air, not a conveyor belt.
     rainPos.x += sin(uTime * 0.25 + aRainStart.z * 1.7) * 0.18;
 
-    vec3 pos = mix(rainPos, aSpherePos, uMorphProgress);
+    // Spin about the globe's own axis, then tilt that axis off vertical.
+    // Rotating the sphere seat here rather than the whole object keeps the
+    // rain upright — only the destination turns, so the fall never skews.
+    vec3 spherePos = rotateZ(rotateY(aSpherePos, uRotation), uTilt);
+
+    vec3 pos = mix(rainPos, spherePos, uMorphProgress);
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = aSize * uPixelRatio * (9.0 / -mvPosition.z);
+
+    // Grow slightly as the shell closes, so ~30k discrete points overlap into
+    // one continuous surface instead of reading as a dotted screen.
+    float sizeGain = mix(1.0, 1.5, uMorphProgress);
+    gl_PointSize = aSize * sizeGain * uPixelRatio * (9.0 / -mvPosition.z);
 
     // Fade at the top and bottom of the field so particles arrive and leave
     // rather than popping in and out at the wrap seam.
@@ -57,7 +81,14 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
     // Once morphed onto the globe there is no fall phase to fade against.
     edgeFade = mix(edgeFade, 1.0, uMorphProgress);
 
-    vAlpha = exists * edgeFade;
+    // Additive blending has no depth sorting, so without this the far side of
+    // the shell sums straight through the near side and the globe blows out
+    // to a white ball. Dimming by depth restores the read of a solid sphere
+    // lit from the front, and costs nothing.
+    float depthFade = smoothstep(-uSphereRadius * 0.85, uSphereRadius * 0.6, spherePos.z);
+    float facing = mix(1.0, 0.12 + depthFade * 0.88, uMorphProgress);
+
+    vAlpha = exists * edgeFade * facing;
   }
 `;
 

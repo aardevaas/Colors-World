@@ -2,34 +2,21 @@
 
 import Link from 'next/link';
 import { GitHubIcon } from '@/components/icons/GitHubIcon';
-import type { StormDrive } from './ParticleStorm';
 import styles from './landing.module.css';
 
 interface HeroHudProps {
   readonly motionEnabled: boolean;
   readonly onToggleMotion: () => void;
-  readonly drive: StormDrive;
-  readonly onToggleDrive: () => void;
 }
 
 const REPO_URL = 'https://github.com/aardevaas/Colors-World';
 
-export function HeroHud({
-  motionEnabled,
-  onToggleMotion,
-  drive,
-  onToggleDrive,
-}: HeroHudProps) {
+export function HeroHud({ motionEnabled, onToggleMotion }: HeroHudProps) {
   return (
     <div className={styles.hud}>
       <header className={styles.hudTop}>
         <span className={styles.wordmark}>Colors World</span>
         <div className={styles.hudControls}>
-          {/* Temporary A/B control so the flick-driven vs depth-driven storm
-              can be compared live before one is committed to. */}
-          <button type="button" onClick={onToggleDrive} className={styles.hudToggle}>
-            storm: {drive}
-          </button>
           <button
             type="button"
             onClick={onToggleMotion}

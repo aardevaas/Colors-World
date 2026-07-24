@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
-import type { StormDrive } from './ParticleStorm';
 import { HeroHud } from './HeroHud';
 import styles from './landing.module.css';
 
@@ -29,7 +28,6 @@ const ParticleCanvas = dynamic(() => import('./ParticleCanvas'), {
 export function LandingExperience() {
   const sectionRef = useRef<HTMLElement>(null);
   const [motionEnabled, setMotionEnabled] = useState(true);
-  const [drive, setDrive] = useState<StormDrive>('velocity');
 
   // Respect the OS preference by default; the HUD toggle overrides it in
   // either direction, so someone who wants the spectacle can opt back in.
@@ -52,18 +50,10 @@ export function LandingExperience() {
       style={{ height: `${SECTION_HEIGHT_VH}vh` }}
     >
       <div className={styles.pinned}>
-        <ParticleCanvas
-          scrollRef={scrollRef}
-          drive={drive}
-          reducedMotion={!motionEnabled}
-        />
+        <ParticleCanvas scrollRef={scrollRef} reducedMotion={!motionEnabled} />
         <HeroHud
           motionEnabled={motionEnabled}
           onToggleMotion={() => setMotionEnabled((previous) => !previous)}
-          drive={drive}
-          onToggleDrive={() =>
-            setDrive((previous) => (previous === 'velocity' ? 'progress' : 'velocity'))
-          }
         />
       </div>
     </section>

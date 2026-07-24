@@ -3,12 +3,11 @@
 import { type RefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { ScrollState } from '@/lib/landing/use-scroll-progress';
-import { ParticleStorm, type StormDrive } from './ParticleStorm';
+import { ParticleStorm } from './ParticleStorm';
 import styles from './landing.module.css';
 
 interface ParticleCanvasProps {
   readonly scrollRef: RefObject<ScrollState>;
-  readonly drive: StormDrive;
   readonly reducedMotion: boolean;
 }
 
@@ -20,7 +19,6 @@ interface ParticleCanvasProps {
  */
 export default function ParticleCanvas({
   scrollRef,
-  drive,
   reducedMotion,
 }: ParticleCanvasProps) {
   return (
@@ -31,7 +29,7 @@ export default function ParticleCanvas({
       camera={{ fov: 55, position: [0, 0, 9], near: 0.1, far: 100 }}
     >
       <color attach="background" args={['#050508']} />
-      <ParticleStorm scrollRef={scrollRef} drive={drive} reducedMotion={reducedMotion} />
+      <ParticleStorm scrollRef={scrollRef} reducedMotion={reducedMotion} />
     </Canvas>
   );
 }

@@ -78,6 +78,21 @@ export function useScrollProgress(
 
     lenis.on('scroll', handleScroll);
 
+    // Lenis only emits for scrolls it drives. A scrollbar drag, keyboard
+    // paging, an anchor jump, or a restored scroll position on reload would
+    // otherwise leave `progress` stale — and since progress is what decides
+    // whether the globe is assembled, stale here means visibly wrong. Reading
+    // position (never velocity) from the native event keeps the two in sync
+    // without competing for the gesture.
+    function syncProgress() {
+      stateRef.current = {
+        progress: readProgress(),
+        velocity: stateRef.current.velocity,
+      };
+    }
+    window.addEventListener('scroll', syncProgress, { passive: true });
+    window.addEventListener('resize', syncProgress);
+
     const decay = window.setInterval(() => {
       const current = stateRef.current;
       if (current.velocity > 0) {
@@ -94,6 +109,8 @@ export function useScrollProgress(
     return () => {
       cancelAnimationFrame(rafId);
       window.clearInterval(decay);
+      window.removeEventListener('scroll', syncProgress);
+      window.removeEventListener('resize', syncProgress);
       lenis.off('scroll', handleScroll);
       lenis.destroy();
     };
