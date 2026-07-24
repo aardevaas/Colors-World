@@ -300,3 +300,14 @@ The existing app (Studio Wall, Spectrum, Scale Lab) deliberately reads as a *qui
 - An infinite marquee of real, computed Spectrum swatches (`indexToSwatch` — the actual arithmetic engine, not a hardcoded palette) scrolling behind/below the headline — the product's core differentiator, visible in the first second, not explained in a bullet point three scrolls down.
 - A magnetic CTA button (nudges toward the cursor on hover, `transform` only) into `/studio`.
 - Full `prefers-reduced-motion` fallback — every animation freezes to its resting state; the marquee and blob field are decorative, never load-bearing for comprehension.
+- "Built by: aardevaas" credit line under the sub-copy, linking to the GitHub profile, with a pulsing glow on the icon.
+
+### Section 2 — the rain-to-globe set piece, built
+
+Below the Hero: each of the marquee's 32 hues is a "faucet" — `buildRainBlockSeeds` expands it into 12 real shade variants (same arithmetic engine, `composeIndex`/`indexToSwatch`), interleaved round-robin so every hue rains concurrently rather than hue-by-hue. Spawn rate and rain-vs-globe phase are both driven by scroll depth into the section, not time.
+
+Past ~55% scroll, physics freezes — each block's last physics position becomes its migration start — and every block eases onto an assigned point on a sphere via hand-rolled 3D→2D perspective projection (`sphere-projection.ts`, plain trigonometry on the same canvas, no WebGL): longitude = source hue, latitude = shade, so the assembled globe reads as colour-banded meridians. Further scroll keeps rotating it. A block that never got to fall before the cutoff still joins from the globe's centre with a delayed arrival — no colour family is silently dropped just because someone scrolled fast.
+
+`sphere-projection.ts` and `color-rain-variants.ts` are pure and unit-tested (11 new tests) — this is the one part of the landing page with real automated coverage rather than only visual verification.
+
+Not yet built, and a deliberate stopping point until there's direction on it: drag/pointer-driven rotation once the globe has formed, and whatever comes after ("where these end up," per the brief) — the globe currently just rotates with continued scroll and the section ends.
