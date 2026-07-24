@@ -462,6 +462,49 @@ browser** — unit tests are the only honest verification of the windows.
 - Bundle check held: `/` is 117 kB first-load (was 116 kB pre-Phase-5) — still
   comfortably under the 150 kB budget, and Phase 5 added no client JS at all.
 
+**Shipped — gate the cards behind the explosion, not raw scroll (founder feedback, 2026-07-24):**
+
+Real bug, found by the founder actually scrolling through it: the cards were
+mounted unconditionally as ordinary document-flow content right after
+`.stage`. Since `.stage` is a fixed 300vh regardless of whether anyone has
+ever clicked a colour, scrolling past it showed the cards laid directly over
+a fully intact, still auto-rotating, **unexploded** globe — "sitting on top
+of the globe, looks like a complete mess," their words. The fix isn't
+cosmetic — it's that the cards' *existence in the DOM* is now conditional:
+
+- `FeatureCards` only renders after a click has actually exploded the globe
+  (a `cardsRevealed` state flipped by a timeout keyed off
+  `EXPLOSION_DURATION_SECONDS`, same constant the shader uses). Verified
+  directly: before any click, `document.body.scrollHeight` is *exactly* 3.00x
+  `window.innerHeight` — there is nowhere to scroll to reach the cards at
+  all, which is what actually rules the bug out rather than a z-index or
+  timing tweak that could still race.
+- **The auto-navigate-to-`/library` behaviour from Phase 4 is gone.**
+  Clicking a colour no longer teleports you off the landing page — the
+  explosion now reveals the toolkit (the cards) as the next beat of the
+  story, matching "so they know what tabs they'll be able to work with."
+  The picked colour still isn't lost: it's carried into the **Library
+  card's own link specifically** (`/library?color=HEX`), so choosing to
+  actually enter Library still opens on the colour that was searched for —
+  it just waits for that to be a deliberate click on a card, not an
+  automatic redirect.
+- Once the cards mount, the page smooth-scrolls to present them
+  (`scrollIntoView`) — otherwise "reveal the cards" would silently add
+  content below the fold with nothing telling the visitor anything changed.
+- **Reduced-motion gap closed as a direct consequence:** the pointer-effect
+  used to `return` immediately whenever `reducedMotion` was true, meaning
+  the click listener was never even attached — a reduced-motion visitor
+  could never trigger `onExplode` at all, and would have been permanently
+  stuck with no way to reach the cards under this new gated design. Click
+  now stays live in both modes; only the drag-to-orbit listeners are
+  skipped for reduced motion (dragging a globe that isn't supposed to move
+  doesn't fit the preference, and there's nothing to reorient while it's
+  held static anyway).
+- The cards section gets a plain 700ms cross-fade + rise on its first paint
+  (its DOM literally didn't exist a moment before, so this *is* the reveal
+  moment) — automatically reduced to instant by the existing global
+  `prefers-reduced-motion` override, nothing extra needed for that.
+
 **Open items:**
 1. **Sound** — deferred until the landing page is signed off. *Remind the founder.*
 2. Route migration to the 5-tab structure (§8) — app work, not landing

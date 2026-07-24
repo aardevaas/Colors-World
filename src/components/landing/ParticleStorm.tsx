@@ -275,8 +275,14 @@ export function ParticleStorm({
   // listeners rather than R3F pointer events on the mesh, for the same
   // reason picking is manual: the mesh's geometry doesn't represent where
   // anything visually is.
+  //
+  // Click stays live even when reducedMotion is true — the globe is already
+  // rendered fully assembled and static in that mode (see useFrame below),
+  // and a visitor still needs a way to pick a colour and reveal the feature
+  // cards. Only the drag-to-orbit listeners are skipped for reduced motion;
+  // reorienting a globe that isn't supposed to be moving doesn't fit the
+  // preference, and there is nothing for it to interact with while static.
   useEffect(() => {
-    if (reducedMotion) return;
     const canvas = gl.domElement;
 
     function handleClick(event: MouseEvent) {
@@ -307,6 +313,12 @@ export function ParticleStorm({
       uniforms.uHoveredIndexNorm.value = -1;
       onHoverChange?.(null);
       onExplode?.(hex);
+    }
+
+    canvas.addEventListener('click', handleClick);
+
+    if (reducedMotion) {
+      return () => canvas.removeEventListener('click', handleClick);
     }
 
     function handlePointerDown(event: PointerEvent) {
@@ -345,7 +357,6 @@ export function ParticleStorm({
       }
     }
 
-    canvas.addEventListener('click', handleClick);
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);

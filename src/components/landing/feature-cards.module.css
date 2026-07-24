@@ -12,6 +12,24 @@
   padding: var(--space-vast) var(--space-wide) calc(var(--space-vast) * 2);
   max-width: 84rem;
   margin: 0 auto;
+  /* This section doesn't exist in the DOM until the globe has actually
+     exploded (see LandingExperience), so its very first paint is the
+     reveal moment — a plain cross-fade marks that instead of a jump-cut.
+     The global prefers-reduced-motion override in globals.css already
+     zeroes this to an instant appearance for anyone who wants that, so
+     there is nothing extra to gate here. */
+  animation: reveal 700ms var(--ease-out-expo);
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .sectionHeader {

@@ -2,18 +2,23 @@ import Link from 'next/link';
 import styles from './feature-cards.module.css';
 
 /**
- * Phase 5 — the five flagship tabs, per the locked brief (§8). A plain
- * Server Component: no interactivity here beyond ordinary links, so it adds
- * nothing to the client bundle. Deliberately rendered as a normal-flow
- * sibling *after* the pinned globe section rather than nested inside it —
- * see landing.module.css's `.pinned` comment for why that's what lets the
- * drifting stardust keep showing through behind these cards as they scroll.
+ * Phase 5 — the five flagship tabs, per the locked brief (§8). Rendered only
+ * once the globe has actually been exploded (see LandingExperience) — never
+ * unconditionally after the globe section, so it can't appear laid over an
+ * intact, unexploded globe.
  *
  * Three of the five target routes (/builder, /visualizer, /typography)
  * don't exist yet — that's a separate, already-tracked app-side route
  * migration (brief §8), not something this component works around. Those
  * cards will 404 until that migration lands.
  */
+
+interface FeatureCardsProps {
+  /** The colour picked on the globe, if any — carried into the Library
+   *  card's link specifically, so choosing to enter Library still opens on
+   *  the colour that was searched for rather than losing it. */
+  readonly pickedColorHex?: string;
+}
 
 interface FeatureCard {
   readonly tab: string;
@@ -77,10 +82,10 @@ const FEATURE_CARDS: readonly FeatureCard[] = [
   },
 ];
 
-function FeatureCardPanel({ card }: { card: FeatureCard }) {
+function FeatureCardPanel({ card, href }: { card: FeatureCard; href: string }) {
   return (
     <Link
-      href={card.route}
+      href={href}
       className={card.featured ? `${styles.card} ${styles.cardFeatured}` : styles.card}
     >
       <div className={styles.cardHeader}>
@@ -97,8 +102,12 @@ function FeatureCardPanel({ card }: { card: FeatureCard }) {
   );
 }
 
-export function FeatureCards() {
+export function FeatureCards({ pickedColorHex }: FeatureCardsProps) {
   const [library, ...rest] = FEATURE_CARDS;
+  const libraryHref =
+    library !== undefined && pickedColorHex !== undefined
+      ? `${library.route}?color=${pickedColorHex.replace('#', '')}`
+      : (library?.route ?? '/library');
 
   return (
     <section className={styles.section}>
@@ -112,9 +121,9 @@ export function FeatureCards() {
       </header>
 
       <div className={styles.grid}>
-        {library !== undefined && <FeatureCardPanel card={library} />}
+        {library !== undefined && <FeatureCardPanel card={library} href={libraryHref} />}
         {rest.map((card) => (
-          <FeatureCardPanel key={card.route} card={card} />
+          <FeatureCardPanel key={card.route} card={card} href={card.route} />
         ))}
       </div>
     </section>

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
 import { EXPLOSION_DURATION_SECONDS } from '@/lib/landing/explosion-timing';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
@@ -17,15 +16,25 @@ import styles from './landing.module.css';
  * The canvas is a fixed, viewport-covering backdrop for the whole page (see
  * landing.module.css's `.pinned`) — the 300vh `.stage` section drives the
  * scroll-linked story (storm, globe morph, rotation) entirely on its own
- * pacing, while the feature cards afterwards are ordinary document-flow
- * content that scrolls up over that same still-live, drifting field.
+ * pacing.
+ *
+ * The feature cards are *not* ordinary scroll-reachable content — they
+ * don't exist in the document at all until a click has actually exploded
+ * the globe. Rendering them unconditionally right after `.stage` (the
+ * original approach) meant they'd appear the moment someone scrolled past
+ * 300vh regardless of whether they'd ever clicked, so a curious scroll
+ * would show the cards laid directly over a fully intact, still-rotating,
+ * unexploded globe — exactly the "sitting on top of the globe" mess this
+ * was rewritten to fix. Gating the cards behind explosion state means
+ * there's simply nowhere to scroll to until the story has actually reached
+ * that point.
  */
 
 /** Three full screen-heights of scroll, per the brief. */
 const SECTION_HEIGHT_VH = 300;
-/** A little slack past the shader's own climax before navigating, so the
- *  page never cuts away mid-explosion. */
-const NAVIGATE_DELAY_MS = (EXPLOSION_DURATION_SECONDS + 0.15) * 1000;
+/** A little slack past the shader's own climax before revealing the cards,
+ *  so they never appear mid-explosion. */
+const CARDS_REVEAL_DELAY_MS = (EXPLOSION_DURATION_SECONDS + 0.15) * 1000;
 
 const ParticleCanvas = dynamic(() => import('./ParticleCanvas'), {
   ssr: false,
@@ -34,8 +43,10 @@ const ParticleCanvas = dynamic(() => import('./ParticleCanvas'), {
 
 export function LandingExperience() {
   const sectionRef = useRef<HTMLElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
   const [motionEnabled, setMotionEnabled] = useState(true);
-  const router = useRouter();
+  const [pickedColorHex, setPickedColorHex] = useState<string | null>(null);
+  const [cardsRevealed, setCardsRevealed] = useState(false);
 
   // Respect the OS preference by default; the HUD toggle overrides it in
   // either direction, so someone who wants the spectacle can opt back in.
@@ -72,6 +83,15 @@ export function LandingExperience() {
     return () => cancelAnimationFrame(frame);
   }, [motionEnabled, scrollRef]);
 
+  // Once the cards actually mount (the DOM they live in didn't exist a
+  // moment ago), scroll to present them — otherwise "after the explosion we
+  // show the cards" would require the visitor to already be scrolling
+  // further on their own initiative to ever discover that anything changed.
+  useEffect(() => {
+    if (!cardsRevealed) return;
+    cardsRef.current?.scrollIntoView({ behavior: motionEnabled ? 'smooth' : 'auto', block: 'start' });
+  }, [cardsRevealed, motionEnabled]);
+
   // Hover, like the fade above, is written straight to the DOM rather than
   // held in React state — it can fire every couple of frames while the
   // pointer sits over the globe, and re-rendering the component tree for a
@@ -98,15 +118,17 @@ export function LandingExperience() {
 
   // The explosion's own timing lives with the shader (EXPLOSION_DURATION_SECONDS,
   // shared via explosion-timing.ts) so this can never fall out of step with
-  // what's actually happening on screen.
+  // what's actually happening on screen. Picking a colour no longer navigates
+  // anywhere by itself — it reveals the toolkit instead, and the picked
+  // colour rides along into the Library card specifically, so choosing to
+  // enter Library still carries it forward.
   function handleExplode(hex: string) {
     const hud = hudRef.current;
     const tooltip = hud?.querySelector<HTMLElement>('[data-tooltip]');
     if (tooltip !== null && tooltip !== undefined) tooltip.style.opacity = '0';
 
-    window.setTimeout(() => {
-      router.push(`/library?color=${hex.replace('#', '')}`);
-    }, NAVIGATE_DELAY_MS);
+    setPickedColorHex(hex);
+    window.setTimeout(() => setCardsRevealed(true), CARDS_REVEAL_DELAY_MS);
   }
 
   return (
@@ -130,7 +152,11 @@ export function LandingExperience() {
           />
         </div>
       </section>
-      <FeatureCards />
+      {cardsRevealed && (
+        <div ref={cardsRef}>
+          <FeatureCards pickedColorHex={pickedColorHex ?? undefined} />
+        </div>
+      )}
     </>
   );
 }
