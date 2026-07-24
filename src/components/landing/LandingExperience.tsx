@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
+import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
 import styles from './landing.module.css';
 
@@ -42,6 +43,27 @@ export function LandingExperience() {
   }, []);
 
   const scrollRef = useScrollProgress(sectionRef, motionEnabled);
+  const hudRef = useRef<HTMLDivElement>(null);
+
+  // Written straight to CSS variables from a frame loop rather than held in
+  // React state: this changes every frame while scrolling, and re-rendering
+  // the tree that often to fade some text would cost more than the particle
+  // field does. Opacity-only, so it stays on the compositor.
+  useEffect(() => {
+    if (!motionEnabled) return;
+    let frame = 0;
+    function tick() {
+      frame = requestAnimationFrame(tick);
+      const hud = hudRef.current;
+      if (hud === null) return;
+      const fade = resolveHudFade(scrollRef.current?.progress ?? 0);
+      hud.style.setProperty('--copy-opacity', String(fade.copyOpacity));
+      hud.style.setProperty('--cue-opacity', String(fade.cueOpacity));
+      hud.style.setProperty('--copy-pointer', fade.copyPointerEvents);
+    }
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [motionEnabled, scrollRef]);
 
   return (
     <section
@@ -52,6 +74,7 @@ export function LandingExperience() {
       <div className={styles.pinned}>
         <ParticleCanvas scrollRef={scrollRef} reducedMotion={!motionEnabled} />
         <HeroHud
+          ref={hudRef}
           motionEnabled={motionEnabled}
           onToggleMotion={() => setMotionEnabled((previous) => !previous)}
         />

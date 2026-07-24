@@ -7,13 +7,16 @@ import styles from './landing.module.css';
 interface HeroHudProps {
   readonly motionEnabled: boolean;
   readonly onToggleMotion: () => void;
+  /** Carries the scroll-driven fade — see LandingExperience for why it's a
+   *  CSS variable on this node rather than React state. */
+  readonly ref?: React.Ref<HTMLDivElement>;
 }
 
 const REPO_URL = 'https://github.com/aardevaas/Colors-World';
 
-export function HeroHud({ motionEnabled, onToggleMotion }: HeroHudProps) {
+export function HeroHud({ motionEnabled, onToggleMotion, ref }: HeroHudProps) {
   return (
-    <div className={styles.hud}>
+    <div className={styles.hud} ref={ref}>
       <header className={styles.hudTop}>
         <span className={styles.wordmark}>Colors World</span>
         <div className={styles.hudControls}>

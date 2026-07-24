@@ -336,6 +336,22 @@ share `.next` and it produces `Cannot find module './XXX.js'`. Fix:
   position would otherwise leave progress stale, and progress is what decides
   whether the globe is assembled
 
+**Shipped — hero fade (founder request, 2026-07-24):**
+The hero copy cross-dissolves out as the globe gathers (0.28 → 0.5), so the
+two never compete. Deliberately overlaps the start of the morph (0.42) — the
+brief was "fade away *as* the sphere creates itself", so it is still faintly
+present when the gather begins rather than cutting beforehand. The scroll cue
+clears much earlier (0.03 → 0.14). The **top bar does not fade** — wordmark and
+controls stay as persistent HUD. Faded copy switches to
+`pointer-events: none` so an invisible CTA can never swallow a click meant for
+a particle.
+
+Driven by writing CSS variables from a frame loop, not React state — this
+changes every frame while scrolling and re-rendering the tree that often would
+cost more than the particle field. Timing lives in `src/lib/landing/scroll-fade.ts`
+as pure functions **because the rAF write cannot be observed in a headless
+browser** — unit tests are the only honest verification of the windows.
+
 **Next up:** Phase 4 (hover/click → explosion + post-processing → navigate to
 `/library?color=…`) → Phase 5 (feature cards).
 
