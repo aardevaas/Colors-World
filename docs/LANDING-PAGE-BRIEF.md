@@ -517,3 +517,95 @@ cosmetic — it's that the cards' *existence in the DOM* is now conditional:
    *content* (the DOM the cards actually render) was directly confirmed via
    `elementFromPoint` and rect inspection at a real scrolled position, since
    that content, unlike the canvas, doesn't depend on rAF at all.
+
+---
+
+## 12. Globe rebuild — free orbit, zoom, opaque shell (locked 2026-07-24)
+
+Founder feedback that triggered this: *"its not fully 3D. I should be able to
+turn it around however I want. Also the white 'light' shining on it is tooo
+much, no need for that — the hero here are the colors. I should be able to zoom
+in and out of the sphere as well. Has to be smoother — make it so that I cant
+see through it."*
+
+### The key finding: "too much white light" and "I can see through it" are the same bug
+
+They read as two asks; they have **one** root cause. The material uses
+`AdditiveBlending` with `depthWrite: false`, so every particle along a view ray
+*sums*. Where the shell is dense — the middle of the globe, where the far side
+stacks behind the near side — those sums saturate to white. That is the "white
+light." And because nothing writes depth, the far side is never actually
+occluded, which is the "see through it."
+
+The existing `depthFade`/`facing` term in the vertex shader was a **workaround
+for exactly this**: it dims particles by world-space `z` so the far side stops
+blowing the near side out. It was treating the symptom.
+
+**The fix removes code rather than adding it:** switch to `NormalBlending` +
+`depthWrite: true` + `depthTest: true`, and **delete `depthFade`/`facing`
+entirely**. The depth buffer then genuinely occludes the far side, so there is
+nothing left to blow out and nothing to fake-dim.
+
+Additive was originally chosen so particles read as *emitted light in a void*.
+That only matters where particles overlap — which is only the globe, i.e. the
+exact place it is causing the problem. Rain and the settled explosion are
+sparse enough that additive vs. normal is visually near-identical there. So
+opaque throughout is an acceptable trade, not a regression.
+
+### Decisions
+
+**D1 — Rotation: quaternion uniform, camera stays on the +Z axis.**
+Replace the `uRotation`/`uTilt` Euler pair with a single `uOrient` (`vec4`
+quaternion). Euler angles are why rotation is currently constrained (and why
+`MAX_DRAG_PITCH_RADIANS` had to clamp at 60° to avoid a pole-on flat disc);
+a quaternion gives true trackball rotation on any axis with no gimbal issues
+and no clamp.
+
+Deliberately **not** drei's `OrbitControls`, for two concrete reasons:
+1. The canvas is `position: fixed; inset: 0` — it covers the entire viewport.
+   OrbitControls binds wheel for zoom, which would swallow page scroll
+   *everywhere*, and page scroll is what drives the whole rain→gather story.
+2. The existing auto-spin behaviour (fades in with morph, halves on hover,
+   pauses during drag, resumes after ~2s) is finer-grained than
+   `autoRotate` exposes, and already works.
+
+Because the camera only ever *dollies* along Z and never orbits, world-space
+`spherePos.z` keeps meaning "toward the camera" — so this stays compatible
+with the fixed-camera assumption the rest of the shader was built on.
+
+**D2 — Opaque, depth-tested shell.** See the finding above. Fragment discards
+outside the disc instead of feathering a halo into an additive sum.
+
+**D3 — Zoom: camera dolly, with a scroll-release escape hatch.**
+`camera.position.z` over roughly 4.5–12. Wheel-to-zoom is active **only** while
+the globe is assembled and not exploding. Critically: when already at minimum
+zoom and the user keeps wheeling outward, **do not** `preventDefault` — let the
+page scroll again. Without that release the visitor is trapped on a
+full-viewport canvas with no way to scroll back up and re-watch the gather.
+Pinch on touch. The existing `9.0 / -mvPosition.z` term in `gl_PointSize`
+already makes points scale correctly under dolly, for free.
+
+**D4 — Picking: ray–sphere intersection + a spherical bucket grid.**
+Replaces the current O(n) "project all 30k particles and take the nearest in
+NDC" scan. The globe *is* a sphere, so the pointer ray can be intersected
+analytically, inverse-rotated into sphere-local space, and resolved to a
+lattice index via a precomputed (lat, lon) bucket grid — scanning ~tens of
+candidates instead of all of them. This is exact rather than radius-guessed
+(`HOVER_NDC_RADIUS` goes away), and it is **O(1) in particle count**, which is
+what unblocks D5.
+
+**D5 — Smoothness.** Drag gains angular velocity + damping so it glides to a
+stop instead of halting dead. Particle count can now rise (D4 removed the
+per-particle CPU cost that made 30k the ceiling) if the shell still reads gappy
+after D2 — but note the existing density is already ~5px spacing against
+~6–25px points, so D2 alone may be sufficient. **Measure before raising it.**
+
+### Consequences to handle during implementation
+- `src/lib/landing/rotate-sphere-position.ts` and its 9 tests are superseded by
+  quaternion helpers — delete, don't leave both.
+- `HOVER_NDC_RADIUS`, `MAX_DRAG_PITCH_RADIANS`, `DRAG_PITCH_RADIANS_PER_PIXEL`
+  all become obsolete.
+- The explosion path still reads `spherePos` as its outward normal; quaternion
+  rotation must be applied before that, exactly where the Euler pair was.
+- Reduced motion still renders the assembled globe static — verify the opaque
+  path looks right with `uMorphProgress` pinned at 1.

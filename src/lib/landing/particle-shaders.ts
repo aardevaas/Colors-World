@@ -88,9 +88,7 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
   uniform float uSpeedBoost;      // scroll-velocity driven, 0 when idle
   uniform float uFieldHeight;
   uniform float uMorphProgress;   // 0 = raining, 1 = fully assembled globe
-  uniform float uRotation;        // accumulated spin, radians
-  uniform float uTilt;            // fixed axial tilt, radians
-  uniform float uSphereRadius;
+  uniform vec4 uOrient;           // accumulated orientation quaternion (x,y,z,w)
   uniform float uExplodeProgress; // 0 = assembled, ramps to 1 across the climax, stays there while settled
   uniform float uHoveredIndexNorm; // aIndexNorm of the hovered particle, or -1 for none
 
@@ -105,16 +103,15 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
   varying float vAlpha;
   varying float vEmphasis;
 
-  vec3 rotateY(vec3 p, float angle) {
-    float s = sin(angle);
-    float c = cos(angle);
-    return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
-  }
-
-  vec3 rotateZ(vec3 p, float angle) {
-    float s = sin(angle);
-    float c = cos(angle);
-    return vec3(c * p.x - s * p.y, s * p.x + c * p.y, p.z);
+  // Must stay byte-for-byte the same formula as rotateVector() in
+  // quaternion.ts — CPU-side picking mirrors this exactly since the GPU
+  // never reports back where a particle actually ended up on screen. This
+  // replaces the old rotateY/rotateZ Euler pair: Euler angles were *why*
+  // drag-to-orbit was clamped to a 60° pitch (past that the sphere goes
+  // pole-on and reads as a flat disc) — a quaternion has no such pole.
+  vec3 rotateByQuat(vec3 v, vec4 q) {
+    vec3 t = 2.0 * cross(q.xyz, v);
+    return v + q.w * t + cross(q.xyz, t);
   }
 
   ${NOISE_GLSL}
@@ -137,10 +134,11 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
     // Lateral drift so the fall reads as air, not a conveyor belt.
     rainPos.x += sin(uTime * 0.25 + aRainStart.z * 1.7) * 0.18;
 
-    // Spin about the globe's own axis, then tilt that axis off vertical.
     // Rotating the sphere seat here rather than the whole object keeps the
     // rain upright — only the destination turns, so the fall never skews.
-    vec3 spherePos = rotateZ(rotateY(aSpherePos, uRotation), uTilt);
+    // uOrient carries both the fixed axial tilt and all accumulated
+    // auto-spin/drag as one quaternion (see ParticleStorm.tsx).
+    vec3 spherePos = rotateByQuat(aSpherePos, uOrient);
 
     vec3 pos = mix(rainPos, spherePos, uMorphProgress);
 
@@ -164,12 +162,36 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
     // indices, so precisely one particle lights up, never its neighbours.
     float isHovered = step(-1.0e-5, uHoveredIndexNorm) * step(abs(aIndexNorm - uHoveredIndexNorm), 5.0e-6);
 
-    // Grow slightly as the shell closes, so ~30k discrete points overlap into
-    // one continuous surface instead of reading as a dotted screen — then
-    // shrink a little through the settle for "elegant ambient depth" rather
-    // than a field of equally bright dots behind future foreground content.
-    float sizeGain = mix(1.0, 1.5, uMorphProgress) * mix(1.0, 0.82, smoothstep(0.3, 1.0, uExplodeProgress));
-    gl_PointSize = aSize * sizeGain * (1.0 + isHovered * 0.9) * uPixelRatio * (9.0 / -mvPosition.z);
+    // Grow as the shell closes, so ~30k discrete points overlap into one
+    // continuous, gapless surface instead of reading as a dotted screen —
+    // then shrink a little through the settle for "elegant ambient depth"
+    // rather than a field of equally bright dots behind future foreground
+    // content.
+    float sizeGain = mix(1.0, 1.7, uMorphProgress) * mix(1.0, 0.82, smoothstep(0.3, 1.0, uExplodeProgress));
+
+    // A plain multiplier here wasn't enough, and pushing it higher made a
+    // *different* bug worse rather than fixing this one: aSize already
+    // varies per particle, and 9.0/-mvPosition.z already grows point size
+    // for whichever particles sit closest to the camera (correct, physical
+    // perspective) — so a uniform gain amplifies both, and the
+    // closest/largest-aSize particle balloons into an obvious oversized
+    // square while the smallest/farthest ones can still fall short of their
+    // neighbours' spacing. Clamping the *logical* (pre-pixel-ratio) size to
+    // a fixed range is what actually fixes "I can still see through it":
+    // the floor guarantees every particle, however small or far, covers
+    // its neighbours' gap; the ceiling stops any single particle from
+    // dominating regardless of how close it gets to the camera or how
+    // large its own aSize happened to roll.
+    //
+    // Only mixed in once assembled and not exploding — the rain/storm's
+    // organic size variance (tuned separately, not part of this bug) and
+    // the explosion's own dispersing scale stay exactly as they were;
+    // clampAmount is 0 for both of those and 1 only for the still, closed
+    // globe a viewer can actually orbit and inspect.
+    float rawPointSize = aSize * sizeGain * (1.0 + isHovered * 0.9) * (9.0 / -mvPosition.z);
+    float clampedPointSize = clamp(rawPointSize, 10.0, 18.0);
+    float clampAmount = uMorphProgress * (1.0 - uExplodeProgress);
+    gl_PointSize = mix(rawPointSize, clampedPointSize, clampAmount) * uPixelRatio;
 
     // Fade at the top and bottom of the field so particles arrive and leave
     // rather than popping in and out at the wrap seam.
@@ -177,23 +199,27 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */ `
     // Once morphed onto the globe there is no fall phase to fade against.
     edgeFade = mix(edgeFade, 1.0, uMorphProgress);
 
-    // Additive blending has no depth sorting, so without this the far side of
-    // the shell sums straight through the near side and the globe blows out
-    // to a white ball. Dimming by depth restores the read of a solid sphere
-    // lit from the front — relaxed back to full visibility once exploding,
-    // since a dispersed field in open space has no "far side" to hide.
-    float depthFade = smoothstep(-uSphereRadius * 0.85, uSphereRadius * 0.6, spherePos.z);
-    float facing = mix(1.0, 0.12 + depthFade * 0.88, uMorphProgress * (1.0 - uExplodeProgress));
-
     // Dim slightly through the settle, same reasoning as the size shrink.
     float settleFade = mix(1.0, 0.55, smoothstep(0.4, 1.0, uExplodeProgress));
 
-    vAlpha = exists * edgeFade * facing * settleFade;
+    // There used to be a facing/depthFade term here that dimmed the far
+    // side of the shell by world-space z. That was a workaround for additive
+    // blending having no depth sorting — with the far side never actually
+    // occluded, dense overlap summed straight through to white. The material
+    // is now depth-tested + depth-written and normally (not additively)
+    // blended (see ParticleStorm.tsx), so the depth buffer genuinely
+    // occludes the far side and there is nothing left to fake-dim. Removing
+    // this is *why* the globe stopped reading as "too much white light" and
+    // "I can see through it" — both were symptoms of the same missing depth
+    // test, not two separate problems.
+    vAlpha = exists * edgeFade * settleFade;
     vEmphasis = isHovered * (1.0 - uExplodeProgress);
   }
 `;
 
 export const PARTICLE_FRAGMENT_SHADER = /* glsl */ `
+  uniform float uBrightness; // 1 = full colour, ramped down post-reveal so the feature cards stay legible over it
+
   varying vec3 vColor;
   varying float vAlpha;
   varying float vEmphasis;
@@ -220,6 +246,6 @@ export const PARTICLE_FRAGMENT_SHADER = /* glsl */ `
     if (alpha <= 0.001) discard;
 
     vec3 emphasized = mix(vColor, vec3(1.0), vEmphasis * 0.55);
-    gl_FragColor = vec4(emphasized, alpha);
+    gl_FragColor = vec4(emphasized * uBrightness, alpha);
   }
 `;
