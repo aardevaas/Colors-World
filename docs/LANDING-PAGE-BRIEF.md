@@ -352,11 +352,62 @@ cost more than the particle field. Timing lives in `src/lib/landing/scroll-fade.
 as pure functions **because the rAF write cannot be observed in a headless
 browser** — unit tests are the only honest verification of the windows.
 
-**Next up:** Phase 4 (hover/click → explosion + post-processing → navigate to
-`/library?color=…`) → Phase 5 (feature cards).
+**Shipped — Phase 4, the explosion:**
+- **New MIT-only exception noted:** `postprocessing` (the underlying engine
+  `@react-three/postprocessing` wraps) is **Zlib**-licensed, not literally MIT.
+  Zlib is permissive — no copyleft, commercial forks explicitly allowed — so it
+  doesn't conflict with the dual-license strategy in spirit, but flagging it
+  since the standing rule was written as "MIT-only."
+- **Picking is fully manual, not three.js raycasting.** A particle's on-screen
+  position exists only inside the vertex shader — `geometry.attributes.position`
+  holds the dummy rain seat, never the live sphere position — so three's
+  built-in `Points.raycast()` would silently hit-test the wrong data. Hover and
+  click instead recompute the shader's own rotation on the CPU
+  (`rotate-sphere-position.ts`, unit-tested specifically because a drift
+  between the JS copy and the GLSL would misalign hover with no visible error)
+  and project through the real camera every other frame.
+- Click is a native `click` listener on the canvas, not an R3F pointer event on
+  the mesh, for the same reason. Re-picks at the exact click position rather
+  than trusting the last hover — this is also what makes a touch tap work,
+  since touch never produces a hover first.
+- **Curl noise, not simplex.** Hash-based value noise was used for the
+  turbulence field instead of hand-rolling simplex noise — a curl field only
+  needs *some* continuous, organic noise to be divergence-free by
+  construction; which primitive supplies it barely matters visually, and this
+  GLSL cannot be unit-tested at all, so the simpler primitive was chosen
+  specifically to leave less room for a silent math bug.
+- Explosion = radial shockwave (outward along each particle's own sphere
+  normal) + curl-noise turbulence that keeps growing through the settle, so
+  the dispersed field drifts gently forever rather than freezing solid.
+- Hover: brighter/whiter glow + larger point size on the exact hovered
+  particle (exact match via a tolerance tuned between float-rounding noise and
+  the ~1/30000 spacing between neighbouring indices), tooltip reading
+  `#HEX • Click to explore`, auto-rotation halved for a steadier click.
+- Post-processing (bloom + chromatic aberration) mounts only for the ~1.4s
+  climax window, is skipped entirely on touch devices, and auto-bypasses via
+  drei's `PerformanceMonitor` below 50fps. "Selective" bloom needed no masking
+  work — it can only ever touch pixels the canvas drew, and the HUD/feature
+  cards are separate DOM in their own stacking layer on top of it.
+- Navigation to `/library?color=HEX` fires from a timeout in
+  `LandingExperience`, timed off the same `EXPLOSION_DURATION_SECONDS`
+  constant the shader uses (`src/lib/landing/explosion-timing.ts`) — kept in
+  its own zero-dependency file specifically so importing it can never
+  accidentally drag `three` back into the non-lazy main bundle.
+- Bundle check held: `/` is 116 kB first-load (was 115 kB before
+  postprocessing was added) — still under the 150 kB budget.
+
+**Next up:** Phase 5 (feature cards, §8).
 
 **Open items:**
 1. **Sound** — deferred until the landing page is signed off. *Remind the founder.*
 2. Route migration to the 5-tab structure (§8) — app work, not landing
 3. Confirm the dual-license choice (PolyForm vs AGPL+exception) and add LICENSE
-4. Phase 3 visuals are **unreviewed by the agent** (see §10) — needs a human look
+4. **Phases 3 and 4 are unreviewed by the agent** (see §10) — this sandbox
+   cannot exercise scroll-gated or frame-gated interaction at all (the morph,
+   hover, click, and explosion all require `requestAnimationFrame`, which is
+   paused here), so hover feel, click accuracy, and the explosion's visual
+   character all need a human look
+5. Deferred from the brief on purpose, not forgotten: manual orbit-drag
+   rotation (pause auto-rotate while dragging, resume ~2s after) — additive
+   polish on top of the auto-rotation, not required for the core
+   hover→click→explode→navigate loop
