@@ -23,44 +23,31 @@ const MARQUEE_CHROMA_STEP = SPECTRUM_STEPS - 1;
 // One full sweep of the hue wheel in 32 swatches.
 const MARQUEE_HUE_INCREMENT = 8;
 
+// The marquee's hues double as the rain's "faucets" — ColorRain expands each
+// one into its own family of shade variants (see color-rain-variants.ts).
+const MARQUEE_HUE_STEPS = Array.from(
+  { length: Math.ceil(SPECTRUM_STEPS / MARQUEE_HUE_INCREMENT) },
+  (_, position) => position * MARQUEE_HUE_INCREMENT
+);
+
 function buildMarqueeSwatches(): GeneratedSwatch[] {
-  const swatches: GeneratedSwatch[] = [];
-  for (let hueStep = 0; hueStep < SPECTRUM_STEPS; hueStep += MARQUEE_HUE_INCREMENT) {
+  return MARQUEE_HUE_STEPS.map((hueStep) => {
     const index = composeIndex({
       lightnessStep: MARQUEE_LIGHTNESS_STEP,
       hueStep,
       chromaStep: MARQUEE_CHROMA_STEP,
     });
-    swatches.push(indexToSwatch(index));
-  }
-  return swatches;
-}
-
-// Several lightness bands, not just one — "all different tones" means dark,
-// light, and muted variants of every hue, not just a vivid rainbow ring.
-const RAIN_LIGHTNESS_STEPS = [40, 80, 120, 160, 200] as const;
-const RAIN_CHROMA_STEP = SPECTRUM_STEPS - 1;
-const RAIN_HUE_INCREMENT = 24;
-
-function buildRainSwatchHexes(): string[] {
-  const hexes: string[] = [];
-  for (const lightnessStep of RAIN_LIGHTNESS_STEPS) {
-    for (let hueStep = 0; hueStep < SPECTRUM_STEPS; hueStep += RAIN_HUE_INCREMENT) {
-      const index = composeIndex({ lightnessStep, hueStep, chromaStep: RAIN_CHROMA_STEP });
-      hexes.push(indexToSwatch(index).hex);
-    }
-  }
-  return hexes;
+    return indexToSwatch(index);
+  });
 }
 
 export default function LandingPage() {
   const marqueeSwatches = buildMarqueeSwatches();
-  const rainSwatchHexes = buildRainSwatchHexes();
 
   return (
     <div className={unbounded.variable}>
       <Hero marqueeSwatches={marqueeSwatches} />
-      <ColorRain swatchHexes={rainSwatchHexes} />
+      <ColorRain marqueeHueSteps={MARQUEE_HUE_STEPS} />
     </div>
   );
 }

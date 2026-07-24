@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { setupColorRainPhysics } from '@/lib/landing/setup-color-rain-physics';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildRainBlockSeeds } from '@/lib/landing/color-rain-variants';
+import { setupColorRain } from '@/lib/landing/setup-color-rain';
 import styles from './color-rain.module.css';
 
 interface ColorRainProps {
-  readonly swatchHexes: readonly string[];
+  readonly marqueeHueSteps: readonly number[];
 }
 
-export function ColorRain({ swatchHexes }: ColorRainProps) {
+export function ColorRain({ marqueeHueSteps }: ColorRainProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -16,6 +17,13 @@ export function ColorRain({ swatchHexes }: ColorRainProps) {
   useEffect(() => {
     setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }, []);
+
+  // Reduced motion skips the simulation entirely — a plain static grid
+  // still shows every hue's shade family, just without the fall/assembly.
+  const fallbackHexes = useMemo(
+    () => (reducedMotion ? buildRainBlockSeeds(marqueeHueSteps).map((seed) => seed.swatch.hex) : []),
+    [reducedMotion, marqueeHueSteps]
+  );
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -28,21 +36,21 @@ export function ColorRain({ swatchHexes }: ColorRainProps) {
 
     import('matter-js').then(({ default: matter }) => {
       if (cancelled) return;
-      cleanup = setupColorRainPhysics(matter, section, canvas, swatchHexes);
+      cleanup = setupColorRain(matter, section, canvas, marqueeHueSteps);
     });
 
     return () => {
       cancelled = true;
       cleanup?.();
     };
-  }, [reducedMotion, swatchHexes]);
+  }, [reducedMotion, marqueeHueSteps]);
 
   return (
     <section ref={sectionRef} className={styles.rainSection}>
       <div className={styles.rainSticky}>
         {reducedMotion ? (
           <div className={styles.staticFallback} aria-hidden="true">
-            {swatchHexes.map((hex, position) => (
+            {fallbackHexes.map((hex, position) => (
               <span
                 key={`${hex}-${position}`}
                 className={styles.staticBlock}
