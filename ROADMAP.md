@@ -278,6 +278,15 @@ Creates the `brand_assets` table (RLS-scoped via the same `is_project_member()` 
 
 ## Phase 7 — UX/UI overhaul: the landing page (started 2026-07-23)
 
+> **→ The authoritative spec now lives in [docs/LANDING-PAGE-BRIEF.md](docs/LANDING-PAGE-BRIEF.md).**
+> The landing page was rebuilt from scratch on WebGL/React Three Fiber
+> (2026-07-24), superseding the Canvas-2D version described further down this
+> section. That file holds the full locked brief: stack decisions and the
+> MIT-only constraint, scroll choreography, the globe's colour mapping, the
+> 5-tab route structure, accessibility, and every open question. **Read it
+> before touching the landing page.** The notes below are kept as the record
+> of how the section got here.
+
 **The problem this fixes:** there was no landing page. `/` was the Studio Wall app itself — a visitor's very first interaction with a brand-new, empty canvas, with nothing sold to them first. For a tool asking strangers to star a repo and stick around, that's backwards. First fix, structural, done immediately: **Studio Wall moves to `/studio`**; `/` is now reserved for a real marketing page, built independently in a `design/landing-page` branch so the live app isn't disrupted mid-redesign.
 
 Section build order (one at a time, reviewed before moving to the next):
