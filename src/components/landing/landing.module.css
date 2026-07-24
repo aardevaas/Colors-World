@@ -10,10 +10,24 @@
   background: #050508;
 }
 
+/*
+ * Fixed, not sticky — this is a genuine viewport-covering backdrop, not a
+ * per-section pin. The globe's own scroll pacing (rain/gather/rotation) is
+ * still driven purely off the 300vh .stage section below, completely
+ * unaffected by this; `position: fixed` only decides how long the *visual*
+ * stays behind whatever content follows, without changing any timing.
+ * That's deliberate: the feature cards render as ordinary document-flow
+ * content *after* .stage rather than nested inside it, specifically so the
+ * live, drifting stardust shows through behind them as they scroll — per
+ * the brief, that continuity from explosion into ambient background is not
+ * optional. Extending .stage itself to cover the cards too would have
+ * squeezed all of rain/gather/rotation's carefully-tuned pacing into a
+ * smaller fraction of a much longer scroll instead.
+ */
 .pinned {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
 }
 

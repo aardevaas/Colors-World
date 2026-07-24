@@ -50,9 +50,10 @@ const HERO_PARTICLES = 50;
 /** Scroll fraction by which the storm is at full density (Phase 2 complete). */
 const STORM_FULL_AT = 0.4;
 
-/** Phase 3: the storm gathers into the globe across this scroll window. */
+/** Phase 3: the storm gathers into the globe across this scroll window.
+ *  Widened from an earlier 0.42-0.72 — the creation felt too quick. */
 const MORPH_START = 0.42;
-const MORPH_END = 0.72;
+const MORPH_END = 0.88;
 /** Interaction only makes sense once the shell has actually closed. */
 const ASSEMBLED_THRESHOLD = 0.97;
 
@@ -76,11 +77,33 @@ const HOVER_NDC_RADIUS = 0.035;
  *  measured necessity. */
 const HOVER_SCAN_FRAME_STRIDE = 2;
 
+/**
+ * Click-and-drag manual orbit — "search for any color" by hand, not just
+ * whatever the auto-spin happens to be showing. Radians per pixel of drag;
+ * sign/magnitude are a first pass since this can't be felt out visually
+ * here — flip the sign on either axis if a direction reads as backwards.
+ */
+const DRAG_YAW_RADIANS_PER_PIXEL = 0.006;
+const DRAG_PITCH_RADIANS_PER_PIXEL = 0.006;
+/** Keeps the manual tilt well short of looking at the globe pole-on, which
+ *  would make the sphere read as a flat disc. */
+const MAX_DRAG_PITCH_RADIANS = (60 * Math.PI) / 180;
+/** Below this total pointer travel, a press+release is a click, not a drag —
+ *  otherwise every tap-to-explode would also nudge the globe by a pixel. */
+const DRAG_DISTANCE_THRESHOLD_PX = 6;
+/** Auto-rotation stays paused this long after a drag ends, then eases back
+ *  in — resuming instantly would feel like the drag was ignored. */
+const AUTO_ROTATION_RESUME_DELAY_SECONDS = 2;
+
 /** Smoothstep's smoother cousin — zero 1st and 2nd derivatives at both ends,
  *  so the gather starts and settles without a perceptible kick. */
 function smootherstep(edge0: number, edge1: number, value: number): number {
   const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
   return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 /**
@@ -114,7 +137,6 @@ export function ParticleStorm({
 }: ParticleStormProps) {
   const pointsRef = useRef<Points>(null);
   const smoothedBoost = useRef(0);
-  const rotation = useRef(0);
   const clockRef = useRef(0);
   const hoveredIndexRef = useRef<number | null>(null);
   const explodeStartRef = useRef<number | null>(null);
@@ -123,6 +145,27 @@ export function ParticleStorm({
   const viewport = useThree((state) => state.viewport);
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
+
+  // Auto-spin (advances on its own, per the scroll-driven gather) is kept
+  // separate from the manual drag offset (only ever changes from a pointer
+  // drag) rather than summed into one accumulator — pausing auto-rotation
+  // during a drag is then just "don't advance this one", with nothing to
+  // unwind afterwards.
+  const autoRotation = useRef(0);
+  const dragYaw = useRef(0);
+  const dragPitch = useRef(0);
+  const isDragging = useRef(false);
+  const dragLast = useRef<{ x: number; y: number } | null>(null);
+  const dragDistance = useRef(0);
+  const wasDragging = useRef(false);
+  const autoRotationResumeAt = useRef(0);
+
+  function currentRotation(): number {
+    return autoRotation.current + dragYaw.current;
+  }
+  function currentTilt(): number {
+    return AXIAL_TILT_RADIANS + dragPitch.current;
+  }
 
   const buffers = useMemo(
     () =>
@@ -188,9 +231,18 @@ export function ParticleStorm({
    * reimplements the shader's own rotation (via the tested
    * `rotateSpherePosition`) on the CPU and projects it through the real
    * camera instead, which is the only way to know where a particle actually
-   * rendered this frame.
+   * rendered this frame. Takes the *current* rotation/tilt as arguments
+   * (rather than reading the refs itself) so a click's one-off pick and the
+   * per-frame hover scan are guaranteed to use the same values a given call
+   * intends, including mid-drag.
    */
-  function pickNearestParticle(ndcX: number, ndcY: number, activeCamera: Camera): number | null {
+  function pickNearestParticle(
+    ndcX: number,
+    ndcY: number,
+    activeCamera: Camera,
+    rotationRadians: number,
+    tiltRadians: number
+  ): number | null {
     const radiusSq = HOVER_NDC_RADIUS * HOVER_NDC_RADIUS;
     let bestIndex: number | null = null;
     let bestZ = -Infinity;
@@ -199,7 +251,7 @@ export function ParticleStorm({
       const sx = buffers.spherePos[i * 3] ?? 0;
       const sy = buffers.spherePos[i * 3 + 1] ?? 0;
       const sz = buffers.spherePos[i * 3 + 2] ?? 0;
-      const rotated = rotateSpherePosition({ x: sx, y: sy, z: sz }, rotation.current, AXIAL_TILT_RADIANS);
+      const rotated = rotateSpherePosition({ x: sx, y: sy, z: sz }, rotationRadians, tiltRadians);
 
       pickScratch.set(rotated.x, rotated.y, rotated.z).project(activeCamera);
       const dx = pickScratch.x - ndcX;
@@ -219,14 +271,22 @@ export function ParticleStorm({
     return bestIndex;
   }
 
-  // Click/tap handled as a native DOM listener rather than an R3F pointer
-  // event on the mesh, for the same reason picking is manual: the mesh's
-  // geometry doesn't represent where anything visually is.
+  // Click, drag-to-orbit, and tap-to-explode all handled as native DOM
+  // listeners rather than R3F pointer events on the mesh, for the same
+  // reason picking is manual: the mesh's geometry doesn't represent where
+  // anything visually is.
   useEffect(() => {
     if (reducedMotion) return;
     const canvas = gl.domElement;
 
     function handleClick(event: MouseEvent) {
+      // A drag that just ended still delivers a native 'click' on release —
+      // suppress exactly that one so reorienting the globe never also
+      // detonates it.
+      if (wasDragging.current) {
+        wasDragging.current = false;
+        return;
+      }
       if (explodeStartRef.current !== null) return; // one explosion per visit
       if (uniforms.uMorphProgress.value < ASSEMBLED_THRESHOLD) return;
 
@@ -236,7 +296,7 @@ export function ParticleStorm({
       // Recomputed at the exact click position rather than trusting
       // whatever was last hovered — this is also what makes touch taps
       // work, since touch never produces a hover in the first place.
-      const index = pickNearestParticle(ndcX, ndcY, camera);
+      const index = pickNearestParticle(ndcX, ndcY, camera, currentRotation(), currentTilt());
       if (index === null) return;
 
       const hex = buffers.hex[index];
@@ -249,9 +309,55 @@ export function ParticleStorm({
       onExplode?.(hex);
     }
 
+    function handlePointerDown(event: PointerEvent) {
+      if (explodeStartRef.current !== null) return;
+      if (uniforms.uMorphProgress.value < ASSEMBLED_THRESHOLD) return;
+      isDragging.current = true;
+      dragDistance.current = 0;
+      dragLast.current = { x: event.clientX, y: event.clientY };
+      canvas.setPointerCapture(event.pointerId);
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      if (!isDragging.current || dragLast.current === null) return;
+      const dx = event.clientX - dragLast.current.x;
+      const dy = event.clientY - dragLast.current.y;
+      dragLast.current = { x: event.clientX, y: event.clientY };
+      dragDistance.current += Math.hypot(dx, dy);
+      dragYaw.current += dx * DRAG_YAW_RADIANS_PER_PIXEL;
+      dragPitch.current = clamp(
+        dragPitch.current + dy * DRAG_PITCH_RADIANS_PER_PIXEL,
+        -MAX_DRAG_PITCH_RADIANS,
+        MAX_DRAG_PITCH_RADIANS
+      );
+    }
+
+    function handlePointerUp(event: PointerEvent) {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      dragLast.current = null;
+      if (dragDistance.current > DRAG_DISTANCE_THRESHOLD_PX) {
+        wasDragging.current = true;
+        autoRotationResumeAt.current = clockRef.current + AUTO_ROTATION_RESUME_DELAY_SECONDS;
+      }
+      if (canvas.hasPointerCapture(event.pointerId)) {
+        canvas.releasePointerCapture(event.pointerId);
+      }
+    }
+
     canvas.addEventListener('click', handleClick);
-    return () => canvas.removeEventListener('click', handleClick);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- pickNearestParticle closes over buffers/rotation refs that are stable for the component's lifetime; re-binding per render would just churn listeners for no behavioural change.
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
+    return () => {
+      canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointercancel', handlePointerUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pickNearestParticle/currentRotation/currentTilt close over refs and buffers that are stable for the component's lifetime; re-binding per render would just churn listeners for no behavioural change.
   }, [reducedMotion, gl, camera, buffers.hex, onExplode, onHoverChange, uniforms]);
 
   useFrame((state, delta) => {
@@ -300,11 +406,18 @@ export function ParticleStorm({
     const exploding = explodeStartRef.current !== null;
     const assembled = morph >= ASSEMBLED_THRESHOLD;
 
-    // Hover only makes sense on a fully-formed, non-exploding globe.
-    if (assembled && !exploding) {
+    // Hover only makes sense on a fully-formed, non-exploding globe, and not
+    // mid-drag — the pointer is busy reorienting, not inspecting.
+    if (assembled && !exploding && !isDragging.current) {
       frameParity.current = (frameParity.current + 1) % HOVER_SCAN_FRAME_STRIDE;
       if (frameParity.current === 0) {
-        const index = pickNearestParticle(state.pointer.x, state.pointer.y, state.camera);
+        const index = pickNearestParticle(
+          state.pointer.x,
+          state.pointer.y,
+          state.camera,
+          currentRotation(),
+          currentTilt()
+        );
         if (index !== hoveredIndexRef.current) {
           hoveredIndexRef.current = index;
           if (index === null) {
@@ -327,11 +440,17 @@ export function ParticleStorm({
     }
 
     // Spin fades in with the gather, halves while hovering (for a steadier
-    // click), and fades back out entirely once exploding — a scattering
-    // field has no axis left to spin about.
-    const hoverDamping = hoveredIndexRef.current !== null ? HOVER_ROTATION_DAMPING : 1;
-    rotation.current += ROTATION_RADIANS_PER_SECOND * morph * hoverDamping * delta;
-    uniforms.uRotation.value = rotation.current;
+    // click), and pauses entirely while dragging or for a couple of seconds
+    // after — otherwise the auto-spin would immediately fight whatever angle
+    // was just dialed in by hand. Fades back out entirely once exploding — a
+    // scattering field has no axis left to spin about.
+    const autoRotationPaused = isDragging.current || state.clock.elapsedTime < autoRotationResumeAt.current;
+    if (!autoRotationPaused) {
+      const hoverDamping = hoveredIndexRef.current !== null ? HOVER_ROTATION_DAMPING : 1;
+      autoRotation.current += ROTATION_RADIANS_PER_SECOND * morph * hoverDamping * delta;
+    }
+    uniforms.uRotation.value = currentRotation();
+    uniforms.uTilt.value = currentTilt();
 
     // Phase 4 — the climax. A fixed-duration ramp from the moment of the
     // click; holds at 1 afterwards so the settled/drifting state persists

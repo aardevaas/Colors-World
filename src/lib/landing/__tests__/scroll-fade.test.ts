@@ -8,7 +8,7 @@ import {
 
 /** Mirrors ParticleStorm — the copy must be gone before the shell closes. */
 const MORPH_START = 0.42;
-const MORPH_END = 0.72;
+const MORPH_END = 0.88;
 
 describe('fadeOut', () => {
   test('holds at 1 before the window and 0 after it', () => {

@@ -7,16 +7,18 @@ import { EXPLOSION_DURATION_SECONDS } from '@/lib/landing/explosion-timing';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
+import { FeatureCards } from './FeatureCards';
 import type { HoverInfo } from './ParticleStorm';
 import styles from './landing.module.css';
 
 /**
- * Phases 1 through 4 of the landing experience.
+ * The full landing experience, phases 1 through 5.
  *
- * The canvas is pinned (sticky) inside a tall section, so scrolling drives
- * the story while the visual holds the viewport — the same three
- * screen-heights of scroll carry the storm, the globe morph, and (via click)
- * the explosion.
+ * The canvas is a fixed, viewport-covering backdrop for the whole page (see
+ * landing.module.css's `.pinned`) — the 300vh `.stage` section drives the
+ * scroll-linked story (storm, globe morph, rotation) entirely on its own
+ * pacing, while the feature cards afterwards are ordinary document-flow
+ * content that scrolls up over that same still-live, drifting field.
  */
 
 /** Three full screen-heights of scroll, per the brief. */
@@ -108,24 +110,27 @@ export function LandingExperience() {
   }
 
   return (
-    <section
-      ref={sectionRef}
-      className={styles.stage}
-      style={{ height: `${SECTION_HEIGHT_VH}vh` }}
-    >
-      <div className={styles.pinned}>
-        <ParticleCanvas
-          scrollRef={scrollRef}
-          reducedMotion={!motionEnabled}
-          onHoverChange={handleHoverChange}
-          onExplode={handleExplode}
-        />
-        <HeroHud
-          ref={hudRef}
-          motionEnabled={motionEnabled}
-          onToggleMotion={() => setMotionEnabled((previous) => !previous)}
-        />
-      </div>
-    </section>
+    <>
+      <section
+        ref={sectionRef}
+        className={styles.stage}
+        style={{ height: `${SECTION_HEIGHT_VH}vh` }}
+      >
+        <div className={styles.pinned}>
+          <ParticleCanvas
+            scrollRef={scrollRef}
+            reducedMotion={!motionEnabled}
+            onHoverChange={handleHoverChange}
+            onExplode={handleExplode}
+          />
+          <HeroHud
+            ref={hudRef}
+            motionEnabled={motionEnabled}
+            onToggleMotion={() => setMotionEnabled((previous) => !previous)}
+          />
+        </div>
+      </section>
+      <FeatureCards />
+    </>
   );
 }

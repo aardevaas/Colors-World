@@ -396,18 +396,81 @@ browser** — unit tests are the only honest verification of the windows.
 - Bundle check held: `/` is 116 kB first-load (was 115 kB before
   postprocessing was added) — still under the 150 kB budget.
 
-**Next up:** Phase 5 (feature cards, §8).
+**Shipped — longer gather + click-drag manual orbit (founder feedback, 2026-07-24):**
+- Globe-assembly window widened from 0.42-0.72 to 0.42-**0.88** of scroll —
+  the creation read as too quick at the original pacing.
+- **Click-and-drag now lets you manually reorient the globe** to browse to any
+  colour by hand, not just whatever the auto-spin happens to show — this was
+  previously listed below as deferred; it's built now. Horizontal drag = yaw,
+  vertical drag = pitch (clamped to ±60° so the sphere never goes edge-on and
+  reads as a flat disc). Auto-rotation pauses for the drag's duration plus 2
+  further seconds, then eases back in, so the hand-picked angle doesn't get
+  immediately fought by the auto-spin.
+- **Architecture note, in case this needs touching again:** this is
+  implemented as an offset added directly to the *shader's own* rotation/tilt
+  uniforms (`dragYaw`, `dragPitch`), not as a camera orbit (drei's
+  `OrbitControls`). Camera-orbiting was considered and rejected — the
+  depth-based dimming that keeps the globe reading as solid
+  (`particle-shaders.ts`'s `depthFade`/`facing`) is computed in **world
+  space**, which is only valid because the camera never moves. Orbiting the
+  camera instead would have required reworking that to view-space depth to
+  stay correct from every angle — a real, riskier change to code that can't
+  be visually verified here. Keeping the camera fixed and rotating the
+  sphere's *destination* instead (which the shader already did for
+  auto-rotation) sidesteps that entirely.
+- A native `click` still fires after a drag ends — suppressed via a
+  `wasDragging` flag (set only once total pointer travel exceeds a 6px
+  threshold) so reorienting the globe can never also detonate it.
+- Hover is suspended while dragging (the pointer is busy reorienting, not
+  inspecting) and the picking function now takes rotation/tilt as explicit
+  arguments rather than reading refs itself, so a click's one-off pick and the
+  per-frame hover scan can never disagree about which angle they're picking
+  against.
+- Direction/sensitivity are a first pass, not felt out — flip either sign in
+  `ParticleStorm.tsx`'s `DRAG_YAW_RADIANS_PER_PIXEL` /
+  `DRAG_PITCH_RADIANS_PER_PIXEL` if a drag direction reads as backwards.
+
+**Shipped — Phase 5, the five feature cards:**
+- **Structural change worth knowing about:** the canvas is no longer
+  `position: sticky` scoped to the 300vh globe section — it's now a genuine
+  `position: fixed` backdrop for the *whole page*. The 300vh `.stage` section
+  still drives all of rain/gather/rotation's pacing exactly as before,
+  completely unaffected; only how long the *visual* persists behind later
+  content changed. This is what makes the founder's Q21 requirement possible —
+  render the feature cards over the *live*, still-drifting stardust rather
+  than fading to a static image — without squeezing the globe's carefully-tuned
+  timing into a smaller fraction of a much longer scroll (which is what
+  extending `.stage` itself to also cover the cards would have done instead).
+- Cards render as an ordinary Server Component (`FeatureCards.tsx`, zero
+  client JS added) in **normal document flow straight after** `.stage` — not
+  nested inside the pinned/fixed div — so they simply scroll up over the
+  still-fixed, still-rendering canvas behind them, exactly as specified.
+- Editorial bento, not a uniform grid: the Library card (where every globe
+  click lands) spans the full width and reads first/largest; the remaining
+  four sit in a 2-column grid below it.
+- Individual cards get a glass panel (blur + translucent dark background) for
+  legibility; the **section itself stays fully transparent** so the dimmed,
+  drifting settle-state particles keep showing through in the gaps around and
+  between cards, not just hidden behind them.
+- Copy, subtitles, and card-to-route mapping are verbatim from the locked
+  brief (§8) — nothing paraphrased or improved on unilaterally.
+- **3 of 5 target routes don't exist yet:** `/library` and `/studio` are
+  live; `/builder`, `/visualizer`, `/typography` are not — those three cards
+  will 404 until the route consolidation (§8, already tracked as separate
+  app-side work) actually happens. Not a defect in this component; a
+  pre-existing, already-documented gap.
+- Bundle check held: `/` is 117 kB first-load (was 116 kB pre-Phase-5) — still
+  comfortably under the 150 kB budget, and Phase 5 added no client JS at all.
 
 **Open items:**
 1. **Sound** — deferred until the landing page is signed off. *Remind the founder.*
 2. Route migration to the 5-tab structure (§8) — app work, not landing
 3. Confirm the dual-license choice (PolyForm vs AGPL+exception) and add LICENSE
-4. **Phases 3 and 4 are unreviewed by the agent** (see §10) — this sandbox
-   cannot exercise scroll-gated or frame-gated interaction at all (the morph,
-   hover, click, and explosion all require `requestAnimationFrame`, which is
-   paused here), so hover feel, click accuracy, and the explosion's visual
-   character all need a human look
-5. Deferred from the brief on purpose, not forgotten: manual orbit-drag
-   rotation (pause auto-rotate while dragging, resume ~2s after) — additive
-   polish on top of the auto-rotation, not required for the core
-   hover→click→explode→navigate loop
+4. **Phases 3 and 4 remain unreviewed by the agent for feel** (see §10) — the
+   morph pacing, drag direction/sensitivity, hover, click, and explosion are
+   all scroll/frame-gated and this sandbox pauses `requestAnimationFrame`
+   entirely; verified here means "correct code, correct DOM, no console
+   errors, matches the maths" — not "confirmed to feel right." Phase 5's
+   *content* (the DOM the cards actually render) was directly confirmed via
+   `elementFromPoint` and rect inspection at a real scrolled position, since
+   that content, unlike the canvas, doesn't depend on rAF at all.
