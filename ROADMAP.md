@@ -114,9 +114,22 @@ Compare: Coolors gives you five colours at a time. Radix gives you twelve hues, 
 
 _Now there's something worth saving._
 
-- **Supabase Auth**, magic-link — no passwords for family members to lose
+- **Supabase Auth** — **rebuilt 2026-07-23**: password (sign up / sign in) and Google/GitHub OAuth are now the primary paths; magic-link is a secondary option, collapsed behind a toggle on the login page
 - **Projects** — each with its own boards, palettes, and assets
 - **Private by default**, shared deliberately per your call
+
+### ⚠️ Why magic-link stopped being the default
+
+Magic-link was the right call for "~10 people, business and family" — no password to forget. It stopped being the right call the moment this became a public, free, open-source tool anyone can sign up to: Supabase's own mail sender caps out at **2 emails/hour** by default, and even custom SMTP (Resend, etc.) is still one more account the user has to set up before anyone else can sign in at all. That's a real barrier to "100% free to access."
+
+**Password + OAuth sidestep the mail dependency entirely.** Google/GitHub OAuth never sends an email — the provider vouches for identity directly. Password sign-up only needs mail if Supabase's **"Confirm email"** setting (Authentication → Providers → Email) is left on; turning it off makes account creation instant with zero mail involved, at the cost of not verifying the address belongs to the signer-upper (a reasonable trade for a community tool, not a bank).
+
+**Setup still needed, external to this codebase (can't be done by me — these are your accounts):**
+1. **Google OAuth**: Google Cloud Console → create an OAuth 2.0 Client ID (Web application) → Authorized redirect URI `https://oyoxodtrthufczmbfows.supabase.co/auth/v1/callback` → paste the Client ID/Secret into Supabase → Authentication → Providers → Google → enable
+2. **GitHub OAuth**: GitHub → Settings → Developer settings → OAuth Apps → New OAuth App → Authorization callback URL `https://oyoxodtrthufczmbfows.supabase.co/auth/v1/callback` → paste Client ID/Secret into Supabase → Authentication → Providers → GitHub → enable
+3. Optionally: Authentication → Providers → Email → toggle off **"Confirm email"** for frictionless password sign-up
+
+`src/app/auth/callback/route.ts` needed **no changes** — it already exchanges an auth code for a session generically (`exchangeCodeForSession`), which is exactly how magic-link, password-confirmation, and OAuth all land.
 
 ### ⚠️ This reverses my earlier RLS advice — correctly
 
