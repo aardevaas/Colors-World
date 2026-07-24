@@ -48,6 +48,18 @@ const MAX_TRACK_PX = 6_000_000;
  */
 const MAX_FILTER_SCAN_PER_STEP = 2_000_000;
 
+/**
+ * Lightness is the outer/slowest-changing axis (see generate-color.ts), and
+ * step 0 — the very top of the track, where every browser lands by default
+ * — is the *lightest* band: L≈0.97 for every hue, which is nearly white
+ * regardless of chroma. A fresh visitor's first screen was, by construction,
+ * the least colourful one in the entire 16.7M-colour space — indistinguishable
+ * from a rendering bug. Landing partway down instead shows real, saturated
+ * colour immediately; scrolling further up still reaches the light end same
+ * as always.
+ */
+const INITIAL_SCROLL_FRACTION = 0.32;
+
 interface VisibleRange {
   readonly startRow: number;
   readonly endRow: number;
@@ -144,6 +156,8 @@ export function SpectrumBrowser() {
   // Measure how many CELL_SIZE columns actually fit — the virtualization math
   // (which row a scroll position corresponds to) depends on this being exact,
   // not an approximation of what CSS grid's auto-fill will decide to do.
+  const hasSetInitialScroll = useRef(false);
+
   useEffect(() => {
     const el = containerRef.current;
     if (el === null) return;
@@ -153,6 +167,17 @@ export function SpectrumBrowser() {
       setColumns(nextColumns);
       setContainerHeight(height);
       setRowHeight(width / nextColumns);
+
+      // One-time only, and only before anything else has moved the scroll
+      // position — a resize later on shouldn't yank the view back.
+      if (!hasSetInitialScroll.current && el !== null && height > 0) {
+        hasSetInitialScroll.current = true;
+        const rowHeightNow = width / nextColumns;
+        const totalRows = Math.ceil(TOTAL_SPECTRUM_SIZE / nextColumns);
+        const trackHeight = Math.min(MAX_TRACK_PX, totalRows * rowHeightNow);
+        const scrollableTrack = Math.max(1, trackHeight - height);
+        el.scrollTop = INITIAL_SCROLL_FRACTION * scrollableTrack;
+      }
     }
 
     // ResizeObserver is spec'd to report asynchronously — there's a real
