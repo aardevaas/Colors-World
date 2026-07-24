@@ -1,0 +1,326 @@
+/*
+ * Cinematic, moody, restrained. The stage is a near-black void so that the
+ * only saturated light on screen is emitted by the colours themselves —
+ * every UI element here is deliberately low-contrast glass so it never
+ * competes with the particle field.
+ */
+
+.stage {
+  position: relative;
+  background: #050508;
+}
+
+.pinned {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * R3F sizes the canvas from a ResizeObserver and only sets `display: block`
+ * inline, so until that observer fires the element sits at the intrinsic
+ * 300x150 default. Pinning the display size in CSS means the stage is filled
+ * from the first paint and never flashes a small box in the corner — the
+ * observer still owns the drawing-buffer resolution.
+ */
+.canvas > div,
+.canvas canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Holds the stage black while three.js streams in, so there is no flash of
+   a differently-coloured box before the field appears. */
+.canvasFallback {
+  position: absolute;
+  inset: 0;
+  background: #050508;
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  /* The field behind stays interactive; only real controls catch the cursor. */
+  pointer-events: none;
+}
+
+.hudTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-base);
+  padding: var(--space-wide) var(--space-vast);
+}
+
+.wordmark {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: oklch(97% 0.004 265 / 0.9);
+}
+
+.hudControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-tight);
+  pointer-events: auto;
+}
+
+.hudToggle,
+.hudLink {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: oklch(97% 0.004 265 / 0.72);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid oklch(100% 0 0 / 0.12);
+  background: oklch(100% 0 0 / 0.04);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition:
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hudToggle:hover,
+.hudLink:hover {
+  color: oklch(99% 0 0);
+  border-color: oklch(100% 0 0 / 0.28);
+  background: oklch(100% 0 0 / 0.08);
+}
+
+/* ---------- centre copy ---------- */
+
+.copy {
+  align-self: center;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-base);
+  max-width: 78rem;
+  padding: 0 var(--space-vast);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: oklch(80% 0.015 265 / 0.85);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 800;
+  /* Tuned so "All 16.7 million of them." holds one line at laptop widths —
+     any larger and it breaks into three ragged lines and loses its shape. */
+  font-size: clamp(2.1rem, 0.9rem + 3.9vw, 5.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  color: oklch(98% 0.002 265);
+  /* A cool halo, as if lit by the field behind it rather than a light source. */
+  text-shadow: 0 0 80px oklch(70% 0.12 265 / 0.35);
+}
+
+.headlineAccent {
+  background: linear-gradient(
+    100deg,
+    oklch(74% 0.2 25),
+    oklch(80% 0.19 95),
+    oklch(76% 0.2 150),
+    oklch(74% 0.19 260),
+    oklch(74% 0.2 25)
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: spectrumDrift 9s linear infinite;
+}
+
+@keyframes spectrumDrift {
+  to {
+    background-position: 220% 50%;
+  }
+}
+
+.sub {
+  margin: 0;
+  max-width: 36rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: clamp(0.95rem, 0.88rem + 0.35vw, 1.15rem);
+  line-height: 1.55;
+  color: oklch(82% 0.008 265 / 0.82);
+}
+
+.builtBy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: oklch(78% 0.01 265 / 0.8);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.builtBy:hover {
+  color: oklch(96% 0.004 265);
+}
+
+.builtByIcon {
+  color: oklch(84% 0.15 250);
+  animation: iconPulse 2.8s ease-in-out infinite;
+}
+
+.builtBy:hover .builtByIcon {
+  filter: drop-shadow(0 0 10px oklch(80% 0.19 250));
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px oklch(80% 0.19 250 / 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px oklch(80% 0.19 250 / 0.95));
+  }
+}
+
+/* ---------- CTAs ---------- */
+
+.ctaRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-base);
+  flex-wrap: wrap;
+  margin-top: var(--space-tight);
+  pointer-events: auto;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ctaPrimary {
+  background: oklch(97% 0.003 265);
+  color: #050508;
+}
+
+.ctaPrimary:hover {
+  transform: translateY(-2px);
+  background: oklch(100% 0 0);
+}
+
+.ctaSecondary {
+  color: oklch(96% 0.004 265);
+  border: 1px solid oklch(100% 0 0 / 0.16);
+  background: oklch(100% 0 0 / 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.ctaSecondary:hover {
+  transform: translateY(-2px);
+  border-color: oklch(100% 0 0 / 0.34);
+  background: oklch(100% 0 0 / 0.1);
+}
+
+/* ---------- scroll cue ---------- */
+
+.scrollCue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: var(--space-wide);
+}
+
+.scrollCueLabel {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: oklch(76% 0.01 265 / 0.55);
+}
+
+.scrollCueLine {
+  width: 1px;
+  height: 3rem;
+  background: linear-gradient(
+    to bottom,
+    oklch(100% 0 0 / 0.5),
+    oklch(100% 0 0 / 0)
+  );
+  animation: cueDrift 2.4s ease-in-out infinite;
+  transform-origin: top;
+}
+
+@keyframes cueDrift {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .hudTop {
+    padding: var(--space-base) var(--space-wide);
+  }
+
+  .copy {
+    padding: 0 var(--space-wide);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .headlineAccent,
+  .builtByIcon,
+  .scrollCueLine {
+    animation: none;
+  }
+}
