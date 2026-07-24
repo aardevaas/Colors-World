@@ -1,0 +1,35 @@
+.rainSection {
+  position: relative;
+  /* Tall runway so there's real scroll distance to drive the pile-up —
+     too short and every visitor would blow past it in one swipe. */
+  height: 260vh;
+  background: oklch(11% 0.015 280);
+}
+
+.rainSticky {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.rainCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.staticFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
+  align-content: end;
+  gap: var(--space-tight);
+  padding: var(--space-vast);
+}
+
+.staticBlock {
+  aspect-ratio: 1;
+  border-radius: 8px;
+}

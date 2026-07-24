@@ -177,6 +177,44 @@
   margin: 0 auto;
 }
 
+.builtBy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: calc(var(--space-tight) * -1) auto 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.03em;
+  color: oklch(78% 0.012 265);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out-expo);
+}
+
+.builtBy:hover,
+.builtBy:focus-visible {
+  color: oklch(94% 0.006 265);
+}
+
+.builtByIcon {
+  color: oklch(85% 0.15 250);
+  animation: iconGlow 2.6s ease-in-out infinite;
+}
+
+.builtBy:hover .builtByIcon,
+.builtBy:focus-visible .builtByIcon {
+  filter: drop-shadow(0 0 10px oklch(80% 0.19 250));
+}
+
+@keyframes iconGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px oklch(80% 0.19 250 / 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 7px oklch(80% 0.19 250 / 0.9));
+  }
+}
+
 .ctaRow {
   display: flex;
   align-items: center;

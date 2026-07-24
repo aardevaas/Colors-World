@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { GitHubIcon } from '@/components/icons/GitHubIcon';
 import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import styles from './hero.module.css';
 
@@ -102,6 +103,15 @@ export function Hero({ marqueeSwatches }: HeroProps) {
           The free, open-source studio for colour, palettes, branding, and typography —
           built in the open, for everyone.
         </p>
+        <a
+          href="https://github.com/aardevaas"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.builtBy}
+        >
+          Built by: aardevaas
+          <GitHubIcon className={styles.builtByIcon} />
+        </a>
         <div className={styles.ctaRow}>
           <Link href="/studio" ref={ctaRef} className={styles.ctaPrimary}>
             Enter the Studio →

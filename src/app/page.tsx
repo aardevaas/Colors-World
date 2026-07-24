@@ -1,4 +1,5 @@
 import { Unbounded } from 'next/font/google';
+import { ColorRain } from '@/components/landing/ColorRain';
 import { Hero } from '@/components/landing/Hero';
 import {
   composeIndex,
@@ -35,12 +36,31 @@ function buildMarqueeSwatches(): GeneratedSwatch[] {
   return swatches;
 }
 
+// Several lightness bands, not just one — "all different tones" means dark,
+// light, and muted variants of every hue, not just a vivid rainbow ring.
+const RAIN_LIGHTNESS_STEPS = [40, 80, 120, 160, 200] as const;
+const RAIN_CHROMA_STEP = SPECTRUM_STEPS - 1;
+const RAIN_HUE_INCREMENT = 24;
+
+function buildRainSwatchHexes(): string[] {
+  const hexes: string[] = [];
+  for (const lightnessStep of RAIN_LIGHTNESS_STEPS) {
+    for (let hueStep = 0; hueStep < SPECTRUM_STEPS; hueStep += RAIN_HUE_INCREMENT) {
+      const index = composeIndex({ lightnessStep, hueStep, chromaStep: RAIN_CHROMA_STEP });
+      hexes.push(indexToSwatch(index).hex);
+    }
+  }
+  return hexes;
+}
+
 export default function LandingPage() {
   const marqueeSwatches = buildMarqueeSwatches();
+  const rainSwatchHexes = buildRainSwatchHexes();
 
   return (
     <div className={unbounded.variable}>
       <Hero marqueeSwatches={marqueeSwatches} />
+      <ColorRain swatchHexes={rainSwatchHexes} />
     </div>
   );
 }
