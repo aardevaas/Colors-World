@@ -7,9 +7,13 @@ import {
 
 /**
  * Each hue in the Hero's marquee becomes a "faucet": this expands one hue
- * into a family of shade variants (dark to light, a little hue jitter),
+ * into a family of shade variants (dark to light, a little colour jitter),
  * using the exact same 16.7M-colour arithmetic as the marquee and the
  * Spectrum itself — nothing here is a separate palette or colour system.
+ *
+ * Shade ring count is deliberately generous (18, not a handful) — the globe
+ * this feeds needs a full, continuous tonal gradient per hue, not a few
+ * visible bands with gaps between them.
  */
 
 export interface RainBlockSeed {
@@ -20,11 +24,18 @@ export interface RainBlockSeed {
   readonly variantsPerHue: number;
 }
 
-const VARIANTS_PER_HUE = 12;
-// Spread across the lightness range — order doesn't matter, only coverage.
-const LIGHTNESS_STEP_SPREAD = [40, 64, 88, 112, 136, 160, 184, 202, 218, 232, 244, 252] as const;
+const VARIANTS_PER_HUE = 18;
 const HUE_JITTER_STEPS = 3;
 const CHROMA_VARIANCE_STEPS = 20;
+
+function buildLightnessSteps(count: number): number[] {
+  if (count <= 1) return [Math.floor(SPECTRUM_STEPS / 2)];
+  return Array.from({ length: count }, (_, position) =>
+    Math.round((position / (count - 1)) * (SPECTRUM_STEPS - 1))
+  );
+}
+
+const LIGHTNESS_STEP_SPREAD = buildLightnessSteps(VARIANTS_PER_HUE);
 
 export function buildRainBlockSeeds(marqueeHueSteps: readonly number[]): RainBlockSeed[] {
   const totalHues = marqueeHueSteps.length;

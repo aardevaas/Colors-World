@@ -8,9 +8,9 @@ describe('buildRainBlockSeeds', () => {
     expect(buildRainBlockSeeds([])).toEqual([]);
   });
 
-  test('produces exactly 12 shade variants per source hue', () => {
+  test('produces exactly 18 shade variants per source hue', () => {
     const seeds = buildRainBlockSeeds(hueSteps);
-    expect(seeds.length).toBe(hueSteps.length * 12);
+    expect(seeds.length).toBe(hueSteps.length * 18);
   });
 
   test('is interleaved round-robin — the first N seeds cover every hue once, in order', () => {
@@ -30,7 +30,7 @@ describe('buildRainBlockSeeds', () => {
       expect(seed.sourceHueIndex).toBeGreaterThanOrEqual(0);
       expect(seed.sourceHueIndex).toBeLessThan(hueSteps.length);
       expect(seed.shadeIndex).toBeGreaterThanOrEqual(0);
-      expect(seed.shadeIndex).toBeLessThan(12);
+      expect(seed.shadeIndex).toBeLessThan(18);
     }
   });
 

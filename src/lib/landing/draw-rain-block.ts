@@ -20,8 +20,9 @@ function traceRoundedRect(ctx: CanvasRenderingContext2D, size: number, cornerRad
 
 /**
  * A soft top-light band per block reads as depth without a real light
- * source — cheap, and it's what keeps a pile (or sphere) of flat rectangles
- * from looking like a flat pile of rectangles.
+ * source — cheap, and it's what keeps a pile of flat rectangles from
+ * looking like a flat pile of rectangles. Used for the falling-and-piling
+ * rain phase only — see drawSphereTile for the assembled globe's surface.
  */
 export function drawRainBlock(ctx: CanvasRenderingContext2D, block: DrawableBlock): void {
   ctx.save();
@@ -40,4 +41,25 @@ export function drawRainBlock(ctx: CanvasRenderingContext2D, block: DrawableBloc
   ctx.restore();
 
   ctx.restore();
+}
+
+export interface SphereTile {
+  readonly x: number;
+  readonly y: number;
+  readonly radius: number;
+  readonly color: string;
+}
+
+/**
+ * Plain filled dots, not rotated rounded rects — at the density needed for
+ * a *smooth, complete* sphere surface (thousands of tiles/frame), circles
+ * are both cheaper to fill (no per-tile rotate) and read as rounder/more
+ * "globe-like" than a low-poly facet of squares would at the same density.
+ */
+export function drawSphereTile(ctx: CanvasRenderingContext2D, tile: SphereTile): void {
+  if (tile.radius <= 0) return;
+  ctx.beginPath();
+  ctx.arc(tile.x, tile.y, tile.radius, 0, Math.PI * 2);
+  ctx.fillStyle = tile.color;
+  ctx.fill();
 }

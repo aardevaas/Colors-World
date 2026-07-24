@@ -1,6 +1,6 @@
 import type Matter from 'matter-js';
 import { buildRainBlockSeeds, type RainBlockSeed } from './color-rain-variants';
-import { drawRainBlock } from './draw-rain-block';
+import { drawRainBlock, drawSphereTile } from './draw-rain-block';
 import { projectSpherePoint } from './sphere-projection';
 
 /**
@@ -11,16 +11,20 @@ import { projectSpherePoint } from './sphere-projection';
  *    pile up, spawn rate tied to scroll depth, not time.
  * 2. **Globe** (progress RAIN_PHASE_END → 1) — physics freezes the instant
  *    the rain phase ends (each block's last physics position becomes its
- *    migration start point), and every block eases into an assigned spot on
- *    a sphere via hand-rolled 3D→2D perspective projection (see
- *    sphere-projection.ts) — longitude = source hue, latitude = shade, so
- *    the assembled globe reads as colour-banded meridians. Further scroll
- *    keeps rotating it.
+ *    migration start point), and every block "blooms" into a small cluster
+ *    of surface tiles that ease onto assigned spots on a sphere via
+ *    hand-rolled 3D→2D perspective projection (see sphere-projection.ts) —
+ *    longitude = source hue, latitude = shade, laid out on a deterministic
+ *    (no jitter) grid so the surface reads as clean, continuous rainbow
+ *    bands rather than a scatter. Each grid cell blooms into a CLUSTER_GRID²
+ *    cluster of tiles sized to overlap their neighbours, so the assembled
+ *    globe is a dense, gapless surface rather than a handful of floating
+ *    dots. Further scroll keeps rotating it.
  *
  * Blocks that never got a chance to fall before the section handed off to
- * phase 2 (a very fast scroll) still get a slot on the globe — they just
- * start their migration from the centre with a slightly later arrival,
- * rather than being silently dropped.
+ * phase 2 (a very fast scroll) still get their cluster of tiles on the
+ * globe — they just start migrating from the centre with a slightly later
+ * arrival, rather than being silently dropped.
  */
 
 const RAIN_PHASE_END = 0.55;
@@ -28,12 +32,21 @@ const ASSEMBLE_PHASE_END = 0.82;
 const ROTATION_TOTAL_RADIANS = Math.PI * 2.4;
 
 const WALL_THICKNESS = 80;
-const MIN_BLOCK_SIZE = 20;
-const MAX_BLOCK_SIZE = 46;
+const MIN_BLOCK_SIZE = 16;
+const MAX_BLOCK_SIZE = 36;
 const MAX_MIGRATION_DELAY = 0.3;
 const LATE_ARRIVAL_DELAY = 0.4;
 const GLOBE_RADIUS_FACTOR = 0.42;
 const MAX_FRAME_DELTA_MS = 16.667;
+
+/** Every (hue, shade) grid cell blooms into a CLUSTER_GRID x CLUSTER_GRID
+ * patch of tiles at assembly time — this is what gives the sphere real
+ * surface density instead of one dot per cell. */
+const CLUSTER_GRID = 2;
+/** How much each tile's diameter overlaps its notional cell — generously
+ * over 1 so neighbouring tiles always overlap rather than risk a gap. */
+const TILE_OVERLAP_FACTOR = 1.8;
+const LATITUDE_SPAN = Math.PI * 0.86;
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
@@ -47,18 +60,26 @@ function easeOutCubic(t: number): number {
   return 1 - (1 - t) ** 3;
 }
 
+/** Centred fractional offsets for an N x N grid, e.g. N=2 -> [-0.25, 0.25]. */
+function buildClusterFractions(gridSize: number): number[] {
+  return Array.from({ length: gridSize }, (_, index) => (index + 0.5) / gridSize - 0.5);
+}
+
+interface SphereSlot {
+  readonly theta: number;
+  readonly phi: number;
+}
+
 interface FrozenPosition {
   readonly x: number;
   readonly y: number;
-  readonly angle: number;
 }
 
 interface LiveBlock {
   readonly seed: RainBlockSeed;
   readonly size: number;
   readonly cornerRadius: number;
-  readonly theta: number;
-  readonly phi: number;
+  readonly subTiles: readonly SphereSlot[];
   readonly migrationDelay: number;
   body: Matter.Body | null;
   frozen: FrozenPosition | null;
@@ -105,23 +126,33 @@ export function setupColorRain(
   });
   Composite.add(engine.world, [floor, leftWall, rightWall]);
 
-  const totalHues = Math.max(1, marqueeHueSteps.length);
   const seeds = buildRainBlockSeeds(marqueeHueSteps);
+  const totalHues = Math.max(1, marqueeHueSteps.length);
+  const shadeRings = Math.max(1, seeds[0]?.variantsPerHue ?? 1);
   const hueSlice = (Math.PI * 2) / totalHues;
-  const latitudeSpan = Math.PI * 0.86;
+  const phiStep = shadeRings > 1 ? LATITUDE_SPAN / (shadeRings - 1) : 0;
+  const clusterFractions = buildClusterFractions(CLUSTER_GRID);
 
   const liveBlocks: LiveBlock[] = seeds.map((seed) => {
     const size = MIN_BLOCK_SIZE + Math.random() * (MAX_BLOCK_SIZE - MIN_BLOCK_SIZE);
-    const theta = seed.sourceHueIndex * hueSlice + (Math.random() - 0.5) * hueSlice * 0.6;
-    const phi =
-      (seed.shadeIndex / Math.max(1, seed.variantsPerHue - 1) - 0.5) * latitudeSpan +
-      (Math.random() - 0.5) * 0.12;
+    const cellTheta = seed.sourceHueIndex * hueSlice;
+    const cellPhi = -LATITUDE_SPAN / 2 + seed.shadeIndex * phiStep;
+
+    const subTiles: SphereSlot[] = [];
+    for (const rowFraction of clusterFractions) {
+      for (const colFraction of clusterFractions) {
+        subTiles.push({
+          theta: cellTheta + colFraction * hueSlice,
+          phi: cellPhi + rowFraction * phiStep,
+        });
+      }
+    }
+
     return {
       seed,
       size,
       cornerRadius: size * 0.18,
-      theta,
-      phi,
+      subTiles,
       migrationDelay: Math.random() * MAX_MIGRATION_DELAY,
       body: null,
       frozen: null,
@@ -162,12 +193,12 @@ export function setupColorRain(
     globePhaseStarted = true;
     for (const block of liveBlocks) {
       if (block.body !== null) {
-        block.frozen = { x: block.body.position.x, y: block.body.position.y, angle: block.body.angle };
+        block.frozen = { x: block.body.position.x, y: block.body.position.y };
         Composite.remove(engine.world, block.body);
         block.body = null;
       } else {
         block.lateArrival = true;
-        block.frozen = { x: width / 2, y: height / 2, angle: Math.random() * Math.PI };
+        block.frozen = { x: width / 2, y: height / 2 };
       }
     }
   }
@@ -223,12 +254,18 @@ export function setupColorRain(
     const centerY = height / 2;
     const radius = Math.min(width, height) * GLOBE_RADIUS_FACTOR;
 
+    // Sized off the equator — the widest, most gap-prone ring — so every
+    // other ring (naturally denser toward the poles) only ever overlaps
+    // more, never less.
+    const equatorialHueArc = radius * hueSlice;
+    const phiArc = radius * phiStep;
+    const cellDimension = Math.max(equatorialHueArc, phiArc);
+    const finalTileRadius = (cellDimension / CLUSTER_GRID / 2) * TILE_OVERLAP_FACTOR;
+
     interface Renderable {
       readonly x: number;
       readonly y: number;
-      readonly angle: number;
-      readonly size: number;
-      readonly cornerRadius: number;
+      readonly radius: number;
       readonly color: string;
       readonly depth: number;
     }
@@ -238,23 +275,24 @@ export function setupColorRain(
       if (block.frozen === null) continue;
       const delay = block.lateArrival ? LATE_ARRIVAL_DELAY : block.migrationDelay;
       const blend = easeOutCubic(clamp01((assembleProgress - delay) / Math.max(0.0001, 1 - delay)));
-      const target = projectSpherePoint(block.theta, block.phi, rotation, radius, centerX, centerY);
+      const startRadius = block.size / 2;
 
-      renderables.push({
-        x: lerp(block.frozen.x, target.x, blend),
-        y: lerp(block.frozen.y, target.y, blend),
-        angle: block.frozen.angle,
-        size: block.size * lerp(1, target.scale, blend),
-        cornerRadius: block.cornerRadius,
-        color: block.seed.swatch.hex,
-        depth: lerp(0, target.z, blend),
-      });
+      for (const slot of block.subTiles) {
+        const target = projectSpherePoint(slot.theta, slot.phi, rotation, radius, centerX, centerY);
+        renderables.push({
+          x: lerp(block.frozen.x, target.x, blend),
+          y: lerp(block.frozen.y, target.y, blend),
+          radius: Math.max(0, lerp(startRadius, finalTileRadius * target.scale, blend)),
+          color: block.seed.swatch.hex,
+          depth: lerp(0, target.z, blend),
+        });
+      }
     }
 
     renderables.sort((a, b) => b.depth - a.depth);
 
     ctx.clearRect(0, 0, width, height);
-    for (const renderable of renderables) drawRainBlock(ctx, renderable);
+    for (const renderable of renderables) drawSphereTile(ctx, renderable);
   }
 
   let frameId = 0;
