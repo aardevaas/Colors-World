@@ -21,6 +21,17 @@ export async function AccountStatus() {
     );
   }
 
+  // Every visitor gets a real (anonymous) session from middleware.ts, so
+  // `user` is never null in practice — but an anonymous user has no email
+  // to show, and "save your account" is the more useful call to action.
+  if (user.is_anonymous === true) {
+    return (
+      <a href="/login" className={styles.link}>
+        save your account
+      </a>
+    );
+  }
+
   return (
     <form action={signOut} className={styles.form}>
       <span className={styles.email}>{user.email}</span>

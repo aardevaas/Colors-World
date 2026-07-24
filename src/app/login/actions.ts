@@ -73,6 +73,25 @@ export async function passwordAuthAction(
   const supabase = await createServerSupabaseClient();
 
   if (mode === 'signup') {
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+
+    // Every visitor already has an anonymous session (see middleware.ts).
+    // updateUser() attaches the email/password to that *same* user instead
+    // of signUp() creating a disconnected new one, so anything already
+    // saved under this session's auth.uid() carries over automatically.
+    if (currentUser !== null && currentUser.is_anonymous === true) {
+      const { data, error } = await supabase.auth.updateUser({ email, password });
+      if (error !== null) {
+        return { status: 'error', message: error.message };
+      }
+      if (data.user?.is_anonymous === false) {
+        redirect('/');
+      }
+      return { status: 'sent', message: `Check ${email} to confirm and finish saving your account.` };
+    }
+
     const origin = await resolveOrigin();
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -104,10 +123,27 @@ export type OAuthProvider = 'google' | 'github';
 export async function signInWithOAuthProvider(provider: OAuthProvider): Promise<void> {
   const origin = await resolveOrigin();
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: `${origin}/auth/callback` },
-  });
+
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  // linkIdentity attaches the provider to the *current* anonymous session
+  // (same auth.uid(), so existing saved work carries over) instead of
+  // signInWithOAuth's plain sign-in, which would switch to a disconnected
+  // account. Needs "Enable Manual Linking" on in Supabase's Auth providers
+  // settings; if the identity is already claimed elsewhere it errors and
+  // falls through to the same generic redirect as any other OAuth failure.
+  const { data, error } =
+    currentUser !== null && currentUser.is_anonymous === true
+      ? await supabase.auth.linkIdentity({
+          provider,
+          options: { redirectTo: `${origin}/auth/callback` },
+        })
+      : await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: `${origin}/auth/callback` },
+        });
 
   if (error !== null || data.url === null) {
     redirect('/login?error=oauth');

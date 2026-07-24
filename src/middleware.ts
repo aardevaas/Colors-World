@@ -35,7 +35,18 @@ export async function middleware(request: NextRequest) {
 
   // Touching getUser() is what triggers the refresh — a plain getSession()
   // read wouldn't validate or renew an expiring token.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // No session at all (first visit, or a fully signed-out browser) — give
+  // every visitor a real session immediately so browsing and collecting
+  // never needs a signup wall. signInAnonymously() writes its cookies
+  // through the same setAll above, so this is the only layer that can do it
+  // (Server Components can't persist cookies at all).
+  if (user === null) {
+    await supabase.auth.signInAnonymously();
+  }
 
   return response;
 }

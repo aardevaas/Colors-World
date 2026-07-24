@@ -179,9 +179,14 @@ create unique index if not exists colors_spectrum_index_idx
 
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  email text not null,
+  email text,
   created_at timestamptz not null default now()
 );
+
+-- email is nullable because anonymous sign-ins (auth.users.is_anonymous)
+-- have no email at all; re-running this on an older database drops the
+-- not-null constraint that was here before anonymous auth existed.
+alter table profiles alter column email drop not null;
 
 create or replace function handle_new_user()
 returns trigger

@@ -131,6 +131,19 @@ Magic-link was the right call for "~10 people, business and family" — no passw
 
 `src/app/auth/callback/route.ts` needed **no changes** — it already exchanges an auth code for a session generically (`exchangeCodeForSession`), which is exactly how magic-link, password-confirmation, and OAuth all land.
 
+### Anonymous sign-ins — **added 2026-07-23**: browse and collect with zero signup wall
+
+Every visitor now gets a real Supabase session automatically (`supabase.auth.signInAnonymously()` in `src/middleware.ts`, run whenever `getUser()` comes back null) — no account, no click, no friction. It's a real `auth.uid()`, so every existing RLS policy and the `resolveDefaultProjectId` auto-provisioning just work, unmodified. Saving a palette, board, or asset works immediately; creating an account is only needed to keep that work past the current browser/device.
+
+**Upgrading is in-place, not a fresh account.** Signing up with a password (`passwordAuthAction`) or linking Google/GitHub (`signInWithOAuthProvider`) while the current session is anonymous calls `supabase.auth.updateUser()` / `linkIdentity()` on that *same* session instead of creating a disconnected new one — so `auth.uid()` never changes, and everything already saved carries over automatically. Falls back to normal `signUp`/`signInWithOAuth` once the visitor already has a real, non-anonymous session (i.e., they're not upgrading, just switching accounts).
+
+**Setup still needed, external to this codebase:**
+1. Supabase → Authentication → Sign In / Providers → enable **"Allow anonymous sign-ins"**
+2. Supabase → Authentication → Providers → toggle on **"Enable Manual Linking"** (required for `linkIdentity()` to attach OAuth to an anonymous session instead of erroring)
+3. `supabase/schema.sql` needs re-running: `profiles.email` is now nullable (anonymous users have no email) — the file is idempotent, safe to run again in the SQL Editor
+
+**Known trade-off, accepted for now, not yet built:** Supabase's own docs recommend pairing anonymous sign-ins with CAPTCHA (hCaptcha/Turnstile via Authentication → Attack Protection) to stop bot-driven mass account creation. Skipped for launch since it adds a dependency and friction of its own — revisit if abuse shows up in practice.
+
 ### ⚠️ This reverses my earlier RLS advice — correctly
 
 I previously told you to decline Row Level Security. That was right *given the conditions I verified at the time*: no anon key anywhere, no browser-side database access, service-role key server-only. **You have just changed both conditions.**
