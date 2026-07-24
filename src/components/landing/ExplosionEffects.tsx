@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Bloom, ChromaticAberration, EffectComposer } from '@react-three/postprocessing';
-import type { ChromaticAberrationEffect } from 'postprocessing';
+import { Vector2 } from 'three';
 
 /**
  * Mounted only for the ~1s explosion climax (see ParticleCanvas) — never
@@ -21,21 +21,31 @@ const ABERRATION_DECAY_SECONDS = 0.5;
 const ABERRATION_PEAK = 0.0045;
 
 function AnimatedChromaticAberration() {
-  const effectRef = useRef<ChromaticAberrationEffect>(null);
+  // Owned directly (not read back through a ref to the effect instance):
+  // `ChromaticAberrationEffect` stores whatever it's given in its `offset`
+  // uniform without coercing it, so this must already be a real `Vector2` —
+  // a plain `[x, y]` tuple silently becomes the stored value with no `.set`.
+  // Mutating our own instance in place also means never touching a `ref` to
+  // the underlying effect: `@react-three/postprocessing`'s wrapper keys its
+  // constructor-arg memo off `JSON.stringify(props)`, and under React 19 an
+  // unforwarded `ref` prop rides along inside that object — once the ref
+  // holds the live (circularly self-referencing) effect instance, any
+  // upstream re-render during the explosion (PerformanceMonitor's
+  // decline/incline flip-flops are tuned to land in exactly this window)
+  // throws trying to serialize it.
+  const offset = useMemo(() => new Vector2(ABERRATION_PEAK, ABERRATION_PEAK), []);
   const mountTime = useRef<number | null>(null);
 
   useFrame((state) => {
-    const effect = effectRef.current;
-    if (effect === null) return;
     if (mountTime.current === null) mountTime.current = state.clock.elapsedTime;
 
     const elapsed = state.clock.elapsedTime - mountTime.current;
     const decay = Math.max(0, 1 - elapsed / ABERRATION_DECAY_SECONDS);
     const magnitude = ABERRATION_PEAK * decay;
-    effect.offset.set(magnitude, magnitude);
+    offset.set(magnitude, magnitude);
   });
 
-  return <ChromaticAberration ref={effectRef} offset={[ABERRATION_PEAK, ABERRATION_PEAK]} />;
+  return <ChromaticAberration offset={offset} />;
 }
 
 export function ExplosionEffects() {

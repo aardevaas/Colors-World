@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { EXPLOSION_DURATION_SECONDS } from '@/lib/landing/explosion-timing';
+import { CARDS_REVEAL_DELAY_SECONDS } from '@/lib/landing/explosion-timing';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
@@ -32,9 +32,7 @@ import styles from './landing.module.css';
 
 /** Three full screen-heights of scroll, per the brief. */
 const SECTION_HEIGHT_VH = 300;
-/** A little slack past the shader's own climax before revealing the cards,
- *  so they never appear mid-explosion. */
-const CARDS_REVEAL_DELAY_MS = (EXPLOSION_DURATION_SECONDS + 0.15) * 1000;
+const CARDS_REVEAL_DELAY_MS = CARDS_REVEAL_DELAY_SECONDS * 1000;
 
 const ParticleCanvas = dynamic(() => import('./ParticleCanvas'), {
   ssr: false,
@@ -149,6 +147,7 @@ export function LandingExperience() {
             ref={hudRef}
             motionEnabled={motionEnabled}
             onToggleMotion={() => setMotionEnabled((previous) => !previous)}
+            pickedColorHex={pickedColorHex ?? undefined}
           />
         </div>
       </section>

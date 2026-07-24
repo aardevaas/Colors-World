@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { routeBarcodeGradient } from '@/lib/landing/barcode-pattern';
 import styles from './feature-cards.module.css';
 
 /**
@@ -6,6 +9,12 @@ import styles from './feature-cards.module.css';
  * once the globe has actually been exploded (see LandingExperience) — never
  * unconditionally after the globe section, so it can't appear laid over an
  * intact, unexploded globe.
+ *
+ * Styled as holographic ticket stubs (per the "Card - Data.mp4" reference)
+ * with the ticket-specific motifs reskinned to mean something for a colour
+ * tool rather than carried over literally: the barcode becomes the route
+ * path, the QR code becomes a mini palette swatch. No tear-to-open gesture —
+ * per the brief, the whole card stays one unambiguous click-through link.
  *
  * Three of the five target routes (/builder, /visualizer, /typography)
  * don't exist yet — that's a separate, already-tracked app-side route
@@ -82,22 +91,82 @@ const FEATURE_CARDS: readonly FeatureCard[] = [
   },
 ];
 
-function FeatureCardPanel({ card, href }: { card: FeatureCard; href: string }) {
+/** Spread deterministically per card index — purely decorative, standing in
+ *  for the reference's QR code as "this tool touches the whole spectrum,"
+ *  not a real data visualization. */
+function SwatchStrip({ seed }: { seed: number }) {
+  const swatches = Array.from({ length: 6 }, (_, i) => (60 * i + seed * 47) % 360);
+  return (
+    <div className={styles.swatchGrid} aria-hidden="true">
+      {swatches.map((hue, i) => (
+        // eslint-disable-next-line react/no-array-index-key -- fixed-length decorative strip, never reordered/inserted/removed
+        <span key={i} className={styles.swatch} style={{ background: `oklch(72% 0.19 ${hue})` }} />
+      ))}
+    </div>
+  );
+}
+
+function handlePointerMove(event: React.PointerEvent<HTMLAnchorElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const mx = ((event.clientX - rect.left) / rect.width) * 100;
+  const my = ((event.clientY - rect.top) / rect.height) * 100;
+  event.currentTarget.style.setProperty('--mx', `${mx}%`);
+  event.currentTarget.style.setProperty('--my', `${my}%`);
+}
+
+function handlePointerLeave(event: React.PointerEvent<HTMLAnchorElement>) {
+  event.currentTarget.style.setProperty('--mx', '50%');
+  event.currentTarget.style.setProperty('--my', '50%');
+}
+
+function FeatureCardPanel({
+  card,
+  href,
+  index,
+}: {
+  card: FeatureCard;
+  href: string;
+  index: number;
+}) {
   return (
     <Link
       href={href}
       className={card.featured ? `${styles.card} ${styles.cardFeatured}` : styles.card}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
     >
-      <div className={styles.cardHeader}>
-        <h3 className={styles.cardTitle}>{card.tab}</h3>
-        <span className={styles.cardRoute}>{card.route}</span>
+      {/* Pointer-reactive holographic sheen — position tracked via CSS custom
+          properties written directly on pointermove (not React state), same
+          reasoning as the hero's scroll-driven fade: this fires far too
+          often to route through a re-render. */}
+      <span className={styles.foil} aria-hidden="true" />
+
+      <div className={styles.stub} aria-hidden="true">
+        <span className={styles.stubIndex}>0{index + 1}</span>
+        <span className={styles.stubTab}>{card.tab}</span>
       </div>
-      <p className={styles.cardSubtitle}>{card.subtitle}</p>
-      <ul className={styles.cardHighlights}>
-        {card.highlights.map((highlight) => (
-          <li key={highlight}>{highlight}</li>
-        ))}
-      </ul>
+
+      <div className={styles.body}>
+        <div className={styles.cardHeader}>
+          <h3 className={styles.cardTitle}>{card.tab}</h3>
+          <span className={styles.cardRoute}>{card.route}</span>
+        </div>
+        <p className={styles.cardSubtitle}>{card.subtitle}</p>
+        <ul className={styles.cardHighlights}>
+          {card.highlights.map((highlight) => (
+            <li key={highlight}>{highlight}</li>
+          ))}
+        </ul>
+
+        <div className={styles.ticketFooter}>
+          <span
+            className={styles.barcode}
+            style={{ backgroundImage: routeBarcodeGradient(card.route) }}
+            aria-hidden="true"
+          />
+          <SwatchStrip seed={index} />
+        </div>
+      </div>
     </Link>
   );
 }
@@ -121,9 +190,11 @@ export function FeatureCards({ pickedColorHex }: FeatureCardsProps) {
       </header>
 
       <div className={styles.grid}>
-        {library !== undefined && <FeatureCardPanel card={library} href={libraryHref} />}
-        {rest.map((card) => (
-          <FeatureCardPanel key={card.route} card={card} href={card.route} />
+        {library !== undefined && (
+          <FeatureCardPanel card={library} href={libraryHref} index={0} />
+        )}
+        {rest.map((card, i) => (
+          <FeatureCardPanel key={card.route} card={card} href={card.route} index={i + 1} />
         ))}
       </div>
     </section>

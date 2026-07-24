@@ -196,21 +196,145 @@
   color: oklch(82% 0.008 265 / 0.82);
 }
 
+/* ---------- built-by maker's plate ---------- */
+
+/*
+ * A small smoked-glass plate bolted to the stage — the maker's plate riveted
+ * to the machine, which is what a byline actually is.
+ *
+ * Adapted from a light frosted-glass reference (uiverse.io/dexter-st): its
+ * near-opaque white fill and four stacked drop-shadows were built for a pale
+ * grey backdrop, and carried onto this near-black stage they'd have made the
+ * credit line louder than the two CTAs directly beneath it — the one thing a
+ * byline must never be. So the fill drops to the same barely-there glass the
+ * rest of the HUD uses, and the shadow stack becomes a single inner top
+ * highlight, which is all it takes to read as a pane catching light from
+ * above rather than a flat rectangle.
+ */
 .builtBy {
+  --bolt-size: 5px;
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
+  padding: 0.5rem 1.05rem;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: oklch(78% 0.01 265 / 0.8);
   text-decoration: none;
   pointer-events: var(--copy-pointer, auto);
-  transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid oklch(100% 0 0 / 0.1);
+  background: oklch(100% 0 0 / 0.035);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.08);
+  transform-style: preserve-3d;
+  transition:
+    color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.builtBy:hover {
-  color: oklch(96% 0.004 265);
+/*
+ * The tilt (driven by --tilt-x/--tilt-y from a pointermove handler in
+ * HeroHud.tsx) plus a cast shadow that only appears alongside it is what
+ * turns this from a flat panel with a highlight painted on into something
+ * that actually reads as a bolted plate lifting slightly off the stage.
+ */
+.builtBy:hover,
+.builtBy:focus-visible {
+  border-color: oklch(100% 0 0 / 0.2);
+  background: oklch(100% 0 0 / 0.06);
+  transform: perspective(500px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  box-shadow:
+    inset 0 1px 0 0 oklch(100% 0 0 / 0.1),
+    0 10px 22px -8px oklch(0% 0 0 / 0.5);
+}
+
+.builtByLabel {
+  color: oklch(78% 0.01 265 / 0.8);
+}
+
+/*
+ * Straddling the edge rather than sitting inside it — that overhang is the
+ * whole reason the plate reads as mounted *onto* the stage instead of drawn
+ * on it. Half the bolt hangs off, so the offset tracks --bolt-size rather
+ * than being hardcoded alongside it.
+ */
+.bolt {
+  position: absolute;
+  width: var(--bolt-size);
+  height: var(--bolt-size);
+  border-radius: 25%;
+  border: 1px solid oklch(100% 0 0 / 0.16);
+  /* Lit from above, so the shading runs dark-at-bottom — the same trick the
+     reference uses to turn a flat square into a machined head. */
+  background-image: radial-gradient(
+    circle at 50% 120%,
+    oklch(0% 0 0 / 0.55),
+    oklch(93% 0.004 265 / 0.85)
+  );
+}
+
+.boltTop {
+  top: calc(var(--bolt-size) * -0.5);
+}
+.boltBottom {
+  bottom: calc(var(--bolt-size) * -0.5);
+}
+.boltLeft {
+  left: calc(var(--bolt-size) * -0.5);
+}
+.boltRight {
+  right: calc(var(--bolt-size) * -0.5);
+}
+
+/*
+ * Only the name shines — "Built by:" and the icon stay put, per the brief.
+ *
+ * The spectrum is clipped to the text at all times and simply held fully
+ * desaturated at rest, where it lands on the same soft grey as the rest of
+ * the line. Hovering saturates it in rather than swapping one paint for
+ * another: toggling `background-clip` on hover instead would hand off from
+ * flat colour to gradient in a single frame, which reads as a flicker no
+ * matter how the rest is eased.
+ */
+.builtByName {
+  background-image: linear-gradient(
+    100deg,
+    oklch(74% 0.2 25),
+    oklch(80% 0.19 95),
+    oklch(76% 0.2 150),
+    oklch(74% 0.19 260),
+    oklch(74% 0.2 25)
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: saturate(0) opacity(0.8);
+  transition: filter 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.builtBy:hover .builtByName,
+.builtBy:focus-visible .builtByName {
+  filter: saturate(1) opacity(1);
+  animation: spectrumDrift 2.2s linear infinite;
+}
+
+/* Forced-colours strips background images, which would leave text painted
+   with `color: transparent` simply invisible. */
+@media (forced-colors: active) {
+  .builtByName {
+    color: LinkText;
+    -webkit-text-fill-color: LinkText;
+  }
 }
 
 .builtByIcon {
@@ -263,20 +387,94 @@
     border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/*
+ * Prismatic light streak, after the "Button 02.mp4" reference — that
+ * reference sweeps a bright rainbow streak across a *dark* pill, so it
+ * reads as light hitting glass. Ours is the reverse (dark text on a near-
+ * white fill), so the same streak would either vanish into the white or,
+ * worse, wash out the text under it. Adapted as a `mix-blend-mode: overlay`
+ * pass instead: overlay leaves near-white pixels close to unchanged and
+ * only tints the saturated red/blue fringe into the fill, so the streak
+ * reads as a reflection *on* a glossy 3D surface rather than a wash *over*
+ * the text.
+ *
+ * `--mx` is tracked from pointermove and written straight to this element's
+ * inline style (see HeroHud.tsx) — same reasoning as the card foil, this
+ * fires far more often than a re-render should. `--tilt-x`/`--tilt-y` drive
+ * a genuine perspective rotation from the same handler, which is the actual
+ * "has to be 3D" ask: a light streak alone is still a flat trick, the
+ * surface itself needs to tilt.
+ */
 .ctaPrimary {
+  --mx: 50%;
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   background: oklch(97% 0.003 265);
   color: #050508;
+  transform-style: preserve-3d;
 }
 
-.ctaPrimary:hover {
-  transform: translateY(-2px);
+.ctaPrimary:hover,
+.ctaPrimary:focus-visible {
+  transform: perspective(600px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y))
+    translateY(-2px);
   background: oklch(100% 0 0);
 }
 
+.ctaPrimaryContent {
+  position: relative;
+  z-index: 2;
+}
+
+.ctaPrimaryShine {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    oklch(72% 0.2 25 / 0.55) calc(var(--mx) - 7%),
+    oklch(96% 0.02 95 / 0.95) var(--mx),
+    oklch(70% 0.19 250 / 0.55) calc(var(--mx) + 7%),
+    transparent 100%
+  );
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ctaPrimary:hover .ctaPrimaryShine,
+.ctaPrimary:focus-visible .ctaPrimaryShine {
+  opacity: 1;
+}
+
+/*
+ * Liquid metaball fill, after the "Button.mp4" reference — kept to this
+ * secondary CTA only (see HeroHud.tsx for why). `isolation: isolate` scopes
+ * the goo filter's rendering to this button.
+ *
+ * Both `overflow: hidden` *and* `clip-path` are doing the clipping here, not
+ * just one for safety: an SVG filter's effects region can render outside an
+ * ancestor's `overflow: hidden` in some engines once a descendant also gets
+ * its own compositing layer (which the blobs' `transform` animation does) —
+ * confirmed live, the blobs actually poked a few pixels past the pill
+ * without `clip-path` here. `clip-path` clips post-filter, so it holds
+ * regardless.
+ */
 .ctaSecondary {
+  position: relative;
+  overflow: hidden;
+  clip-path: inset(0 round 999px);
+  isolation: isolate;
+  padding: 0;
   color: oklch(96% 0.004 265);
   border: 1px solid oklch(100% 0 0 / 0.16);
-  background: oklch(100% 0 0 / 0.05);
+  background: oklch(14% 0.02 280 / 0.6);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -284,7 +482,124 @@
 .ctaSecondary:hover {
   transform: translateY(-2px);
   border-color: oklch(100% 0 0 / 0.34);
-  background: oklch(100% 0 0 / 0.1);
+}
+
+/* Padding moved here from `.ctaSecondary` itself — the blob field needs to
+   fill the button's full bounds via `inset: 0`, which padding on the parent
+   would otherwise eat into. */
+.ctaSecondaryContent {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.6rem;
+  /* Legible over any blob colour the goo field happens to be showing at
+     the moment, not just the ones it looked fine over in a screenshot. */
+  text-shadow: 0 1px 3px oklch(0% 0 0 / 0.55);
+}
+
+.blobField {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  filter: url(#cta-goo);
+}
+
+/*
+ * Many small balls, each individually shaded as a sphere — after seeing the
+ * reference again ("Button 01.mp4") more closely, it's a dense field of
+ * roughly 15-20 small dots, not the 3 large flat-tinted circles this
+ * started as. `--blob-size`/`--blob-delay`/`--blob-duration` are per-blob
+ * (see HeroHud.tsx), so the whole field never breathes in unison. The
+ * radial-gradient — bright highlight offset toward one corner, darkening
+ * toward the opposite edge — is what makes each one read as an actual 3D
+ * ball catching light rather than a flat tinted disc.
+ */
+.blob {
+  /* Spread position is a percentage of the *parent* (top/left), independent
+     of this blob's own size — the old drift keyframes moved each blob by a
+     percentage of ITS OWN box, which worked fine at ~42px but collapses to
+     a few px of jitter around dead-centre now that blobs are 5-13px, so the
+     whole field clumped in the middle instead of covering the button like
+     the reference. Position and organic wobble are now fully decoupled: this
+     sets *where* a blob lives, the keyframes below add a small fixed-px
+     wiggle on top of it. */
+  position: absolute;
+  top: var(--blob-top, 50%);
+  left: var(--blob-left, 50%);
+  width: var(--blob-size, 0.7rem);
+  height: var(--blob-size, 0.7rem);
+  border-radius: 50%;
+  /* Static fallback for when the animation is off (prefers-reduced-motion):
+     the keyframes below always start from this same centring, but a
+     disabled animation applies no transform at all, which would otherwise
+     anchor each blob by its corner instead of its centre. */
+  transform: translate(-50%, -50%);
+  background-image: radial-gradient(
+    circle at 32% 28%,
+    oklch(94% 0.04 var(--hue, 250)),
+    oklch(72% 0.19 var(--hue, 250)) 55%,
+    oklch(42% 0.14 var(--hue, 250)) 100%
+  );
+  opacity: 0.92;
+  animation:
+    ctaBlobDrift var(--blob-duration, 7s) ease-in-out infinite,
+    ctaBlobHue 9s linear infinite;
+  animation-delay: var(--blob-delay, 0s);
+}
+
+/* Once a colour has actually been picked on the globe, the fill settles on
+   it instead of continuing to cycle the full spectrum — the button then
+   reflects a real choice rather than an unrelated ambient animation. */
+.blobFieldPicked .blob {
+  background-image: radial-gradient(
+    circle at 32% 28%,
+    oklch(94% 0.04 var(--picked-hue)),
+    oklch(72% 0.19 var(--picked-hue)) 55%,
+    oklch(42% 0.14 var(--picked-hue)) 100%
+  );
+  animation: ctaBlobDrift var(--blob-duration, 7s) ease-in-out infinite;
+  animation-delay: var(--blob-delay, 0s);
+}
+
+@property --hue {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 250;
+}
+
+@keyframes ctaBlobHue {
+  from {
+    --hue: 0;
+  }
+  to {
+    --hue: 360;
+  }
+}
+
+/* Asynchronous per-blob drift — each blob's `--blob-delay` offsets it into
+   a different point of the same cycle, which is what keeps the merges
+   reading as organic rather than sixteen dots breathing in unison. Fixed px
+   (not %), so the wobble stays a gentle wiggle regardless of a given blob's
+   own size — a percentage-of-self value here is what previously collapsed
+   the whole field into the button's dead centre once blobs got small. The
+   leading `translate(-50%, -50%)` re-centres each blob on its own
+   `top`/`left` anchor point; everything after it is the wobble itself. */
+@keyframes ctaBlobDrift {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(-50%, -50%) translate(2.5px, -3px) scale(1.15);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(-3px, 2px) scale(0.9);
+  }
+  75% {
+    transform: translate(-50%, -50%) translate(2px, 2.5px) scale(1.05);
+  }
 }
 
 /* ---------- scroll cue ---------- */
@@ -384,7 +699,32 @@
 @media (prefers-reduced-motion: reduce) {
   .headlineAccent,
   .builtByIcon,
-  .scrollCueLine {
+  .scrollCueLine,
+  .builtBy:hover .builtByName,
+  .builtBy:focus-visible .builtByName {
+    /* The spectrum still saturates in on hover — that's a colour change, not
+       motion — it just stops drifting. */
     animation: none;
+  }
+
+  /* The blobs' drift and hue-cycling are autoplaying ambient motion, unlike
+     the foil sheen on the cards (which only moves in response to the
+     pointer) — this is exactly what the preference is for. Held at a fixed
+     mid-cycle frame rather than collapsed to a static single colour, so the
+     button still reads as "liquid," just not moving. */
+  .blob {
+    animation: none;
+    --hue: 250;
+  }
+
+  /* Rotation specifically (unlike the flat colour/opacity cues elsewhere on
+     this page) is a known vestibular trigger, so the 3D tilt on the plate
+     and primary CTA is dropped entirely here rather than just slowed —
+     the lift/border/background hover feedback still applies without it. */
+  .builtBy:hover,
+  .builtBy:focus-visible,
+  .ctaPrimary:hover,
+  .ctaPrimary:focus-visible {
+    transform: none;
   }
 }
