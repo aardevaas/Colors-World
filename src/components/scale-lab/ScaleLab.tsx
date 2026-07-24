@@ -101,7 +101,7 @@ export function ScaleLab({ accountSlot }: ScaleLabProps) {
           Colors World <span className={styles.wordmarkDim}>/ scale lab</span>
         </h1>
         <nav className={styles.navGroup}>
-          <Link href="/" className={styles.navLink}>
+          <Link href="/studio" className={styles.navLink}>
             ← studio
           </Link>
           <Link href="/spectrum" className={styles.navLink}>

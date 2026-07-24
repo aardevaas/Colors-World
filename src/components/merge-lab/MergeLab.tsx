@@ -71,7 +71,7 @@ export function MergeLab({
           Colors World <span className={styles.wordmarkDim}>/ merge lab</span>
         </h1>
         <nav>
-          <Link href="/" className={styles.navLink}>
+          <Link href="/studio" className={styles.navLink}>
             ← studio
           </Link>
         </nav>

@@ -1,0 +1,337 @@
+/*
+ * Deliberately transparent at the section level — the drifting stardust
+ * behind it (see landing.module.css's `.pinned`) needs to keep showing
+ * through in the gaps around and between cards, not just underneath them.
+ * Only the individual cards get an opaque-ish glass panel, for legibility
+ * against a busy, colourful, moving background.
+ */
+
+.section {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-vast) var(--space-wide) calc(var(--space-vast) * 2);
+  max-width: 84rem;
+  margin: 0 auto;
+  /* This section doesn't exist in the DOM until the globe has actually
+     exploded (see LandingExperience), so its very first paint is the
+     reveal moment — a plain cross-fade marks that instead of a jump-cut.
+     The global prefers-reduced-motion override in globals.css already
+     zeroes this to an instant appearance for anyone who wants that, so
+     there is nothing extra to gate here. */
+  animation: reveal 700ms var(--ease-out-expo);
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sectionHeader {
+  max-width: 40rem;
+  margin: 0 auto var(--space-vast);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-tight);
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: oklch(80% 0.015 265 / 0.85);
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.75rem, 1rem + 2.6vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: oklch(98% 0.002 265);
+}
+
+.lead {
+  margin: 0;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: clamp(0.95rem, 0.88rem + 0.3vw, 1.1rem);
+  line-height: 1.6;
+  color: oklch(82% 0.008 265 / 0.82);
+}
+
+/* Editorial bento: the Library card (the globe's own landing spot) spans
+   the full width and reads first/largest; the remaining four sit in a
+   2-column grid — hierarchy through scale, not a uniform card wall. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-base);
+}
+
+/*
+ * Holographic ticket stub, after the "Card - Data.mp4" reference — but
+ * reskinned per the confirmed direction: pure visual language (silhouette,
+ * foil, perforation), no literal barcode/QR, and no tear-to-open gesture.
+ * The whole card stays one unambiguous click-through link, since these
+ * point at real tool routes rather than being an actual ticket.
+ *
+ * `isolation: isolate` scopes the foil's blend mode to this card alone —
+ * without it, `mix-blend-mode` on `.foil` would blend against everything
+ * behind the whole stacking context, including the particle canvas.
+ */
+.card {
+  --mx: 50%;
+  --my: 50%;
+
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid oklch(100% 0 0 / 0.1);
+  background: oklch(16% 0.02 280 / 0.55);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-4px);
+  border-color: oklch(100% 0 0 / 0.24);
+  background: oklch(19% 0.025 280 / 0.65);
+}
+
+.cardFeatured {
+  grid-column: 1 / -1;
+}
+
+/*
+ * The foil sheen. `--mx`/`--my` are written straight to this element's
+ * inline style from a pointermove handler (see FeatureCards.tsx) rather
+ * than held in React state — same reasoning as the hero's scroll-driven
+ * fade, this fires far more often than a re-render should.
+ *
+ * color-dodge against the card's dark glass keeps the gradient's own hues
+ * legible instead of blowing out to white, which is what the same gradient
+ * would do over a light background — verify live, blend-mode rendering is
+ * genuinely hard to fully judge without seeing it on screen.
+ */
+.foil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    115deg,
+    oklch(74% 0.2 25 / 0.6) 0%,
+    oklch(80% 0.19 95 / 0.6) 12%,
+    oklch(78% 0.2 150 / 0.6) 24%,
+    oklch(76% 0.2 220 / 0.6) 36%,
+    oklch(78% 0.22 300 / 0.6) 48%,
+    oklch(74% 0.2 25 / 0.6) 60%
+  );
+  background-size: 260% 260%;
+  background-position: var(--mx) var(--my);
+  mix-blend-mode: color-dodge;
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover .foil,
+.card:focus-visible .foil {
+  opacity: 0.5;
+}
+
+/*
+ * The ticket stub — a fixed-width column so the notch/perforation mask
+ * below works identically whether this card is a half-width tile or the
+ * full-width featured one, with no per-card size math.
+ *
+ * The two notches are real cutouts (not solid circles standing in for
+ * them): this section deliberately keeps the drifting particle canvas
+ * visible through its gaps, and a solid-colour notch would just be a flat
+ * dot that breaks that continuity rather than reading as punched through.
+ * `mask-composite: intersect` layers two radial-gradient holes over one
+ * accumulated result — each transparent circle zeroes the mask there,
+ * everywhere else stays opaque. Standard `mask-*` has been supported
+ * unprefixed in Safari since 15.4 (2022); the `-webkit-` pair is a
+ * defensive fallback for anything older, using the same keyword values
+ * since modern WebKit accepts them on both properties.
+ */
+.stub {
+  --notch: 10px;
+
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0;
+  border-right: 1px dashed oklch(100% 0 0 / 0.22);
+  mask-image:
+    radial-gradient(circle var(--notch) at 50% 0, transparent 99%, black 100%),
+    radial-gradient(circle var(--notch) at 50% 100%, transparent 99%, black 100%);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    radial-gradient(circle var(--notch) at 50% 0, transparent 99%, black 100%),
+    radial-gradient(circle var(--notch) at 50% 100%, transparent 99%, black 100%);
+  -webkit-mask-composite: source-in;
+}
+
+.stubIndex {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: oklch(90% 0.01 265 / 0.85);
+}
+
+.stubTab {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: oklch(78% 0.01 265 / 0.6);
+  text-wrap: nowrap;
+}
+
+.body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-tight);
+  padding: var(--space-wide);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-tight);
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.15rem, 1rem + 0.6vw, 1.6rem);
+  letter-spacing: -0.01em;
+  color: oklch(98% 0.002 265);
+}
+
+.cardRoute {
+  flex-shrink: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: oklch(76% 0.14 250 / 0.85);
+}
+
+.cardSubtitle {
+  margin: 0;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: oklch(84% 0.01 265 / 0.9);
+}
+
+.cardHighlights {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cardHighlights li {
+  position: relative;
+  padding-left: 1rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: oklch(78% 0.008 265 / 0.78);
+}
+
+.cardHighlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: oklch(76% 0.14 250 / 0.85);
+}
+
+/*
+ * The reskinned footer: reference's barcode becomes the route path rendered
+ * as bars (a real, meaningful string instead of a code that wouldn't scan to
+ * anything); its QR code becomes a small swatch strip — "this tool touches
+ * the whole spectrum," not a real data visualization.
+ */
+.ticketFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-base);
+  margin-top: var(--space-tight);
+  padding-top: var(--space-tight);
+  border-top: 1px dashed oklch(100% 0 0 / 0.14);
+}
+
+.barcode {
+  flex: 1;
+  height: 20px;
+  color: oklch(85% 0.01 265 / 0.7);
+}
+
+.swatchGrid {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cardFeatured {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .foil {
+    transition: none;
+  }
+}
