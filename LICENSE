@@ -1,13 +1,19 @@
-Colors World - License Agreement
-Copyright (c) aardevaas
+PolyForm Noncommercial License 1.0.0
+https://polyformproject.org/licenses/noncommercial/1.0.0/
 
-1. PERMITTED USE (NON-COMMERCIAL & PERSONAL)
-Free usage, modification, and distribution are granted strictly for non-commercial, personal, research, or educational purposes, provided that attribution to "aardevaas" is retained in all copies or substantial portions of the software.
+Copyright (c) 2026 aardevaas
 
-2. COMMERCIAL USE & MONETIZATION
-Commercial use, monetization, inclusion in paid software, or revenue-generating activities derived from this code are STRICTLY PROHIBITED without a formal commercial license and financial compensation to the author (aardevaas).
+1. License
+The licensor grants you a non-exclusive, royalty-free, worldwide license to use, modify, and distribute this software solely for noncommercial purposes.
 
-3. ATTRIBUTION
-Any public fork, deployment, or distribution must clearly credit "aardevaas" and link back to the original repository: https://github.com/aardevaas/Colors-World
+2. Noncommercial Purposes
+Noncommercial purposes are testing, educational, research, or personal purposes that are not intended for or directed toward commercial advantage or monetary compensation.
 
-For commercial licensing requests, please contact the author via GitHub.
+3. Commercial Use & Monetization
+Commercial use, including but not limited to selling, hosting as a paid service, or integrating into revenue-generating products, requires a separate commercial license from the licensor (aardevaas).
+
+4. Attribution
+You must retain all copyright notices, license texts, and attribution back to the original repository (https://github.com/aardevaas/Colors-World) in any copy or modified version of this software.
+
+5. Disclaimer
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
