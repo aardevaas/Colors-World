@@ -102,5 +102,12 @@ This project is built for the community, by the community. Whether you want to s
 
 * Open an Issue or PR to share feedback or **build** something cool together!
 
-### 📜 Open Source & License
-Colors World is open-source software licensed under the MIT License. It is free to use, modify, and build upon—forever.
+### 📜 License & Usage Terms
+
+**Colors World** by **aardevaas** is distributed under a **Source-Available Non-Commercial License**.
+
+* 🟢 **Personal & Educational Use:** 100% free to use, tweak, and share.
+* 🏷️ **Attribution Required:** You must credit **aardevaas** in any public forks or implementations.
+* 💼 **Commercial Use & Monetization:** Any commercial use, paid integration, or monetization requires a commercial license and financial compensation. 
+
+*For commercial licensing inquiries, please reach out via GitHub Issues or contact the author.*
