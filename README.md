@@ -98,14 +98,15 @@ Here is a quick tour of what you can do inside **Colors World**:
 
 ---
 
-## ⚡ 1-Click Code Export
+🤝 Join the Movement & Contribute
+This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
 
-When you are ready to build, copy production-ready code directly out of the studio:
+Help Us Spread the Word ⭐
+Star this repository on GitHub so more creators can find it.
 
-### Tailwind CSS v4 `@theme`
-```css
-@theme {
-  --color-primary-50: oklch(0.97 0.02 260);
-  --color-primary-500: oklch(0.65 0.22 260);
-  --color-primary-950: oklch(0.18 0.08 260);
-}
+Share it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
+
+Open an Issue or PR to share feedback or build something cool together!
+
+📜 Open Source & License
+Colors World is open-source software licensed under the MIT License. It is free to use, modify, and build upon—forever.
