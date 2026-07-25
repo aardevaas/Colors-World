@@ -98,15 +98,15 @@ Here is a quick tour of what you can do inside **Colors World**:
 
 ---
 
-🤝 Join the Movement & Contribute
+## 🤝 Join the Movement & Contribute
 This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
 
-Help Us Spread the Word ⭐
+## Help Us Spread the Word ⭐
 Star this repository on GitHub so more creators can find it.
 
 Share it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
 
 Open an Issue or PR to share feedback or build something cool together!
 
-📜 Open Source & License
+## 📜 Open Source & License
 Colors World is open-source software licensed under the MIT License. It is free to use, modify, and build upon—forever.
