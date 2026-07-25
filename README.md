@@ -95,11 +95,11 @@ Here is a quick tour of what you can do inside **Colors World**:
 This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
 
 #### Help Us Spread the Word ⭐
-#Star# this repository on GitHub so more creators can find it.
+* **Star** this repository on GitHub so more creators can find it.
 
-#Share# it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
+* **Share** it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
 
-Open an Issue or PR to share feedback or #build# something cool together!
+* Open an Issue or PR to share feedback or **build** something cool together!
 
 ---
 
