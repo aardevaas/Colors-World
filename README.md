@@ -17,12 +17,9 @@
 
   <br />
 
-  <p>
-    <a href="#-a-letter-from-the-founder">Founder's Story</a> •
-    <a href="#-explore-the-studio-tab-by-tab">Workspace Tour</a> •
-    <a href="#-1-click-code-export">Developer Tokens</a> •
-    <a href="#-join-the-movement--contribute">Contribute</a> •
-    <a href="#-open-source-manifesto">Manifesto</a>
+  <!-- Retro 80s TV displaying static -->
+  <p align="center">
+    <img src="https://media.giphy.com/media/oEI9uBYSzsmufMEiL2/giphy.gif" alt="Retro 80s TV Static" width="480" style="border-radius: 12px; border: 4px solid #1a1a1a;" />
   </p>
 
   <br />
@@ -98,15 +95,19 @@ Here is a quick tour of what you can do inside **Colors World**:
 
 ---
 
+## ⚡ 1-Click Code Export
+
+When you are ready to build, copy production-ready code directly out of the studio:
+
 ## 🤝 Join the Movement & Contribute
 This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
 
 ## Help Us Spread the Word ⭐
-Star this repository on GitHub so more creators can find it.
+* Star this repository on GitHub so more creators can find it.
 
-Share it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
+* Share it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
 
-Open an Issue or PR to share feedback or build something cool together!
+* Open an Issue or PR to share feedback or build something cool together!
 
 ## 📜 Open Source & License
 Colors World is open-source software licensed under the MIT License. It is free to use, modify, and build upon—forever.
