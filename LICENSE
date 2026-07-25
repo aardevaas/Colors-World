@@ -1,21 +1,13 @@
-MIT License
+Colors World - License Agreement
+Copyright (c) aardevaas
 
-Copyright (c) 2026 Colors World contributors
+1. PERMITTED USE (NON-COMMERCIAL & PERSONAL)
+Free usage, modification, and distribution are granted strictly for non-commercial, personal, research, or educational purposes, provided that attribution to "aardevaas" is retained in all copies or substantial portions of the software.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+2. COMMERCIAL USE & MONETIZATION
+Commercial use, monetization, inclusion in paid software, or revenue-generating activities derived from this code are STRICTLY PROHIBITED without a formal commercial license and financial compensation to the author (aardevaas).
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+3. ATTRIBUTION
+Any public fork, deployment, or distribution must clearly credit "aardevaas" and link back to the original repository: https://github.com/aardevaas/Colors-World
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+For commercial licensing requests, please contact the author via GitHub.
