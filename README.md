@@ -17,16 +17,11 @@
 
   <br />
 
-  <!-- Retro 80s TV displaying static -->
+  <!-- Retro 80s TV image sourced directly from your repository -->
   <p align="center">
-    <img src="https://media.giphy.com/media/oEI9uBYSzsmufMEiL2/giphy.gif" alt="Retro 80s TV Static" width="480" style="border-radius: 12px; border: 4px solid #1a1a1a;" />
+    <img src="./Retro%20TV" alt="Retro 80s TV Static" width="480" style="border-radius: 12px; border: 4px solid #1a1a1a;" />
   </p>
 
-  <br />
-
-  <img src="https://raw.githubusercontent.com/aardevaas/Colors-World/main/public/preview-banner.png" alt="Colors World Studio Preview" width="100%" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
-
-  <br />
   <br />
 
 </div>
@@ -47,6 +42,8 @@
 
 ---
 
+<div align="center">
+  
 ## ✨ Why You'll Love Colors World
 
 * 🎨 **Visual First:** Designed for designers, creators, and builders who want an intuitive, inspiring creative studio.
@@ -95,19 +92,15 @@ Here is a quick tour of what you can do inside **Colors World**:
 
 ---
 
-## ⚡ 1-Click Code Export
-
-When you are ready to build, copy production-ready code directly out of the studio:
-
-## 🤝 Join the Movement & Contribute
+### 🤝 Join the Movement & Contribute
 This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
 
-## Help Us Spread the Word ⭐
-* Star this repository on GitHub so more creators can find it.
+### ⭐ Help Us Spread the Word 
+* **Star** this repository on GitHub so more creators can find it.
 
-* Share it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
+* **Share** it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
 
-* Open an Issue or PR to share feedback or build something cool together!
+* Open an Issue or PR to share feedback or **build** something cool together!
 
-## 📜 Open Source & License
+### 📜 Open Source & License
 Colors World is open-source software licensed under the MIT License. It is free to use, modify, and build upon—forever.
