@@ -9,10 +9,10 @@
   <br />
 
   <p>
-    <a href="[https://github.com/aardevaas/Colors-World](https://github.com/aardevaas/Colors-World)"><img src="[https://img.shields.io/badge/](https://img.shields.io/badge/)🚀_LAUNCH_LIVE_STUDIO-050508?style=for-the-badge&logoColor=white" alt="Launch Live Studio"></a>
-    <a href="[https://github.com/aardevaas/Colors-World/stargazers](https://github.com/aardevaas/Colors-World/stargazers)"><img src="[https://img.shields.io/badge/](https://img.shields.io/badge/)⭐_STAR_THIS_REPO-8A2BE2?style=for-the-badge&logo=github&logoColor=white" alt="Star Repo"></a>
-    <a href="[https://github.com/aardevaas/Colors-World/network/members](https://github.com/aardevaas/Colors-World/network/members)"><img src="[https://img.shields.io/badge/](https://img.shields.io/badge/)🍴_FORK-00F5FF?style=for-the-badge&logo=github&logoColor=black" alt="Fork Repo"></a>
-    <img src="[https://img.shields.io/badge/100%25-Free_&_Open_Source-00FF88?style=for-the-badge](https://img.shields.io/badge/100%25-Free_&_Open_Source-00FF88?style=for-the-badge)" alt="100% Free">
+    <a href="https://github.com/aardevaas/Colors-World"><img src="https://img.shields.io/badge/🚀_LAUNCH_LIVE_STUDIO-050508?style=for-the-badge&logoColor=white" alt="Launch Live Studio"></a>
+    <a href="https://github.com/aardevaas/Colors-World/stargazers"><img src="https://img.shields.io/badge/⭐_STAR_THIS_REPO-8A2BE2?style=for-the-badge&logo=github&logoColor=white" alt="Star Repo"></a>
+    <a href="https://github.com/aardevaas/Colors-World/network/members"><img src="https://img.shields.io/badge/🍴_FORK-00F5FF?style=for-the-badge&logo=github&logoColor=black" alt="Fork Repo"></a>
+    <img src="https://img.shields.io/badge/100%25-Free_&_Open_Source-00FF88?style=for-the-badge" alt="100% Free">
   </p>
 
   <br />
@@ -27,7 +27,7 @@
 
   <br />
 
-  <img src="[https://raw.githubusercontent.com/aardevaas/Colors-World/main/public/preview-banner.png](https://raw.githubusercontent.com/aardevaas/Colors-World/main/public/preview-banner.png)" alt="Colors World Studio Preview" width="100%" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+  <img src="https://raw.githubusercontent.com/aardevaas/Colors-World/main/public/preview-banner.png" alt="Colors World Studio Preview" width="100%" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
 
   <br />
   <br />
@@ -109,22 +109,3 @@ When you are ready to build, copy production-ready code directly out of the stud
   --color-primary-500: oklch(0.65 0.22 260);
   --color-primary-950: oklch(0.18 0.08 260);
 }
-:root {
-  --background: oklch(0.05 0.01 260);
-  --foreground: oklch(0.98 0.01 260);
-  --primary: oklch(0.65 0.22 260);
-  --border: oklch(0.20 0.03 260);
-}
-🤝 Join the Movement & Contribute
-This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
-
-Help Us Spread the Word ⭐
-Star this repository on GitHub so more creators can find it.
-
-Share it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
-
-Open an Issue or PR to share feedback or build something cool together!
-
-📜 Open Source & License
-Colors World is open-source software licensed under the MIT License. It is free to use, modify, and build upon—forever.
-
