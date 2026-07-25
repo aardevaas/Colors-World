@@ -3,7 +3,7 @@
   <br />
 
   <h1>COLORS WORLD</h1>
-  <p><strong>The ultimate open-source studio for color discovery, spatial moodboards & typography.</strong></p>
+  <p><strong>The ultimate studio for color discovery, spatial moodboards & typography.</strong></p>
   <p><i>Created by: aardevaas</i></p>
 
   <br />
@@ -12,7 +12,7 @@
     <a href="https://github.com/aardevaas/Colors-World"><img src="https://img.shields.io/badge/🚀_LAUNCH_LIVE_STUDIO-050508?style=for-the-badge&logoColor=white" alt="Launch Live Studio"></a>
     <a href="https://github.com/aardevaas/Colors-World/stargazers"><img src="https://img.shields.io/badge/⭐_STAR_THIS_REPO-8A2BE2?style=for-the-badge&logo=github&logoColor=white" alt="Star Repo"></a>
     <a href="https://github.com/aardevaas/Colors-World/network/members"><img src="https://img.shields.io/badge/🍴_FORK-00F5FF?style=for-the-badge&logo=github&logoColor=black" alt="Fork Repo"></a>
-    <img src="https://img.shields.io/badge/100%25-Free_&_Open_Source-00FF88?style=for-the-badge" alt="100% Free">
+    <img src="https://img.shields.io/badge/100%25_Free-Personal_Use-00FF88?style=for-the-badge" alt="Free for Personal Use">
   </p>
 
   <br />
@@ -34,16 +34,15 @@
 >
 > *It was fragmented, clunky, and exhausting. It pulled me out of my creative flow every single time.*
 >
-> *The open-source community has given me the foundation for almost everything I’ve ever built. I reached a point where I wanted to stop complaining about broken design workflows and build the studio I always dreamed existed—an all-in-one, beautifully visual, zero-cost workspace—and hand it straight back to the community that built me.*
+> *The community has given me the foundation for almost everything I’ve ever built. I reached a point where I wanted to stop complaining about broken design workflows and build the studio I always dreamed existed—an all-in-one, beautifully visual workspace—and hand it straight back to creators.*
 >
-> *No paywalls. No subscriptions. No ads. Just raw creative freedom—100% free, forever."*
+> *No paywalls. No subscriptions. No ads. Just raw creative freedom."*
 >
 > **— aardevaas**
 
 ---
 
-<div align="center">
-  
+
 ## ✨ Why You'll Love Colors World
 
 * 🎨 **Visual First:** Designed for designers, creators, and builders who want an intuitive, inspiring creative studio.
@@ -95,19 +94,24 @@ Here is a quick tour of what you can do inside **Colors World**:
 ### 🤝 Join the Movement & Contribute
 This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
 
-### ⭐ Help Us Spread the Word 
-* **Star** this repository on GitHub so more creators can find it.
+#### Help Us Spread the Word ⭐
+#Star# this repository on GitHub so more creators can find it.
 
-* **Share** it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
+#Share# it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
 
-* Open an Issue or PR to share feedback or **build** something cool together!
+Open an Issue or PR to share feedback or #build# something cool together!
 
-### 📜 License & Usage Terms
+---
 
-**Colors World** by **aardevaas** is distributed under a **Source-Available Non-Commercial License**.
+### 📜 Source-Available & License
+Colors World is free and source-available software licensed under the PolyForm Noncommercial License 1.0.0.
 
-* 🟢 **Personal & Educational Use:** 100% free to use, tweak, and share.
-* 🏷️ **Attribution Required:** You must credit **aardevaas** in any public forks or implementations.
-* 💼 **Commercial Use & Monetization:** Any commercial use, paid integration, or monetization requires a commercial license and financial compensation. 
+🟢 Personal & Educational Use: 100% free to view, modify, and build upon.
 
-*For commercial licensing inquiries, please reach out via GitHub Issues or contact the author.*
+🏷️ Attribution Required: You must credit aardevaas in any public forks or implementations.
+
+💼 Commercial Use & Monetization: Any commercial use, paid integration, or monetization requires a formal commercial license and financial compensation.
+
+---
+
+Now that your repo files are locked in, would you like to review the updated Reddit, Hacker News, and social posts to start getting community traction?
