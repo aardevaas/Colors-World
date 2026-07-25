@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { countColors, getColor, insertColorsBatch, searchColors } from '../colors';
+import {
+  countColors,
+  getColor,
+  getSemanticMatches,
+  insertColorsBatch,
+  searchColors,
+} from '../colors';
 import { createFakeSupabaseClient } from './fake-client';
 
 const GOLDEN: import('../colors').NewColorRow = {
@@ -113,6 +119,83 @@ describe('getColor', () => {
   test('returns null for an id that does not exist', async () => {
     const client = createFakeSupabaseClient();
     expect(await getColor('nonexistent', client)).toBeNull();
+  });
+});
+
+describe('getSemanticMatches', () => {
+  test('returns a curated row for a bucket that matches', async () => {
+    const client = createFakeSupabaseClient({
+      colors: [
+        {
+          id: 'row-1',
+          name: 'Golden Brick',
+          hex: '#e5b262',
+          oklch_l: 0.79,
+          oklch_c: 0.11,
+          oklch_h: 70.5,
+          category: null,
+          description: null,
+          emotion: null,
+          personality: null,
+          mood: null,
+          symbolism: null,
+          use_case: null,
+          keywords: null,
+          contrast_level: null,
+          provenance: 'seed',
+          created_at: new Date().toISOString(),
+          bucket_index: 42,
+        },
+      ],
+    });
+
+    const matches = await getSemanticMatches([42, 99], client);
+    expect(matches.size).toBe(1);
+    expect(matches.get(42)?.name).toBe('Golden Brick');
+    expect(matches.has(99)).toBe(false);
+  });
+
+  test('returns an empty map for an empty input array without querying', async () => {
+    const client = createFakeSupabaseClient();
+    const matches = await getSemanticMatches([], client);
+    expect(matches.size).toBe(0);
+  });
+
+  test('returns an empty map when no bucket has a curated row', async () => {
+    const client = createFakeSupabaseClient();
+    await insertColorsBatch([GOLDEN], client);
+    const matches = await getSemanticMatches([123_456], client);
+    expect(matches.size).toBe(0);
+  });
+
+  test('deduplicates repeated bucket indices in the request', async () => {
+    const client = createFakeSupabaseClient({
+      colors: [
+        {
+          id: 'row-1',
+          name: 'Golden Brick',
+          hex: '#e5b262',
+          oklch_l: 0.79,
+          oklch_c: 0.11,
+          oklch_h: 70.5,
+          category: null,
+          description: null,
+          emotion: null,
+          personality: null,
+          mood: null,
+          symbolism: null,
+          use_case: null,
+          keywords: null,
+          contrast_level: null,
+          provenance: 'seed',
+          created_at: new Date().toISOString(),
+          bucket_index: 7,
+        },
+      ],
+    });
+
+    const matches = await getSemanticMatches([7, 7, 7], client);
+    expect(matches.size).toBe(1);
   });
 });
 

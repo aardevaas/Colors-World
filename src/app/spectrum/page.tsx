@@ -1,36 +1,14 @@
-import Link from 'next/link';
-import { TOTAL_SPECTRUM_SIZE } from '@/lib/spectrum/generate-color';
-import { SpectrumBrowser } from '@/components/spectrum/SpectrumBrowser';
-import styles from '@/components/spectrum/spectrum.module.css';
+import { permanentRedirect } from 'next/navigation';
 
+/**
+ * /spectrum is retired — its virtualization pattern and collect-tray were
+ * absorbed into /library's infinite grid + persistent Harmonic Dock (see
+ * LibraryGrid.tsx and dock-context.tsx), which supersede this page entirely:
+ * a growing/appendable feed instead of a literal 16.7M-row scrollbar, and a
+ * dock that survives every route instead of a page-local tray. A permanent
+ * redirect keeps any bookmarked or externally linked /spectrum URL working
+ * rather than 404ing.
+ */
 export default function SpectrumPage() {
-  return (
-    <div className={styles.shell}>
-      <header className={styles.masthead}>
-        <h1 className={styles.wordmark}>
-          Colors World <span className={styles.wordmarkDim}>/ spectrum</span>
-        </h1>
-        <nav className={styles.navGroup}>
-          <Link href="/studio" className={styles.navLink}>
-            studio
-          </Link>
-          <Link href="/scale-lab" className={styles.navLink}>
-            scale lab
-          </Link>
-          <Link href="/library" className={styles.navLink}>
-            library
-          </Link>
-          <Link href="/assets" className={styles.navLink}>
-            assets
-          </Link>
-        </nav>
-        <p className={styles.specLine}>
-          {TOTAL_SPECTRUM_SIZE.toLocaleString()} colours — the full 8-bit-per-channel space,
-          generated, not stored
-        </p>
-      </header>
-
-      <SpectrumBrowser />
-    </div>
-  );
+  permanentRedirect('/library');
 }

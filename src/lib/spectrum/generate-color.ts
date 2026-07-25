@@ -32,9 +32,12 @@ import { formatHex, maxChroma, type Oklch } from '@/lib/color-engine';
 export const SPECTRUM_STEPS = 256;
 export const TOTAL_SPECTRUM_SIZE = SPECTRUM_STEPS ** 3;
 
-/** Kept off the true 0/1 extremes — pure black/white have no meaningful hue. */
-const LIGHTNESS_FLOOR = 0.03;
-const LIGHTNESS_CEILING = 0.97;
+/** Kept off the true 0/1 extremes — pure black/white have no meaningful hue.
+ *  Exported (not just module-private) so bucket-index.ts's reverse mapping
+ *  — OKLCH back to the nearest bucket — can never drift out of sync with
+ *  the forward formula below by duplicating these as separate constants. */
+export const LIGHTNESS_FLOOR = 0.03;
+export const LIGHTNESS_CEILING = 0.97;
 
 export interface SpectrumCoordinates {
   /** 0 = lightest, 255 = darkest. */

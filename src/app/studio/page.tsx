@@ -33,9 +33,6 @@ export default async function StudioWallPage() {
           <Link href="/scale-lab" className={styles.navLink}>
             scale lab
           </Link>
-          <Link href="/spectrum" className={styles.navLink}>
-            spectrum
-          </Link>
           <Link href="/library" className={styles.navLink}>
             library
           </Link>

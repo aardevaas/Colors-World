@@ -22,13 +22,16 @@ export type {
 
 export {
   formatHex,
+  formatHsl,
   formatOklchCss,
   formatRgb,
   gamutMode,
   parseColor,
   toCuloriOklch,
+  toHsl,
   toOklch,
   toRgb,
+  type Hsl,
   type Rgb8,
 } from './color';
 

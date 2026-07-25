@@ -5,6 +5,7 @@ import {
   auditGamutWarning,
   formatCmyk,
   formatHex,
+  formatHsl,
   formatOklchCss,
   formatRgb,
   toCmyk,
@@ -32,6 +33,7 @@ export function ColorValues({ oklch }: ColorValuesProps) {
       <CopyRow label="hex" value={formatHex(oklch).toUpperCase()} />
       <CopyRow label="rgb" value={formatRgb(oklch)} />
       <CopyRow label="oklch" value={formatOklchCss(oklch)} />
+      <CopyRow label="hsl" value={formatHsl(oklch)} />
       <CopyRow label="cmyk" value={formatCmyk(toCmyk(oklch))} />
 
       {gamutWarning.clamped && (

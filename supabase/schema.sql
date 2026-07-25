@@ -163,6 +163,32 @@ create unique index if not exists colors_spectrum_index_idx
   on colors (spectrum_index);
 
 -- ============================================================================
+-- The Library (roadmap phase 6): the semantic overlay on the arithmetic
+-- 16.7M-colour space.
+--
+-- bucket_index is a *different* mapping from spectrum_index above — it is
+-- NOT a rank among curated rows. It's each row's own position in the exact
+-- same 256^3 (lightness, hue, chroma) bucket space that
+-- src/lib/spectrum/generate-color.ts's composeIndex/indexToOklch define, so
+-- a generated swatch's own bucket index can join straight against this
+-- column: `WHERE bucket_index = ANY($1)` for a batch of on-screen swatches.
+-- Most buckets will have no curated row at all (256^3 buckets vs. ~100K
+-- rows) — that's expected. This is an enrichment when a nearby curated
+-- colour exists, not a guarantee every generated swatch has one.
+--
+-- Left nullable and backfilled by a Node script rather than the inline SQL
+-- block spectrum_index used above, because computing it requires the actual
+-- gamut-mapping math in src/lib/color-engine (maxChroma per hue/lightness)
+-- to invert indexToOklch's chroma formula — reimplementing that in plpgsql
+-- would be a second, driftable copy of logic that already exists once, and
+-- has tests, in TypeScript. See scripts/backfill-bucket-index.mjs.
+-- ============================================================================
+
+alter table colors add column if not exists bucket_index integer;
+
+create index if not exists colors_bucket_index_idx on colors (bucket_index);
+
+-- ============================================================================
 -- Accounts & projects (roadmap phase 3).
 --
 -- This platform was single-user with no accounts through phase 2 — that

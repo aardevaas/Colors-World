@@ -104,9 +104,6 @@ export function ScaleLab({ accountSlot }: ScaleLabProps) {
           <Link href="/studio" className={styles.navLink}>
             ← studio
           </Link>
-          <Link href="/spectrum" className={styles.navLink}>
-            spectrum
-          </Link>
           <Link href="/library" className={styles.navLink}>
             library
           </Link>

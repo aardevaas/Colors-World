@@ -131,6 +131,11 @@ export function createFakeSupabaseClient(
         filters.push((row) => row[column] === value);
         return builder;
       },
+      in(column: string, values: readonly unknown[]) {
+        const set = new Set(values);
+        filters.push((row) => set.has(row[column]));
+        return builder;
+      },
       is(column: string, value: null) {
         filters.push((row) => (row[column] ?? null) === value);
         return builder;

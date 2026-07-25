@@ -138,6 +138,49 @@ export async function countColors(client?: SupabaseClient): Promise<number> {
   return count ?? 0;
 }
 
+interface SemanticMatchRow extends ColorRow {
+  readonly bucket_index: number | null;
+}
+
+/**
+ * The Library's semantic overlay: given the bucket indices of the colours
+ * currently on screen (see src/lib/spectrum/bucket-index.ts), finds any
+ * curated `colors` rows that landed in those same buckets — one indexed
+ * query for a whole visible batch, not one query per card.
+ *
+ * Most requested buckets will have no match at all — 256^3 buckets vs.
+ * ~100K seed rows means an exact hit is the exception, not the rule. That's
+ * expected: this enriches a generated swatch when a nearby curated colour
+ * exists, it never promises one does. When more than one curated row shares
+ * a bucket, the first one returned wins — picking a specific "best" tie
+ * would need a real ranking signal (verified provenance over seed, maybe),
+ * which doesn't exist yet; any deterministic pick is enough for an
+ * enrichment, not a guarantee.
+ */
+export async function getSemanticMatches(
+  bucketIndices: readonly number[],
+  client?: SupabaseClient
+): Promise<Map<number, ColorRecord>> {
+  if (bucketIndices.length === 0) return new Map();
+
+  const supabase = client ?? getSupabaseClient();
+  const unique = [...new Set(bucketIndices)];
+  const { data, error } = await supabase
+    .from('colors')
+    .select()
+    .in('bucket_index', unique)
+    .returns<SemanticMatchRow[]>();
+
+  if (error) throw new Error(`Failed to fetch semantic matches: ${error.message}`);
+
+  const matches = new Map<number, ColorRecord>();
+  for (const row of data) {
+    if (row.bucket_index === null || matches.has(row.bucket_index)) continue;
+    matches.set(row.bucket_index, mapColorRow(row));
+  }
+  return matches;
+}
+
 /**
  * Inserts a batch of rows in one request. Ingestion is the only caller —
  * everything else in the app treats the library as read-only, which is why

@@ -8,6 +8,7 @@ import { normalizeHue } from './interpolate';
 
 const toOklchColor = converter('oklch');
 const toRgbColor = converter('rgb');
+const toHslColor = converter('hsl');
 
 /** The RGB-family gamuts culori itself understands — 'print' is not one of them. */
 type RgbGamut = Exclude<Gamut, 'print'>;
@@ -94,6 +95,31 @@ export function formatRgb(color: Oklch): string {
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
+}
+
+/** HSL channel values — hue in degrees (0-360), saturation/lightness 0-100. */
+export interface Hsl {
+  readonly h: number;
+  readonly s: number;
+  readonly l: number;
+}
+
+/** Lossy for anything outside sRGB, same as toRgb/formatRgb — HSL is an sRGB
+ *  cylindrical remapping, not a wide-gamut format. */
+export function toHsl(color: Oklch): Hsl {
+  const converted = toHslColor(toCuloriOklch(color));
+  return {
+    // culori omits hue for achromatic colours, same convention as parseColor.
+    h: converted?.h === undefined ? 0 : normalizeHue(converted.h),
+    s: clamp01(converted?.s ?? 0) * 100,
+    l: clamp01(converted?.l ?? 0) * 100,
+  };
+}
+
+/** Renders as a CSS Color 4 space-separated `hsl()` function. */
+export function formatHsl(color: Oklch): string {
+  const { h, s, l } = toHsl(color);
+  return `hsl(${round(h, 1)} ${round(s, 1)}% ${round(l, 1)}%)`;
 }
 
 /** Renders as a CSS `oklch()` function, preserving wide-gamut values exactly. */
