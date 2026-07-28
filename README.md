@@ -1,52 +1,117 @@
-# Colors World
+<div align="center">
 
-An open-source studio for color, palettes, branding, and typography — where 100,000 colours are a world you explore, and your dashboard is your studio wall.
+  <br />
 
-Built for designers, marketers, and brand teams — not just color-tooling professionals. Exploratory and visual first; the perceptual-color rigor (OKLCH, gamut mapping, WCAG/APCA contrast) runs quietly underneath rather than being the thing you have to learn.
+  <h1>COLORS WORLD</h1>
+  <p><strong>The ultimate studio for color discovery, spatial moodboards & typography.</strong></p>
+  <p><i>Created by: aardevaas</i></p>
 
-## What's here
+  <br />
 
-- **The Spectrum** — 100,000 colours, browsed as one continuous scroll, not queried a page at a time
-- **Scale Lab** — generate perceptually even tonal scales from a single anchor colour, export as CSS/Tailwind/Figma tokens
-- **Studio Wall** — a freeform per-project board: pin palettes, individual colours, reference images (drop a photo → extract its palette instantly), gradients, typography pairings, links, and notes
-- **History** — every palette keeps a full version graph; branch, fork, and three-way merge without losing anything
-- **Multi-user projects** — Supabase Auth (magic link), Row Level Security on every table, private by default, shared deliberately
-- **Shareable links** — send a read-only view of a board to anyone, no account required
-- **Brand asset library** — logos and marks with simple re-upload versioning
+  <p>
+    <a href="https://github.com/aardevaas/Colors-World"><img src="https://img.shields.io/badge/🚀_LAUNCH_LIVE_STUDIO-050508?style=for-the-badge&logoColor=white" alt="Launch Live Studio"></a>
+    <a href="https://github.com/aardevaas/Colors-World/stargazers"><img src="https://img.shields.io/badge/⭐_STAR_THIS_REPO-8A2BE2?style=for-the-badge&logo=github&logoColor=white" alt="Star Repo"></a>
+    <a href="https://github.com/aardevaas/Colors-World/network/members"><img src="https://img.shields.io/badge/🍴_FORK-00F5FF?style=for-the-badge&logo=github&logoColor=black" alt="Fork Repo"></a>
+    <img src="https://img.shields.io/badge/100%25_Free-Personal_Use-00FF88?style=for-the-badge" alt="Free for Personal Use">
+  </p>
 
-See [`ROADMAP.md`](./ROADMAP.md) for what's shipped, what's in progress, and what's next — updated as the project moves, not a stale planning doc.
+  <br />
 
-## Stack
+  <!-- Retro 80s TV image sourced directly from your repository -->
+  <p align="center">
+    <img src="./Retro%20TV" alt="Retro 80s TV Static" width="480" style="border-radius: 12px; border: 4px solid #1a1a1a;" />
+  </p>
 
-Next.js 15 (App Router) · React 19 · TypeScript · Supabase (Postgres, Auth, Storage) · [culori](https://culorijs.org/) for color math · Vitest.
+  <br />
 
-## Getting started
+</div>
 
-```bash
-npm install
-cp .env.example .env.local   # fill in your Supabase project URL + keys
-npm run dev
-```
+---
 
-### Database setup
+## 💌 A Letter from the Founder
 
-Run these once, in order, in your Supabase project's SQL Editor:
+> *"Every time I kick off a new branding or web project, I find myself opening 10 different browser tabs—one for picking swatches, another for building color scales, a third for extracting colors from reference photos, one to test UI contrast, and yet another just to pair typography.*
+>
+> *It was fragmented, clunky, and exhausting. It pulled me out of my creative flow every single time.*
+>
+> *The community has given me the foundation for almost everything I’ve ever built. I reached a point where I wanted to stop complaining about broken design workflows and build the studio I always dreamed existed—an all-in-one, beautifully visual workspace—and hand it straight back to creators.*
+>
+> *No paywalls. No subscriptions. No ads. Just raw creative freedom."*
+>
+> **— aardevaas**
 
-1. `supabase/schema.sql` — core schema (palettes, colours, Spectrum index, accounts/projects, Studio Wall board items)
-2. Sign up once through the app's `/login` magic-link flow, so a real profile row exists
-3. `supabase/enable-rls.sql` — backfills any pre-existing data to your account, then turns on Row Level Security everywhere
-4. `supabase/storage.sql` — creates the private storage bucket for images/assets
-5. `supabase/sharing.sql` — shareable read-only board links
-6. `supabase/brand-assets.sql` — the brand asset library
+---
 
-Every file is idempotent — safe to re-run. Seed the 100K-colour library with `scripts/ingest-colorpedia.ts` (see the script header for the dataset it expects).
 
-## Contributing
+## ✨ Why You'll Love Colors World
 
-Issues and PRs are welcome. Before opening a large PR, open an issue first to discuss direction — this is a young project with a lot of moving parts, and coordinating early saves rework on both sides.
+* 🎨 **Visual First:** Designed for designers, creators, and builders who want an intuitive, inspiring creative studio.
+* ⚡ **100% Web-Based & Free:** No downloads, no sign-up gates, zero friction. Works directly in your browser.
+* 🔒 **Private & Client-Side:** Everything runs instantly in your browser with zero latency or telemetry.
+* 🛠️ **Seamless Export:** Move from visual exploration to production code in a single click.
 
-Read `ARCHITECTURE.md` for the reasoning behind the color-engine and data-provenance decisions, and `ROADMAP.md` for what's actively being worked on.
+---
 
-## License
+## 🗺️ Explore the Studio (Tab-by-Tab)
 
-[MIT](./LICENSE)
+Here is a quick tour of what you can do inside **Colors World**:
+
+### 01 / The Spectrum — Endless Color Exploration
+* **Wander 16.7 Million Colors:** Scroll through a continuous, visual field of every shade imaginable.
+* **Vibe & Natural Search:** Type a mood or aesthetic (*"Cyberpunk Tokyo rain"*, *"1970s Italian cafe"*, or *"Melancholic autumn"*) to surface instant palette inspiration.
+* **Quick-Save Tray:** Collect colors into your personal tray with a single tap as you explore.
+
+---
+
+### 02 / Scale Lab — Effortless Color Ramps
+* **Instant Tonal Ramps:** Pick any anchor color and generate smooth, balanced shades for your brand or UI.
+* **Preset Mechanics:** Create classic 3-step brand trios, 5-step UI systems, or full design token scales instantly.
+* **Readability Guides:** Built-in indicators automatically show you which color combinations read clearly together.
+
+---
+
+### 03 / Studio Wall — Your Creative Moodboard
+* **Freeform Canvas:** Organize your swatches, palettes, notes, and visual references on an infinite studio wall.
+* **Instant Image Extraction:** Drop any photo or design reference onto the wall to extract its dominant color palette automatically.
+* **Ambient Glows:** Swatches and cards visually radiate on a dark obsidian background, giving your project a true studio feel.
+
+---
+
+### 04 / Visualizer — Test on Real UI
+* **Live Sandbox:** Test your color palettes on real interactive UI mockups—SaaS dashboards, e-commerce cards, editorial heroes, and mobile apps.
+* **1-Click Auto-Fix:** Automatically tune background or text swatches so your UI is clear and accessible without losing your brand identity.
+* **Inclusive Vision Preview:** View your design through real-time filters for all forms of color vision deficiency.
+
+---
+
+### 05 / Typography — Type & Color Pairing
+* **Font Pairing Engine:** Preview curated Google Fonts and CDN typefaces side-by-side with your active color swatches.
+* **Live Heading & Body Preview:** Instantly see how contrast, font size, and color tone work together on real typography samples.
+* **Responsive Fluid Math:** Automatically generates clean CSS code for responsive typography sizes.
+
+---
+
+### 🤝 Join the Movement & Contribute
+This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
+
+#### Help Us Spread the Word ⭐
+* **Star** this repository on GitHub so more creators can find it.
+
+* **Share** it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
+
+* Open an Issue or PR to share feedback or **build** something cool together!
+
+---
+
+### 📜 Source-Available & License
+Colors World is free and source-available software licensed under the PolyForm Noncommercial License 1.0.0.
+
+🟢 Personal & Educational Use: 100% free to view, modify, and build upon.
+
+🏷️ Attribution Required: You must credit aardevaas in any public forks or implementations.
+
+💼 Commercial Use & Monetization: Any commercial use, paid integration, or monetization requires a formal commercial license and financial compensation.
+
+---
+
+Now that your repo files are locked in, would you like to review the updated Reddit, Hacker News, and social posts to start getting community traction?
