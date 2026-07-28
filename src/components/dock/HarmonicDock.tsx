@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type DragEvent } from 'react';
+import Link from 'next/link';
 import { useDock } from '@/lib/dock/dock-context';
 import { formatHex } from '@/lib/color-engine';
 import { readSwatchDragPayload } from '@/lib/dock/drag-payload';
@@ -123,11 +124,9 @@ export function HarmonicDock() {
         })}
       </div>
 
-      {/* /builder doesn't exist yet (brief §8 route migration) — disabled
-          with an honest reason rather than a link that would 404. */}
-      <button type="button" className={styles.scaleLabButton} disabled title="Scale Lab (/builder) is not built yet">
+      <Link href="/builder" className={styles.scaleLabButton}>
         Open in Scale Lab
-      </button>
+      </Link>
     </div>
   );
 }

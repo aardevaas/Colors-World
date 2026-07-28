@@ -48,7 +48,7 @@ export {
   type ControlPoint,
 } from './interpolate';
 
-export { generateScale } from './scale';
+export { DEFAULT_LIGHTNESS, generateScale } from './scale';
 
 export {
   apcaContrast,
@@ -57,6 +57,8 @@ export {
   contrastRatio,
   relativeLuminance,
 } from './contrast';
+
+export { buildContrastMatrix, type ContrastCell, type ContrastMatrix } from './contrast-matrix';
 
 export { CVD_TYPES, simulateCvd } from './cvd';
 

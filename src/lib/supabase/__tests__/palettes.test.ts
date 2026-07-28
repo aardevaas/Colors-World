@@ -71,6 +71,30 @@ describe('versions', () => {
     expect(version.parentIds).toEqual([]);
     expect(version.snapshot).toEqual({ 'brand-5': '#3b82f6' });
     expect(version.message).toBeNull();
+    expect(version.builderSpecs).toBeNull();
+  });
+
+  test('createVersion stores and round-trips builderSpecs when supplied by /builder', async () => {
+    const client = createFakeSupabaseClient();
+    const palette = await createPalette('brand', client);
+    const specs = [
+      { name: 'primary', anchors: [{ step: 5, color: '#3b82f6' }], chromaIntensity: 0.8 },
+    ];
+
+    const version = await createVersion(
+      {
+        paletteId: palette.id,
+        parentIds: [],
+        snapshot: { 'primary-5': '#3b82f6' },
+        builderSpecs: specs,
+      },
+      client
+    );
+
+    expect(version.builderSpecs).toEqual(specs);
+
+    const reloaded = await getVersion(version.id, client);
+    expect(reloaded?.builderSpecs).toEqual(specs);
   });
 
   test('createVersion records parent_ids for a merge commit', async () => {

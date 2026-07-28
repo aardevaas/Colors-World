@@ -1,0 +1,676 @@
+/*
+ * /builder's own atmosphere — deliberately distinct from /library's
+ * zero-web-font "laboratory instrument" register (see globals.css). Each
+ * tab is its own typographic world; only the persistent shell (dock, nav,
+ * account status) stays constant across them. Unbounded for headers,
+ * Plus Jakarta Sans for UI text (both loaded page-locally — see
+ * app/builder/page.tsx), Geist Mono for every colour code and contrast
+ * score (reused from the root's --font-dock-mono, not reloaded here).
+ */
+
+.shell {
+  min-height: 100dvh;
+  background: #050508;
+  color: oklch(96% 0.004 265);
+  font-family: var(--font-builder-body), sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 0%, oklch(45% 0.12 280 / 0.18), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 15%, oklch(50% 0.14 200 / 0.14), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.masthead {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid oklch(100% 0 0 / 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.wordmark {
+  font-family: var(--font-builder-display), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.wordmarkDim {
+  color: oklch(70% 0.006 265 / 0.7);
+  font-weight: 500;
+}
+
+.navGroup {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.navLink {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: oklch(75% 0.006 265 / 0.75);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: oklch(96% 0.004 265);
+}
+
+.globalControls {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid oklch(100% 0 0 / 0.06);
+}
+
+.saveError {
+  position: relative;
+  z-index: 1;
+  margin: 0 2rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  color: oklch(80% 0.16 25);
+  background: oklch(25% 0.06 25 / 0.2);
+  border-radius: 8px;
+}
+
+.emptyState {
+  position: relative;
+  z-index: 1;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: oklch(75% 0.006 265 / 0.8);
+  font-size: 0.95rem;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.scaleList {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem 6rem;
+}
+
+/* ---------- step controls ---------- */
+
+.stepControls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stepPills {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.stepPill {
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid oklch(100% 0 0 / 0.14);
+  background: oklch(100% 0 0 / 0.04);
+  color: oklch(88% 0.006 265);
+  cursor: pointer;
+}
+
+.stepPill[data-active='true'] {
+  background: oklch(100% 0 0 / 0.14);
+  border-color: oklch(100% 0 0 / 0.3);
+}
+
+.stepCustomField {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: oklch(75% 0.006 265 / 0.8);
+}
+
+.stepCustomInput {
+  width: 3.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid oklch(100% 0 0 / 0.14);
+  background: oklch(100% 0 0 / 0.04);
+  color: oklch(96% 0.004 265);
+  font-family: var(--font-dock-mono), monospace;
+}
+
+.selectField {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: oklch(75% 0.006 265 / 0.8);
+}
+
+.selectInput {
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid oklch(100% 0 0 / 0.14);
+  background: oklch(12% 0.01 280);
+  color: oklch(96% 0.004 265);
+  font-family: inherit;
+}
+
+/* ---------- scale panel ---------- */
+
+.scalePanel {
+  border-radius: 18px;
+  border: 1px solid oklch(100% 0 0 / 0.1);
+  background: oklch(100% 0 0 / 0.03);
+  backdrop-filter: blur(20px);
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scalePanel[data-primary='true'] {
+  border-color: oklch(85% 0.18 95 / 0.5);
+  box-shadow: 0 0 0 1px oklch(85% 0.18 95 / 0.15);
+}
+
+.scalePanelHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.scalePrimaryStar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid oklch(100% 0 0 / 0.14);
+  background: oklch(100% 0 0 / 0.04);
+  color: oklch(70% 0.006 265);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.scalePrimaryStar[data-active='true'] {
+  color: oklch(85% 0.18 95);
+  border-color: oklch(85% 0.18 95 / 0.6);
+}
+
+.scaleNameInput {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  font-family: var(--font-builder-display), sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: oklch(96% 0.004 265);
+  padding: 0.15rem 0;
+}
+
+.scaleNameInput:focus {
+  outline: none;
+  border-bottom-color: oklch(100% 0 0 / 0.3);
+}
+
+.scaleAnchorSwatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid oklch(100% 0 0 / 0.16);
+}
+
+/* ---------- swatch row ---------- */
+
+.swatchRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 6px;
+}
+
+.swatch {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  border: 1px solid oklch(100% 0 0 / 0.1);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.swatch:hover {
+  transform: translateY(-2px);
+}
+
+.swatchStep {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.6875rem;
+  align-self: flex-start;
+  background: oklch(0% 0 0 / 0.35);
+  color: oklch(96% 0.004 265);
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+}
+
+.swatchAnchorMark {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.8rem;
+  color: oklch(15% 0.01 265);
+  text-shadow: 0 1px 2px oklch(100% 0 0 / 0.5);
+}
+
+.swatchHex {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.625rem;
+  background: oklch(0% 0 0 / 0.35);
+  color: oklch(96% 0.004 265);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+.swatchBadgeRow {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.swatchBadge {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.5625rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  background: oklch(0% 0 0 / 0.4);
+  color: oklch(90% 0.01 265);
+}
+
+.swatchBadge[data-wide='true'] {
+  color: oklch(85% 0.16 145);
+}
+
+.swatchCopyHint {
+  position: absolute;
+  bottom: 0.4rem;
+  right: 0.5rem;
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.5625rem;
+  color: oklch(100% 0 0 / 0.7);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.swatch:hover .swatchCopyHint,
+.swatch[data-copied='true'] .swatchCopyHint {
+  opacity: 1;
+}
+
+/* ---------- gradient ribbon ---------- */
+
+.ribbonWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ribbonTrack {
+  position: relative;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid oklch(100% 0 0 / 0.14);
+  cursor: crosshair;
+}
+
+.ribbonCursor {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 28px;
+  border-radius: 2px;
+  border: 1px solid oklch(100% 0 0 / 0.8);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.ribbonHint {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.625rem;
+  color: oklch(70% 0.006 265 / 0.7);
+}
+
+/* ---------- curve manipulator ---------- */
+
+.curveGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.curveManipulator {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.curveHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.curveLabel {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: oklch(75% 0.006 265 / 0.8);
+}
+
+.curveReset {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.625rem;
+  background: none;
+  border: none;
+  color: oklch(75% 0.15 250 / 0.9);
+  cursor: pointer;
+}
+
+.curveSvg {
+  width: 100%;
+  height: 72px;
+  border-radius: 10px;
+  background: oklch(100% 0 0 / 0.03);
+  border: 1px solid oklch(100% 0 0 / 0.08);
+  touch-action: none;
+}
+
+.curvePath {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.35;
+}
+
+.curveSvg[data-active='true'] .curvePath {
+  opacity: 1;
+}
+
+.curveHandle {
+  stroke: oklch(100% 0 0);
+  stroke-width: 1.5;
+  cursor: ns-resize;
+}
+
+.curveHandle:focus-visible {
+  outline: 2px solid oklch(85% 0.18 95);
+  outline-offset: 2px;
+}
+
+.curveHint {
+  font-size: 0.625rem;
+  color: oklch(65% 0.006 265 / 0.65);
+}
+
+/* ---------- chroma/torsion sliders ---------- */
+
+.scaleSliders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.scaleSliderField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: oklch(75% 0.006 265 / 0.85);
+}
+
+.scaleSliderField output {
+  font-family: var(--font-dock-mono), monospace;
+  color: oklch(96% 0.004 265);
+}
+
+/* ---------- contrast matrix ---------- */
+
+.matrixPanel {
+  position: relative;
+  z-index: 1;
+  margin: 0 2rem 2rem;
+  border-radius: 16px;
+  border: 1px solid oklch(100% 0 0 / 0.1);
+  background: oklch(100% 0 0 / 0.03);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+
+.matrixToggle {
+  width: 100%;
+  text-align: left;
+  padding: 0.9rem 1.25rem;
+  background: none;
+  border: none;
+  color: oklch(90% 0.006 265);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.matrixBody {
+  padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.matrixScaleSelect {
+  align-self: flex-start;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid oklch(100% 0 0 / 0.14);
+  background: oklch(12% 0.01 280);
+  color: oklch(96% 0.004 265);
+  font-family: inherit;
+}
+
+.matrixAxisNote {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.625rem;
+  color: oklch(70% 0.006 265 / 0.7);
+}
+
+.matrixGrid {
+  display: grid;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.matrixCorner {
+  background: transparent;
+}
+
+.matrixAxisSwatch {
+  border-radius: 4px;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.matrixCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 28px;
+  border-radius: 4px;
+  border: none;
+  background: oklch(20% 0.05 25 / 0.4);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.matrixCell[data-pass='true'] {
+  background: oklch(24% 0.06 150 / 0.4);
+}
+
+.matrixCell[data-highlighted='true'] {
+  outline: 1px solid oklch(100% 0 0 / 0.6);
+}
+
+.matrixRatio {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.6rem;
+  color: oklch(96% 0.004 265);
+  line-height: 1.1;
+}
+
+.matrixApca {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.5rem;
+  color: oklch(80% 0.006 265 / 0.75);
+  line-height: 1.1;
+}
+
+/* ---------- export vault ---------- */
+
+.vault {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.vaultToggle {
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid oklch(100% 0 0 / 0.16);
+  background: oklch(14% 0.02 280 / 0.9);
+  backdrop-filter: blur(12px);
+  color: oklch(96% 0.004 265);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.vaultBody {
+  width: min(28rem, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  border: 1px solid oklch(100% 0 0 / 0.14);
+  background: oklch(9% 0.015 280 / 0.97);
+  backdrop-filter: blur(20px);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vaultTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.vaultTab {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid oklch(100% 0 0 / 0.12);
+  background: none;
+  color: oklch(80% 0.006 265 / 0.8);
+  cursor: pointer;
+}
+
+.vaultTab[data-active='true'] {
+  background: oklch(100% 0 0 / 0.12);
+  color: oklch(96% 0.004 265);
+}
+
+.vaultDisclosure {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.6875rem;
+  color: oklch(75% 0.15 70 / 0.9);
+  background: oklch(30% 0.06 70 / 0.15);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.vaultDisclosureTitle {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.vaultDisclosure ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.vaultCode {
+  font-family: var(--font-dock-mono), monospace;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: oklch(0% 0 0 / 0.3);
+  border-radius: 8px;
+  padding: 0.75rem;
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.vaultCopy {
+  align-self: flex-end;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid oklch(100% 0 0 / 0.16);
+  background: oklch(100% 0 0 / 0.06);
+  color: oklch(96% 0.004 265);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.vaultCopy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swatch,
+  .curveHandle {
+    transition: none;
+  }
+}

@@ -16,7 +16,11 @@ import { formatHex, formatOklchCss, parseColor } from './color';
 import { maxChroma } from './gamut';
 
 const DEFAULT_STEPS = 10;
-const DEFAULT_LIGHTNESS: readonly [number, number] = [0.971, 0.241];
+/** Exported so callers building a ScaleSpec from scratch (e.g. /builder's
+ *  dock-ingestion, picking a sensible default anchor step for a newly
+ *  collected colour) can place a step against the same default ramp
+ *  generateScale itself falls back to, without duplicating these numbers. */
+export const DEFAULT_LIGHTNESS: readonly [number, number] = [0.971, 0.241];
 const DEFAULT_CHROMA_INTENSITY = 1;
 
 /** Minimum lightness separation between adjacent control points. */
@@ -77,8 +81,15 @@ function resolveAnchors(
 function buildLightnessCurve(
   anchors: readonly ResolvedAnchor[],
   steps: number,
-  range: readonly [number, number]
+  range: readonly [number, number],
+  customCurve?: readonly ControlPoint[]
 ): (step: number) => number {
+  if (customCurve !== undefined && customCurve.length > 0) {
+    const interpolator = monotoneInterpolator(customCurve);
+    const lastIndex = steps - 1;
+    return (step: number) => interpolator(step / lastIndex);
+  }
+
   const points: ControlPoint[] = anchors.map((anchor) => ({
     x: anchor.step,
     y: anchor.oklch.l,
@@ -126,8 +137,16 @@ function buildHueCurve(
  */
 function buildSaturationCurve(
   anchors: readonly ResolvedAnchor[],
-  gamut: Gamut
+  gamut: Gamut,
+  steps: number,
+  customCurve?: readonly ControlPoint[]
 ): (step: number) => number {
+  if (customCurve !== undefined && customCurve.length > 0) {
+    const interpolator = monotoneInterpolator(customCurve);
+    const lastIndex = steps - 1;
+    return (step: number) => interpolator(step / lastIndex);
+  }
+
   const fractions = anchors.map((anchor) => {
     const available = maxChroma(anchor.oklch.l, anchor.oklch.h, gamut);
     return {
@@ -141,6 +160,23 @@ function buildSaturationCurve(
     return () => fraction;
   }
   return monotoneInterpolator(fractions);
+}
+
+/**
+ * Shapes how hueTorsion's rotation is distributed across the scale. Default
+ * is today's linear ramp, zeroed at the anchor's own progress so the pinned
+ * colour sits at zero rotation; a custom curve replaces that shape entirely.
+ * The anchor step's hue is irrelevant either way — it gets overwritten by
+ * the exact pinned colour regardless of what this function returns for it.
+ */
+function buildTorsionShape(
+  torsionOrigin: number,
+  customCurve?: readonly ControlPoint[]
+): (progress: number) => number {
+  if (customCurve !== undefined && customCurve.length > 0) {
+    return monotoneInterpolator(customCurve);
+  }
+  return (progress: number) => progress - torsionOrigin;
 }
 
 export function generateScale(spec: ScaleSpec): GeneratedScale {
@@ -157,15 +193,16 @@ export function generateScale(spec: ScaleSpec): GeneratedScale {
   const anchors = resolveAnchors(spec.anchors, steps);
   const anchorByStep = new Map(anchors.map((a) => [a.step, a.oklch]));
 
-  const lightnessAt = buildLightnessCurve(anchors, steps, lightnessRange);
+  const lightnessAt = buildLightnessCurve(anchors, steps, lightnessRange, spec.lightnessCurve);
   const hueAt = buildHueCurve(anchors);
-  const saturationAt = buildSaturationCurve(anchors, gamut);
+  const saturationAt = buildSaturationCurve(anchors, gamut, steps, spec.chromaCurve);
 
   // Torsion is measured *relative to the primary anchor* so that the pinned
   // colour sits at zero rotation. Anchoring at zero keeps the forced-exact
   // anchor continuous with its neighbours instead of creating a visible kink.
   const lastIndex = steps - 1;
   const torsionOrigin = anchors[0]!.step / lastIndex;
+  const torsionShape = buildTorsionShape(torsionOrigin, spec.hueTorsionCurve);
 
   const generated: ScaleStep[] = [];
 
@@ -185,9 +222,7 @@ export function generateScale(spec: ScaleSpec): GeneratedScale {
 
     const lightness = clamp(lightnessAt(step), LIGHTNESS_FLOOR, LIGHTNESS_CEILING);
     const progress = step / lastIndex;
-    const hue = normalizeHue(
-      hueAt(step) + hueTorsion * (progress - torsionOrigin)
-    );
+    const hue = normalizeHue(hueAt(step) + hueTorsion * torsionShape(progress));
 
     const requested = Math.max(0, saturationAt(step) * chromaIntensity);
     const available = maxChroma(lightness, hue, gamut);

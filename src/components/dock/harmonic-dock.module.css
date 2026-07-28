@@ -178,15 +178,24 @@
 
 .scaleLabButton {
   align-self: stretch;
+  text-align: center;
+  text-decoration: none;
   padding: 0.6rem 1rem;
   border-radius: 12px;
-  border: 1px solid oklch(100% 0 0 / 0.12);
-  background: oklch(100% 0 0 / 0.04);
-  color: oklch(90% 0.004 265 / 0.55);
+  border: 1px solid oklch(100% 0 0 / 0.16);
+  background: oklch(100% 0 0 / 0.06);
+  color: oklch(96% 0.004 265 / 0.9);
   font-family: inherit;
   font-size: 0.8125rem;
   letter-spacing: 0.02em;
-  cursor: not-allowed;
+  cursor: pointer;
+  transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scaleLabButton:hover {
+  background: oklch(100% 0 0 / 0.12);
+  border-color: oklch(100% 0 0 / 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,6 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { ScaleSpec } from '@/lib/color-engine';
 import type { PaletteSnapshot } from '@/lib/versioning';
 import { getSupabaseClient } from './client';
 
@@ -17,6 +18,10 @@ export interface PaletteVersionRecord {
   readonly parentIds: readonly string[];
   readonly message: string | null;
   readonly snapshot: PaletteSnapshot;
+  /** The /builder ScaleSpec(s) that produced this version's snapshot, if it
+   *  was saved from /builder — null for versions with no such basis (a
+   *  hand-edited swatch, a merge resolution, anything predating this field). */
+  readonly builderSpecs: readonly ScaleSpec[] | null;
   readonly createdAt: string;
 }
 
@@ -44,6 +49,7 @@ interface PaletteVersionRow {
   readonly parent_ids: readonly string[];
   readonly message: string | null;
   readonly snapshot: PaletteSnapshot;
+  readonly builder_specs: readonly ScaleSpec[] | null;
   readonly created_at: string;
 }
 
@@ -72,6 +78,7 @@ function mapVersionRow(row: PaletteVersionRow): PaletteVersionRecord {
     parentIds: row.parent_ids,
     message: row.message,
     snapshot: row.snapshot,
+    builderSpecs: row.builder_specs ?? null,
     createdAt: row.created_at,
   };
 }
@@ -158,6 +165,7 @@ export async function createVersion(
     parentIds: readonly string[];
     snapshot: PaletteSnapshot;
     message?: string;
+    builderSpecs?: readonly ScaleSpec[];
   },
   client?: SupabaseClient
 ): Promise<PaletteVersionRecord> {
@@ -169,6 +177,7 @@ export async function createVersion(
       parent_ids: input.parentIds,
       snapshot: input.snapshot,
       message: input.message ?? null,
+      builder_specs: input.builderSpecs ?? null,
     })
     .select()
     .single<PaletteVersionRow>();

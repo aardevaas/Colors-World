@@ -1,5 +1,6 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { ScaleSpec } from '@/lib/color-engine';
 import type { PaletteSnapshot } from '@/lib/versioning';
 import {
   createBranch,
@@ -24,7 +25,12 @@ const DEFAULT_BRANCH_NAME = 'main';
 export async function initializePalette(
   name: string,
   snapshot: PaletteSnapshot,
-  options?: { message?: string; branchName?: string; projectId?: string },
+  options?: {
+    message?: string;
+    branchName?: string;
+    projectId?: string;
+    builderSpecs?: readonly ScaleSpec[];
+  },
   client?: SupabaseClient
 ): Promise<{
   palette: PaletteRecord;
@@ -33,7 +39,13 @@ export async function initializePalette(
 }> {
   const palette = await createPalette(name, client, options?.projectId);
   const version = await createVersion(
-    { paletteId: palette.id, parentIds: [], snapshot, message: options?.message },
+    {
+      paletteId: palette.id,
+      parentIds: [],
+      snapshot,
+      message: options?.message,
+      builderSpecs: options?.builderSpecs,
+    },
     client
   );
   const branch = await createBranch(
@@ -87,7 +99,8 @@ export async function commitVersionToBranch(
   branchName: string,
   snapshot: PaletteSnapshot,
   message?: string,
-  client?: SupabaseClient
+  client?: SupabaseClient,
+  builderSpecs?: readonly ScaleSpec[]
 ): Promise<{ version: PaletteVersionRecord; branch: PaletteBranchRecord }> {
   const branch = await getBranch(paletteId, branchName, client);
   if (branch === null) {
@@ -95,7 +108,7 @@ export async function commitVersionToBranch(
   }
 
   const version = await createVersion(
-    { paletteId, parentIds: [branch.headVersionId], snapshot, message },
+    { paletteId, parentIds: [branch.headVersionId], snapshot, message, builderSpecs },
     client
   );
   const updatedBranch = await updateBranchHead(branch.id, version.id, client);
@@ -103,12 +116,17 @@ export async function commitVersionToBranch(
   return { version, branch: updatedBranch };
 }
 
-/** Convenience read: a branch's current snapshot, resolved from its head version. */
+/** Convenience read: a branch's current snapshot (and /builder specs, if any),
+ *  resolved from its head version. */
 export async function getBranchSnapshot(
   paletteId: string,
   branchName: string,
   client?: SupabaseClient
-): Promise<{ branch: PaletteBranchRecord; snapshot: PaletteSnapshot } | null> {
+): Promise<{
+  branch: PaletteBranchRecord;
+  snapshot: PaletteSnapshot;
+  builderSpecs: readonly ScaleSpec[] | null;
+} | null> {
   const branch = await getBranch(paletteId, branchName, client);
   if (branch === null) return null;
 
@@ -119,5 +137,5 @@ export async function getBranchSnapshot(
     );
   }
 
-  return { branch, snapshot: version.snapshot };
+  return { branch, snapshot: version.snapshot, builderSpecs: version.builderSpecs };
 }

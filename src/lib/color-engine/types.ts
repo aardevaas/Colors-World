@@ -7,6 +7,8 @@
  * destroys wide-gamut colour.
  */
 
+import type { ControlPoint } from './interpolate';
+
 /** Perceptual polar coordinates. l ∈ [0,1], c ≥ 0, h ∈ [0,360). */
 export interface Oklch {
   readonly l: number;
@@ -68,6 +70,32 @@ export interface ScaleSpec {
   readonly hueTorsion?: number;
   /** Gamut every generated step is mapped into. Default 'srgb'. */
   readonly gamut?: Gamut;
+
+  /**
+   * Custom curve overrides for /builder's curve manipulator panel. Each is
+   * defined over *normalized progress* (x: 0–1, "0% through the scale" to
+   * "100% through the scale") rather than raw step index — step count is a
+   * user-adjustable slider (1–10), and a curve pinned to step indices would
+   * corrupt the moment someone changes it. Progress space survives that
+   * change untouched.
+   *
+   * All three are optional and independently overridable; omitting one
+   * falls back to today's anchor+range-derived behaviour exactly, so every
+   * scale generated before this field existed keeps producing byte-identical
+   * output. An anchor's own step still resolves to its exact pinned colour
+   * regardless of any curve — these only shape the steps in between.
+   */
+  /** y: lightness, 0–1. Replaces the anchor+range-derived lightness ramp. */
+  readonly lightnessCurve?: readonly ControlPoint[];
+  /** y: fraction of gamut-available chroma, 0–1 (same unit the default
+   *  anchor-derived saturation curve already uses). Still scaled by
+   *  chromaIntensity afterward — the curve shapes it, the intensity dial's
+   *  meaning doesn't change. */
+  readonly chromaCurve?: readonly ControlPoint[];
+  /** y: torsion fraction, -1–1. Replaces the default linear "distance from
+   *  the anchor's own progress" ramp; still scaled by hueTorsion afterward,
+   *  same intensity-dial-plus-shape relationship as chromaCurve. */
+  readonly hueTorsionCurve?: readonly ControlPoint[];
 }
 
 /** One resolved step of a generated scale. */

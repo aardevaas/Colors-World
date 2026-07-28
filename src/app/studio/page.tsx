@@ -30,8 +30,8 @@ export default async function StudioWallPage() {
           Colors World <span className={styles.wordmarkDim}>/ studio</span>
         </h1>
         <nav className={styles.navGroup}>
-          <Link href="/scale-lab" className={styles.navLink}>
-            scale lab
+          <Link href="/builder" className={styles.navLink}>
+            builder
           </Link>
           <Link href="/library" className={styles.navLink}>
             library

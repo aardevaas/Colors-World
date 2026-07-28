@@ -230,6 +230,136 @@ describe('generateScale — input validation', () => {
   });
 });
 
+describe('generateScale — curve-aware ScaleSpec (/builder curve manipulator)', () => {
+  test('omitting every curve produces byte-identical output to the scalar-only path', () => {
+    const spec = {
+      name: 'blue',
+      anchors: [{ step: 5, color: BRAND_BLUE }],
+      hueTorsion: 12,
+      chromaIntensity: 0.9,
+    } as const;
+
+    // No lightnessCurve/chromaCurve/hueTorsionCurve fields at all — this is
+    // exactly what every scale generated before curves existed looked like,
+    // and it must keep producing the same result.
+    const withCurveFieldsAbsent = generateScale(spec);
+    const explicit = generateScale({ ...spec, lightnessCurve: undefined });
+    expect(withCurveFieldsAbsent.steps.map((s) => s.hex)).toEqual(
+      explicit.steps.map((s) => s.hex)
+    );
+  });
+
+  test('a custom lightness curve overrides the anchor-derived ramp', () => {
+    const flatCurve = generateScale({
+      name: 'flat',
+      anchors: [{ step: 5, color: BRAND_BLUE }],
+      // Constant lightness across the whole normalized domain.
+      lightnessCurve: [
+        { x: 0, y: 0.5 },
+        { x: 1, y: 0.5 },
+      ],
+    });
+
+    // Every non-anchor step should land at (very nearly) the same lightness —
+    // the default anchor+range ramp would instead descend monotonically.
+    const nonAnchorLightness = flatCurve.steps
+      .filter((s) => !s.isAnchor)
+      .map((s) => s.oklch.l);
+    for (const l of nonAnchorLightness) {
+      expect(l).toBeCloseTo(0.5, 2);
+    }
+  });
+
+  test('a lightness curve shape is consistent across different step counts', () => {
+    // A straight line from light to dark over normalized progress — the
+    // midpoint-by-progress lightness should land near the curve's own
+    // midpoint value regardless of how many steps that progress is divided
+    // into. This is the guarantee that makes curves safe under the /builder
+    // step-count slider (2-10).
+    const curve = [
+      { x: 0, y: 0.9 },
+      { x: 1, y: 0.1 },
+    ];
+
+    for (const steps of [3, 5, 10]) {
+      const anchorStep = Math.floor(steps / 2);
+      const scale = generateScale({
+        name: `steps-${steps}`,
+        steps,
+        anchors: [{ step: anchorStep, color: BRAND_BLUE }],
+        lightnessCurve: curve,
+      });
+
+      const midStep = scale.steps[Math.floor((steps - 1) / 2)]!;
+      if (!midStep.isAnchor) {
+        expect(midStep.oklch.l).toBeGreaterThan(0.3);
+        expect(midStep.oklch.l).toBeLessThan(0.7);
+      }
+    }
+  });
+
+  test('a chroma curve requesting more than full saturation still gets flagged as clamped', () => {
+    const scale = generateScale({
+      name: 'overdriven-curve',
+      anchors: [{ step: 5, color: BRAND_BLUE }],
+      // Fraction of available chroma > 1 anywhere the gamut can't deliver it.
+      chromaCurve: [
+        { x: 0, y: 1.5 },
+        { x: 1, y: 1.5 },
+      ],
+    });
+
+    expect(scale.steps.some((step) => step.gamutClamped)).toBe(true);
+  });
+
+  test('a custom hue-torsion curve produces a different hue distribution than the default linear ramp', () => {
+    const linear = generateScale({
+      name: 'linear-torsion',
+      anchors: [{ step: 5, color: BRAND_BLUE }],
+      hueTorsion: 40,
+    });
+
+    const custom = generateScale({
+      name: 'custom-torsion',
+      anchors: [{ step: 5, color: BRAND_BLUE }],
+      hueTorsion: 40,
+      // All of the rotation happens right at the end instead of ramping
+      // linearly across the whole scale.
+      hueTorsionCurve: [
+        { x: 0, y: 0 },
+        { x: 0.8, y: 0 },
+        { x: 1, y: 1 },
+      ],
+    });
+
+    // Step 1 (near the light end) should barely have rotated under the custom
+    // curve, unlike the linear ramp which is already rotating there.
+    expect(Math.abs(custom.steps[1]!.oklch.h - linear.steps[1]!.oklch.h)).toBeGreaterThan(1);
+  });
+
+  test('the anchor step still resolves to its exact colour regardless of any curve', () => {
+    const scale = generateScale({
+      name: 'anchor-fidelity',
+      anchors: [{ step: 5, color: BRAND_BLUE }],
+      lightnessCurve: [
+        { x: 0, y: 0.99 },
+        { x: 1, y: 0.99 },
+      ],
+      chromaCurve: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+      ],
+      hueTorsionCurve: [
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+      ],
+    });
+
+    expect(scale.steps[5]!.hex).toBe(BRAND_BLUE);
+    expect(scale.steps[5]!.isAnchor).toBe(true);
+  });
+});
+
 describe('generateScale — determinism', () => {
   test('the same spec always produces the same scale', () => {
     const spec = {

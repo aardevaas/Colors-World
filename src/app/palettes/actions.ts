@@ -9,6 +9,7 @@ import {
 import { createBoardItem, listBoardItems, nextBoardPosition } from '@/lib/supabase/board';
 import { resolveDefaultProjectId } from '@/lib/supabase/projects';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
+import type { ScaleSpec } from '@/lib/color-engine';
 import type { PaletteSnapshot } from '@/lib/versioning';
 
 export interface CreatePaletteResult {
@@ -16,10 +17,19 @@ export interface CreatePaletteResult {
   readonly branchId: string;
 }
 
-/** Persists a Scale Lab-generated snapshot as a brand-new palette on "main". */
+/**
+ * Persists a generated-scale snapshot as a brand-new palette on "main".
+ * `builderSpecs`, when supplied (from /builder), is stored alongside the
+ * resolved snapshot so the palette reopens editable — its curves, hue
+ * torsion, and chroma intensity survive, not just the flattened hex values.
+ * Optional and separate from `snapshot` because not every save has one (a
+ * hand-edited swatch, a merge resolution): there's nothing to store, not a
+ * gap to paper over.
+ */
 export async function createPaletteFromScale(
   name: string,
-  snapshot: PaletteSnapshot
+  snapshot: PaletteSnapshot,
+  builderSpecs?: readonly ScaleSpec[]
 ): Promise<CreatePaletteResult> {
   const supabase = await createServerSupabaseClient();
   const {
@@ -34,7 +44,7 @@ export async function createPaletteFromScale(
   const { palette, branch } = await initializePalette(
     name,
     snapshot,
-    { message: 'Created from Scale Lab', projectId },
+    { message: 'Created from Scale Lab', projectId, builderSpecs },
     supabase
   );
 

@@ -60,8 +60,8 @@ export default async function AssetsPage() {
           <Link href="/studio" className={styles.navLink}>
             studio
           </Link>
-          <Link href="/scale-lab" className={styles.navLink}>
-            scale lab
+          <Link href="/builder" className={styles.navLink}>
+            builder
           </Link>
           <Link href="/library" className={styles.navLink}>
             library

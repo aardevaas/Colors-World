@@ -313,6 +313,17 @@ create trigger board_items_touch_updated_at
   for each row
   execute function touch_board_item_updated_at();
 
+-- /builder ScaleSpec persistence — the curves/torsion/chroma-intensity that
+-- produced a version's snapshot, not just the resolved hex values. Nullable
+-- and separate from `snapshot`: every version already had a snapshot before
+-- /builder existed, and a version committed from anywhere other than
+-- /builder (e.g. a hand-edited swatch, a merge resolution) has no ScaleSpec
+-- basis at all — there's nothing dishonest to backfill, just nothing to
+-- store. Without this a saved palette's curves/torsion were silently
+-- discarded on save; reopening it in /builder produced flat, uncustomized
+-- ramps even if the original had hand-shaped curves.
+alter table palette_versions add column if not exists builder_specs jsonb;
+
 -- Row Level Security: still OFF in this file — see enable-rls.sql.
 --
 -- Turning it on requires two things that don't exist yet the moment this

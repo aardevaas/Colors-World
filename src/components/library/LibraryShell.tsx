@@ -143,8 +143,8 @@ export function LibraryShell() {
           <Link href="/studio" className={styles.navLink}>
             studio
           </Link>{' '}
-          <Link href="/scale-lab" className={styles.navLink}>
-            scale lab
+          <Link href="/builder" className={styles.navLink}>
+            builder
           </Link>{' '}
           <Link href="/assets" className={styles.navLink}>
             assets
