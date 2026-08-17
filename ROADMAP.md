@@ -1,210 +1,243 @@
-# Colors World — Roadmap v4 (reframed 2026-08-17)
+# Colors World — Roadmap v5 (growth-framed, 2026-08-17)
 
-> **This supersedes v3.** v3 was organised around Phases 1–7 and was written
-> *before* the product was restructured into five tabs. Everything built since
-> (`/library`, `/builder`, `/studio`) happened outside that structure, so the
-> phase numbering no longer describes the product. v4 is organised around the
-> **5-tab model** that is now the actual shape of the app.
+> **Supersedes v4** (which superseded v3). v3 was organised by build phases.
+> v4 reorganised around the five tabs. **v5 reorganises around the goal you
+> actually stated: become one of the 100 fastest-growing GitHub repos for
+> design, and be genuinely world-class.**
 >
-> The v3 narrative — the vision, why moodboarding became the centre, the
-> open-source pivot — is still correct and is summarised below rather than
-> repeated in full. The landing page keeps its own authoritative spec in
-> [docs/LANDING-PAGE-BRIEF.md](docs/LANDING-PAGE-BRIEF.md).
+> That is not the same objective as "finish the five tabs," and sequencing work
+> as though it were is the main risk right now. This document is ordered by what
+> compounds, not by what is unfinished.
 
 ---
 
-## The vision (unchanged)
+## The goal, stated plainly
 
-**A creative studio for colour and brand — where 16.7 million colours are a
-world you explore, and your dashboard is your studio wall.** Open-source, free,
-built for designers and marketers first, not colour-tooling professionals.
+1. **Top-100 fastest-growing GitHub repo in design.**
+2. **World-class** — not "good for a solo project."
 
-The rigour (OKLCH engine, WCAG/APCA, gamut mapping, version DAG) stays as
-*invisible infrastructure* that quietly stops you making mistakes — never as the
-thing you interact with.
-
-**Each tab is its own world.** Typography and atmosphere shift per tab to suit
-what that tab does; the persistent shell — Harmonic Dock, navigation, account
-status — stays structurally constant. Geist Mono is the one deliberate global
-exception, reused for numeric legibility rather than aesthetics.
+Everything below is judged against those two, and nothing else.
 
 ---
 
-## Where this actually stands, 2026-08-17
+## 🔴 The uncomfortable part — read this first
+
+**The current licence and the growth goal are in direct conflict.**
+
+`LICENSE` is **PolyForm Noncommercial 1.0.0**. That is a *source-available*
+licence, not an open-source one — it is not OSI-approved. `package.json` has no
+`license` field at all, which is a separate inconsistency worth fixing either
+way.
+
+Your reason for choosing it is legitimate and I am not dismissing it: you said
+you wanted it so people can't profit from your creation. That is a real risk and
+PolyForm NC is a clean way to express it.
+
+But it suppresses nearly every mechanism by which design repos actually grow:
+
+| Growth mechanism | Effect under PolyForm NC |
+|---|---|
+| Company adoption → team stars, internal advocacy | Blocked — legal will reject it |
+| Contributors | Chilled — their work can't be used commercially, yours can be relicensed |
+| Ecosystem effects (fork, embed, package, extend) | Blocked |
+| `awesome-*` lists, OSS newsletters, package registries | Frequently filter for OSI licences |
+| Dependency adoption (`npm i …`) | Effectively dead |
+
+The comparison set is unambiguous. shadcn/ui, Radix, Tailwind, Excalidraw,
+Lucide, Framer Motion — the design repos that actually grew fastest — are
+essentially all MIT/ISC/Apache. I know of no PolyForm-NC repo in the design
+space that hit top-100 growth.
+
+**Three ways to hold both goals at once, best first:**
+
+1. **Split the licence — MIT the engine, protect the app.** ⭐ my recommendation.
+   Publish `lib/color-engine` (and probably `lib/studio`) as MIT under
+   `@colorsworld/engine`; keep the full application PolyForm NC.
+   *Why this is the strongest option:* the thing most likely to make this a
+   top-100 repo is **not the app — it's the engine.** A pure-TypeScript
+   16.7M-colour arithmetic engine with OKLCH throughout, WCAG + APCA, gamut
+   mapping across sRGB/P3/Rec2020, CVD simulation, and 500 tests is a genuinely
+   rare dependency. People star dependencies they can build on. Almost nobody
+   stars an app they're not allowed to use at work. This gets you real growth
+   *and* keeps the product protected.
+2. **AGPL-3.0.** Genuinely open source, but anyone running it as a network
+   service must publish their source — which blocks the exact "someone clones it
+   as a SaaS and profits" scenario you're guarding against. Grafana, Mastodon,
+   and Nextcloud all use this reasoning.
+3. **Keep PolyForm NC and accept a lower growth ceiling.** Entirely valid if
+   protection matters more than reach — but then "top-100 fastest growing"
+   should be retired as a goal rather than quietly missed.
+
+**This is your call and I won't pick it for you — but it gates the whole
+strategy, so it should be decided before, not after, the launch push.**
+
+---
+
+## What actually makes a design repo grow
+
+Worth being blunt, because it changes the ordering below:
+
+1. **A live URL you can try in five seconds, with no signup.** Non-negotiable
+   and currently missing. A design tool nobody can touch cannot grow, no matter
+   how good the code is.
+2. **The README is the product page.** For most visitors it *is* the product.
+   Ours has good bones (founder letter, tab-by-tab) but **no screenshots, no
+   demo GIF**, and it still describes tabs by their retired names ("The
+   Spectrum", "Scale Lab") that no longer match the routes.
+3. **Shareable output is the growth loop.** The watermarked PNG export and
+   `/share/[token]` links are already built — every exported board is an
+   impression. That loop only runs once the app is live.
+4. **Depth beats breadth.** Three exceptional tabs will outperform five average
+   ones. The engine is genuinely differentiated; a half-polished fifth tab is
+   not.
+5. **Launches are events, not states.** You get roughly one good shot per
+   milestone at HN / Product Hunt / Designer News. Spending it on a product with
+   a login wall and no demo wastes the shot.
+
+---
+
+## Where we actually are — verified live, 2026-08-17
 
 | | |
 |---|---|
-| Routes | 13 (`page.tsx` files) |
-| Tests | 500 passing, 54 files, `tsc` clean |
-| Production build | compiles clean; largest first-load `/library` 182 kB, `/studio` 138 kB |
-| Live data | 100,000 colour rows · 4 palettes · 10 versions · 9 board items · 6 profiles · 1 project |
-| Tabs built | 3 of 5 |
-| Deployed | not yet — Vercel import still a manual step |
+| Tabs built | 3 of 5 (`/library`, `/builder`, `/studio`) |
+| Tests | 500 passing, 54 files, `tsc` clean, production build clean |
+| Live data | 100,000 colour rows · 6 profiles · 1 project |
+| **Deployed** | **No. Nothing is live.** |
+| README | No demo media; tab names stale |
+| Licence | PolyForm NC (see above) |
+| `/studio` live verification | **Still blocked** — one SQL run outstanding |
 
-**Verified live against the restored Supabase project on 2026-08-17**, not
-assumed from code.
+### Blockers resolved today
+- ✅ `palette_versions.builder_specs` migrated — version writes work again
+  (verified end-to-end, including a real `builder_specs` write).
+- ✅ Anonymous sign-ins enabled — verified issuing sessions.
 
----
+### Blocker still open — needs one run from you
+- 🔴 **`supabase/policies.sql`** — the live database has RLS on but is missing
+  the `projects_insert` policy, so every anonymous visitor hits
+  `new row violates row-level security policy for table "projects"` the moment
+  `/studio` provisions their project. **The zero-signup-wall promise is still
+  broken until this runs.**
 
-## 🔴 Blocking right now — two configuration gaps, no code involved
-
-Both are things only you can do (Supabase dashboard / SQL editor). Both are
-currently breaking shipped features, and neither is visible from the codebase —
-they were found by probing the live database.
-
-### P0-1 · `palette_versions.builder_specs` does not exist in the live database
-
-`schema.sql` gained this column on 2026-07-28 when `/builder` learned to save
-its `ScaleSpec[]`, but **the migration was never run against the live project.**
-
-`createVersion()` inserts `builder_specs` unconditionally
-([palettes.ts:180](src/lib/supabase/palettes.ts)), so PostgREST rejects the whole
-insert. This is not "specs silently don't persist" — it is a hard failure of
-*every version write*, which breaks three separate surfaces:
-
-- saving a palette from **`/builder`**
-- **`/studio`** image-drop → palette extraction (`createImageAction` →
-  `initializePalette` → `createVersion`)
-- version commits on **`/palettes`**
-
-**Fix:** run `supabase/schema.sql` in the Supabase SQL editor. Idempotent.
-
-### P0-2 · Anonymous sign-ins are disabled on the project
-
-`middleware.ts` calls `signInAnonymously()` for every visitor without a session.
-The live project rejects it: `Anonymous sign-ins are disabled (422)`.
-
-Effect: **every visitor hits the login wall.** The core "browse and collect with
-zero signup wall" promise — built and shipped as task #43 — is dead in
-production. This is also what blocked live verification of `/studio` during its
-build.
-
-**Fix:** Supabase dashboard → Authentication → Providers → enable Anonymous
-sign-ins. Likely reset when the project was paused.
-
-> **Do these two first.** Until then `/studio` cannot be verified end-to-end and
-> `/builder` cannot save.
+  Root cause, worth recording: `enable-rls.sql` opens with a one-time bootstrap
+  that `raise exception`s unless exactly one profile exists. Correct guard —
+  but it means that past the first user the file cannot be run at all, because
+  the exception aborts the script before any policy statement executes. The
+  policies then drift from the repo with nothing able to re-apply them.
+  `policies.sql` is the policy layer alone: idempotent, no bootstrap, safe at
+  any user count.
 
 ---
 
-## The 5-tab model — status
+## The critical path
 
-| # | Tab | Route | State | Spec |
-|---|---|---|---|---|
-| 01 | Library | `/library` | ✅ V1 shipped | (consumed) |
-| 02 | Builder | `/builder` | ✅ V1 shipped | `Tab 02.md` |
-| 03 | Studio | `/studio` | ✅ V1 shipped, **unverified live** | `Tab 03.md` |
-| 04 | Visualizer | `/visualizer` | ❌ not started | `Tab 04.md` |
-| 05 | Typography | `/typography` | ❌ not started | `Tab 05.md` |
+Ruthlessly ordered by what compounds. Steps 1–4 are, I'd argue, worth more than
+Tabs 04 and 05 combined.
 
-Tab specs 02–05 live on the Desktop, not in the repo — **they should move into
-`docs/`** so they are version-controlled with the code they describe.
+### 0 · Unblock — minutes
+Run `supabase/policies.sql`. Then I finish the live `/studio` pass that has
+never happened: pan/zoom, snap + image docking, resize persistence, auto-format
++ undo, PNG export, glow performance on a populated board, and the read-only
+share page.
+
+### 1 · Deploy 🔴 highest leverage item in this document
+Vercel import + env secrets. **Nothing else on this list compounds until there
+is a URL.** Every day undeployed is a day the growth loops (share links, PNG
+watermarks, "try it") produce exactly zero.
+
+### 2 · Decide the licence
+See above. It determines whether steps 3–5 are worth doing at full intensity.
+
+### 3 · Make the README world-class
+The single highest-ROI artefact for GitHub growth.
+- A demo GIF above the fold — the globe assembling, or a palette dragged onto a
+  board. This is what makes someone stop scrolling.
+- Fix the stale tab names (`Spectrum`/`Scale Lab` → `Library`/`Builder`).
+- Lead with the genuinely rare thing: **16.7M colours computed arithmetically,
+  not stored.** That's the hook, and right now it's buried.
+- Live demo link, badges, contribution pointers.
+
+### 4 · Finish the landing page
+It stops dead after the globe. The unbuilt sections include the
+**open-source credibility strip** (live star count, licence badge, contributor
+avatars) — which is precisely the section that converts visitors into
+stargazers.
+
+### 5 · Then Tab 04 `/visualizer`
+Completes the palette → UI → audit → export loop, the most defensible product
+story. `/studio` already deferred its live-UI-preview nodes here, so it has a
+dependency waiting.
+
+### 6 · Tab 05 `/typography`
+The `queryLocalFonts()` approach is elegant — $0 hosting, zero copyright
+exposure. Worth building, but it is the fifth-most-important thing here, not
+the next thing.
+
+### 7 · The V2 audit
+The consolidated cross-tab pass, once all five V1s exist:
+- **Shared `<TabNav>` shell.** Navigation is hand-rolled four times with four
+  different link sets; no tab links to all five, and Tabs 04/05 have nowhere to
+  appear. This violates the locked "shell stays structurally constant" decision.
+- **`/merge`** — orphaned, zero inbound links, unreachable, still ships 129 kB.
+- **`/palettes` and `/assets`** — pre-tab-era surfaces, conceptually homeless.
+- **`/spectrum`, `/scale-lab`** — redirect stubs; keep or drop before launch.
+- Accessibility, performance, visual consistency across tabs.
 
 ---
 
-## What to change, edit, remove, add
+## An argument for doing fewer things better
 
-### Remove
+The instinct will be to finish all five tabs before launching. I'd push back.
 
-- **`/merge`** — orphaned. Zero inbound links from anywhere in the app; it ships
-  in the production bundle (129 kB) and no user can reach it. The three-way
-  merge machinery underneath is sound and worth keeping in `lib/`; the *route*
-  is dead surface. Either wire it into the history UI deliberately or delete the
-  page.
-- **`/spectrum` and `/scale-lab`** — permanent-redirect stubs to `/library` and
-  `/builder`. Correct to have kept during the transition; worth a decision on
-  whether they stay forever as link-rot insurance or get dropped before launch.
+Right now you have **three tabs that are genuinely good and one hard technical
+differentiator nobody else has.** Shipping that, live, with a world-class README
+and a working demo, is a stronger position than five tabs nobody can reach.
 
-### Change
+Tabs 04 and 05 are also the two most likely to feel thin on a first pass —
+`/visualizer` needs bespoke, pixel-perfect UI templates, and `/typography` needs
+real type craft. Rushing them to say "five of five" is exactly how a product
+ends up broad and average instead of narrow and world-class.
 
-- **Navigation is hand-rolled four times with four different link sets.**
-  `/studio` links to builder·library·palettes·assets; `/builder` links to
-  studio·library·palettes; `/library` links to studio·builder·assets; `/assets`
-  links to four more. **No tab links to all five tabs**, and Tabs 04/05 have
-  nowhere to appear. This directly violates the locked "shell stays structurally
-  constant" decision. → **Extract one shared `<TabNav>` shell component** driven
-  by a single route manifest.
-- **`/palettes` and `/assets` are pre-tab-era surfaces** that never got folded
-  into the 5-tab model. They are reachable, functional, and conceptually
-  homeless. → Needs a product call (see below).
-
-### Add
-
-- **Tab 04 `/visualizer`** — live UI component templates, contrast auto-fix, CVD
-  simulation, Tailwind v4 / shadcn export. Note `/studio` deliberately deferred
-  its "live UI preview nodes" here, so this tab already has a dependency waiting
-  on it.
-- **Tab 05 `/typography`** — font ingestion (local `queryLocalFonts()` + Google +
-  Fontshare), variable-axis controls, optical legibility audit, fluid `clamp()`
-  generator, specimen export.
-- **Deployment.** Nothing is live. Vercel import + env secrets is a manual step
-  that has been outstanding since v3.
-
----
-
-## Sequencing — what I'd do, in order
-
-1. **Unblock** — P0-1 and P0-2 above. Minutes of work, currently breaking
-   shipped features.
-2. **Verify Tab 03 live** — the full `/studio` pass that was blocked: pan/zoom
-   feel, snap + image docking, resize persistence, auto-format + undo, PNG
-   export, glow performance on a populated board, and the read-only share page.
-   This is the one piece of V1 never confirmed against a browser.
-3. **Build Tab 04 `/visualizer`** — completes the palette → UI → audit → export
-   loop, which is the product's most defensible story.
-4. **Build Tab 05 `/typography`**.
-5. **V2 audit pass** — the consolidated cross-tab review that was always the plan
-   after all five V1s land. Shared nav shell, `/palettes` + `/assets` resolution,
-   `/merge` decision, visual consistency, accessibility, performance.
-6. **Deploy.**
-
-The alternative sequencing — V2-audit Tabs 01–03 *before* building 04/05 — costs
-a second audit pass later, because Tabs 04 and 05 will surface their own shell
-and consistency problems. Finishing all five V1s first, then auditing once, is
-what the original plan assumed and I still think it is right.
+**Ship three, be excellent, then expand in public** — where each new tab is its
+own launch moment rather than one big anticlimactic reveal.
 
 ---
 
 ## Needs your call
 
-These change what gets built and I would rather not pick silently.
-
-1. **`/palettes` and `/assets`** — fold them into the five tabs (e.g. palettes
-   becomes a Library view, assets becomes a Studio panel), keep them as
-   secondary routes outside the tab model, or retire them?
-2. **`/merge`** — wire into a real history UI, or delete the route?
-3. **Open-source vs hosted service** *(carried unresolved from v3)* — self-host
-   only, a free hosted instance you run, or both? This shapes the auth model,
-   rate limiting, abuse handling, and how the Gemini vibe-search key is handled.
-4. **Spectrum/Library ordering** *(carried unresolved from v3)* — hue-major is
-   the only implemented ordering and reads as a colour-professional's mental
-   model, not a browsing-for-inspiration one. Multiple orderings are cheap
-   (one integer column each) but need direction on *which*.
+1. **Licence** — split MIT engine / protected app (recommended), AGPL, or keep
+   PolyForm NC and retire the top-100 goal?
+2. **Launch timing** — ship at three tabs (recommended) or hold for five?
+3. **`/palettes` and `/assets`** — fold into the tab model, keep as secondary
+   routes, or retire?
+4. **`/merge`** — wire into a real history UI, or delete the route?
+5. **Hosted vs self-host** *(carried unresolved since v3)* — shapes auth, rate
+   limiting, abuse handling, and how the Gemini vibe-search key is managed.
+6. **Library/Spectrum ordering** *(carried since v3)* — hue-major is the only
+   implemented ordering and reads as a colour-professional's model, not a
+   browsing-for-inspiration one. More orderings are cheap; which ones?
 
 ---
 
-## Carried forward from v3 — still true, still open
+## Known scaling consideration, flagged not solved
 
-- **Bulk font upload** needs a real licensing answer before it gets built, not
-  just code. Tab 05's `queryLocalFonts()` approach sidesteps this neatly for the
-  local-fonts case ($0 hosting, zero copyright exposure) but does not answer the
-  question for uploaded fonts.
-- **The landing page** stops deliberately after the globe set piece. Sections
-  3–6 of the brief (feature bento, open-source credibility strip, scrollytelling
-  deep-dive, closing CTA) remain unbuilt. The credibility strip is the one that
-  actually matters for the 10k-star goal.
-- **`sharing.sql` re-run** for the one-active-share-per-project partial unique
-  index. `board_shares` and `brand_assets` are both confirmed present live; this
-  index is the remaining unverified detail.
+Every anonymous visitor now gets a real session, and `/studio` provisions a
+`projects` + `project_members` row per visitor on first view — permanently. At
+10 known users, irrelevant. At launch traffic, it is an unbounded write vector
+for any crawler. Options when it matters: provision lazily on first *write*,
+reap empty anonymous projects after N days, or gate `/studio` behind a real
+account while `/library` and `/builder` stay open. Documented in
+`supabase/policies.sql` so it stays a decision rather than a surprise.
 
 ---
 
 ## Verification standard
 
-Every tab is built the same way: pure logic extracted into `lib/` with unit
-tests, UI verified live in a browser, `tsc` clean, full suite green, production
-build clean before it is called done.
+Pure logic in `lib/` with unit tests · UI verified live in a browser · `tsc`
+clean · full suite green · production build clean, before anything is called
+done.
 
-**Tab 03 is currently the exception** — it has 500-test coverage and a clean
-build, but its live browser pass never happened because the database was
-unreachable. That is step 2 above, and it should close before Tab 04 starts.
+**`/studio` is the one current exception** — 500-test coverage and a clean
+build, but its live browser pass has never run because the database was
+unreachable, then misconfigured. Step 0 closes that.
