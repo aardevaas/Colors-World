@@ -733,10 +733,15 @@
 
 /* ── Auto-Format undo banner ──────────────────────────────── */
 
+/* Sits ABOVE the add-card toolbar, not level with it. Centred at 50% while
+   the toolbar runs to the right edge, the two overlapped by ~229px — which
+   both hid the Undo button behind the toolbar and let a click aimed at Undo
+   land on "+ gradient" instead, silently creating a card. Measured, not
+   guessed: the collision was confirmed live before this was changed. */
 .undoBanner {
   position: fixed;
   left: 50%;
-  bottom: var(--space-wide);
+  bottom: calc(var(--space-wide) + 3.5rem);
   transform: translateX(-50%);
   display: flex;
   align-items: center;

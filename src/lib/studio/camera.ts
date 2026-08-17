@@ -169,23 +169,41 @@ export function interpolateCamera(from: CameraState, to: CameraState, t: number)
 const FRAME_PADDING_RATIO = 0.1;
 
 /**
+ * The most a "fit these rects" operation should ever magnify. Distinct from
+ * MAX_ZOOM, which is the ceiling for *deliberate* zooming: fitting two small
+ * cards into a large viewport mathematically wants 400%, which renders a
+ * 240px note card two feet wide and reads as broken rather than helpful.
+ * Callers pass what makes sense for the gesture — 1 for fit-all (never
+ * magnify past natural size), a little more for focusing a single card.
+ */
+export const FIT_MAX_ZOOM = 1;
+
+/**
  * Solves for the camera that frames every given rect with comfortable
  * padding — the target state for Shift+0 / "fit all". Falls back to
  * framing the whole world when there's nothing to frame, rather than
  * leaving the camera wherever it happened to be.
+ *
+ * `maxZoom` caps magnification for this particular framing; it cannot exceed
+ * the global MAX_ZOOM ceiling regardless of what is passed.
  */
 export function cameraToFrame(
   rects: readonly Rect[],
   viewport: Viewport,
-  bounds: WorldBounds = WORLD_BOUNDS
+  bounds: WorldBounds = WORLD_BOUNDS,
+  maxZoom: number = MAX_ZOOM
 ): CameraState {
+  const ceiling = Math.min(maxZoom, MAX_ZOOM);
   if (rects.length === 0) {
     const worldWidth = bounds.maxX - bounds.minX;
     const worldHeight = bounds.maxY - bounds.minY;
     return {
       x: (bounds.minX + bounds.maxX) / 2,
       y: (bounds.minY + bounds.maxY) / 2,
-      zoom: clampZoom(Math.min(viewport.width / worldWidth, viewport.height / worldHeight)),
+      zoom: Math.min(
+        ceiling,
+        clampZoom(Math.min(viewport.width / worldWidth, viewport.height / worldHeight))
+      ),
     };
   }
 
@@ -203,8 +221,11 @@ export function cameraToFrame(
   const paddedWidth = (maxX - minX) * (1 + FRAME_PADDING_RATIO * 2);
   const paddedHeight = (maxY - minY) * (1 + FRAME_PADDING_RATIO * 2);
 
-  const zoom = clampZoom(
-    Math.min(viewport.width / Math.max(1, paddedWidth), viewport.height / Math.max(1, paddedHeight))
+  const zoom = Math.min(
+    ceiling,
+    clampZoom(
+      Math.min(viewport.width / Math.max(1, paddedWidth), viewport.height / Math.max(1, paddedHeight))
+    )
   );
 
   return { x: (minX + maxX) / 2, y: (minY + maxY) / 2, zoom };

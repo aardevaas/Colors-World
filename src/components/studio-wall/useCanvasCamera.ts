@@ -7,6 +7,8 @@ import {
   clampCameraToBounds,
   interpolateCamera,
   zoomAtPoint,
+  FIT_MAX_ZOOM,
+  WORLD_BOUNDS,
   type CameraState,
   type Rect,
   type Viewport,
@@ -31,8 +33,10 @@ export interface UseCanvasCameraResult {
   readonly handleBackgroundPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
   /** Animated fly-to that frames every given rect with padding — used for
    *  "fit all" (Shift+0, the zoom readout's reset button) and focus zoom on
-   *  a single card (frame a one-rect array to zoom in tight on it). */
-  readonly frameRects: (rects: readonly Rect[]) => void;
+   *  a single card (frame a one-rect array to zoom in tight on it).
+   *  `maxZoom` caps magnification for this framing; defaults to never
+   *  magnifying past natural size. */
+  readonly frameRects: (rects: readonly Rect[], maxZoom?: number) => void;
   /** Animated fly-to a specific world point at the camera's current zoom —
    *  what a minimap click navigates with, as opposed to frameRects's
    *  content-fitting zoom change. */
@@ -88,7 +92,10 @@ export function useCanvasCamera(initialRects: readonly Rect[]): UseCanvasCameraR
     if (viewportSize.width === 0 || viewportSize.height === 0) return;
     hasAutoFramedRef.current = true;
     if (initialRectsRef.current.length > 0) {
-      setCamera(cameraToFrame(initialRectsRef.current, viewportSize));
+      // Same FIT_MAX_ZOOM ceiling frameRects applies — this path bypasses it
+      // by calling cameraToFrame directly, so it has to opt in explicitly or
+      // a board with two small cards opens at 400%.
+      setCamera(cameraToFrame(initialRectsRef.current, viewportSize, WORLD_BOUNDS, FIT_MAX_ZOOM));
     }
   }, [viewportSize]);
 
@@ -186,9 +193,9 @@ export function useCanvasCamera(initialRects: readonly Rect[]): UseCanvasCameraR
     if (clamped.x !== raw.x || clamped.y !== raw.y) springCameraTo(clamped);
   }
 
-  function frameRects(rects: readonly Rect[]): void {
+  function frameRects(rects: readonly Rect[], maxZoom: number = FIT_MAX_ZOOM): void {
     if (viewportSizeRef.current.width === 0 || viewportSizeRef.current.height === 0) return;
-    springCameraTo(cameraToFrame(rects, viewportSizeRef.current));
+    springCameraTo(cameraToFrame(rects, viewportSizeRef.current, WORLD_BOUNDS, maxZoom));
   }
 
   function flyTo(worldX: number, worldY: number): void {

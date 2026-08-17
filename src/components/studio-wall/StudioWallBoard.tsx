@@ -97,6 +97,9 @@ const GLOW_FULL_ZOOM = 0.8;
  *  displays without the file size exploding the way 3x+ would. */
 const EXPORT_DPR = 2;
 
+/** Double-click focus may magnify past 1:1, but well short of MAX_ZOOM. */
+const FOCUS_MAX_ZOOM = 1.75;
+
 interface UndoSnapshotEntry {
   readonly id: string;
   readonly x: number;
@@ -582,7 +585,10 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
 
   function handleCardDoubleClick(card: BoardCard) {
     setFocusedCardId(card.id);
-    frameRects([card]);
+    // Focusing one card is a deliberate "look closer" gesture, so it may
+    // magnify past natural size — but not to the 400% ceiling, which turns a
+    // 240px note into a wall of text.
+    frameRects([card], FOCUS_MAX_ZOOM);
   }
 
   function handleBackgroundDoubleClick() {

@@ -7,6 +7,7 @@ import {
   screenToWorld,
   worldToScreen,
   zoomAtPoint,
+  FIT_MAX_ZOOM,
   MAX_ZOOM,
   MIN_ZOOM,
   WORLD_BOUNDS,
@@ -193,5 +194,39 @@ describe('cameraToFrame', () => {
     expect(tiny.zoom).toBeLessThanOrEqual(MAX_ZOOM);
     const huge = cameraToFrame([{ x: 0, y: 0, width: 100_000, height: 100_000 }], VIEWPORT);
     expect(huge.zoom).toBeGreaterThanOrEqual(MIN_ZOOM);
+  });
+
+  it('honours a per-call maxZoom cap instead of magnifying to MAX_ZOOM', () => {
+    // A single small card in a large viewport mathematically wants ~4x.
+    const rect = { x: 0, y: 0, width: 240, height: 180 };
+    const uncapped = cameraToFrame([rect], VIEWPORT);
+    expect(uncapped.zoom).toBeGreaterThan(1);
+
+    const capped = cameraToFrame([rect], VIEWPORT, WORLD_BOUNDS, FIT_MAX_ZOOM);
+    expect(capped.zoom).toBe(FIT_MAX_ZOOM);
+    // Centring must be unaffected by the cap.
+    expect(capped.x).toBeCloseTo(uncapped.x, 6);
+    expect(capped.y).toBeCloseTo(uncapped.y, 6);
+  });
+
+  it('still shrinks below the cap when content is larger than the viewport', () => {
+    // The cap is a ceiling, not a floor — big content must still zoom out.
+    const framed = cameraToFrame(
+      [{ x: 0, y: 0, width: 6000, height: 4000 }],
+      VIEWPORT,
+      WORLD_BOUNDS,
+      FIT_MAX_ZOOM
+    );
+    expect(framed.zoom).toBeLessThan(FIT_MAX_ZOOM);
+  });
+
+  it('never lets maxZoom exceed the global MAX_ZOOM ceiling', () => {
+    const framed = cameraToFrame(
+      [{ x: 0, y: 0, width: 1, height: 1 }],
+      VIEWPORT,
+      WORLD_BOUNDS,
+      999
+    );
+    expect(framed.zoom).toBeLessThanOrEqual(MAX_ZOOM);
   });
 });
