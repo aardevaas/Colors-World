@@ -87,9 +87,29 @@ create policy profiles_update_self on profiles
 -- means at scale.
 -- ============================================================================
 
+-- `owner_id = auth.uid()` is not redundant with is_project_member() — it is
+-- load-bearing in two places, both of which broke live on 2026-08-17 when it
+-- was missing:
+--
+--   1. Creating a project. `insert(...).select()` compiles to
+--      `INSERT ... RETURNING`, and the returned row is checked against this
+--      SELECT policy. At that instant the creator has no membership row yet
+--      (it is inserted by the following statement), so a membership-only
+--      policy rejects the read-back and a successful insert surfaces as
+--      `new row violates row-level security policy`.
+--
+--   2. Adding the owner's own membership row. `project_members_insert` below
+--      contains `select 1 from projects where ... owner_id = auth.uid()`, and
+--      that subquery is itself subject to *this* policy. With a
+--      membership-only rule it returns zero rows — the project is invisible to
+--      the very check that would make its owner a member — so project creation
+--      deadlocks one statement later.
+--
+-- Semantically it is also just correct: an owner should always be able to see
+-- their own project, including if its membership row is ever lost.
 drop policy if exists projects_select on projects;
 create policy projects_select on projects
-  for select using (is_project_member(id));
+  for select using (owner_id = auth.uid() or is_project_member(id));
 
 drop policy if exists projects_insert on projects;
 create policy projects_insert on projects
