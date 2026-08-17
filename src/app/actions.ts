@@ -8,6 +8,7 @@ import {
   listBoardItems,
   nextBoardPosition,
   updateBoardItemPosition,
+  updateBoardItemSize,
   updateItemContent,
   updateNoteContent,
   type BoardItemRecord,
@@ -95,10 +96,16 @@ export async function moveItemAction(
   id: string,
   x: number,
   y: number,
-  zIndex: number
+  zIndex: number,
+  rotation?: number
 ): Promise<void> {
   const { supabase } = await requireUserId();
-  await updateBoardItemPosition(id, { x, y, zIndex }, supabase);
+  await updateBoardItemPosition(id, { x, y, zIndex, rotation }, supabase);
+}
+
+export async function resizeItemAction(id: string, width: number, height: number): Promise<void> {
+  const { supabase } = await requireUserId();
+  await updateBoardItemSize(id, { width, height }, supabase);
 }
 
 export async function updateNoteAction(id: string, text: string): Promise<void> {
@@ -224,7 +231,10 @@ export async function createImageAction(formData: FormData): Promise<CreateImage
     {
       projectId,
       itemType: 'image',
-      content: { path },
+      // colors travel with the image itself (not just the companion palette
+      // below) so the extracted-colour pins overlaid on the image card
+      // survive a reload, not just the session that uploaded it.
+      content: { path, colors },
       width: 220,
       height: 220,
       ...nextBoardPosition(existingItems.length),

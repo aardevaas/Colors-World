@@ -70,10 +70,13 @@ export async function hydrateBoardCard(
     if (path === null) {
       return { ...base, kind: 'note', text: '⚠ image reference is missing' };
     }
+    const colors = Array.isArray(item.content?.colors)
+      ? (item.content.colors as unknown[]).filter((c): c is string => typeof c === 'string')
+      : [];
     const { data: signed } = await supabase.storage
       .from(BOARD_ASSETS_BUCKET)
       .createSignedUrl(path, IMAGE_SIGNED_URL_TTL_SECONDS);
-    return { ...base, kind: 'image', path, url: signed?.signedUrl ?? null };
+    return { ...base, kind: 'image', path, url: signed?.signedUrl ?? null, colors };
   }
 
   // item.itemType === 'palette' — refId is only ever null for the other item types.

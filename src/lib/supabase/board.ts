@@ -123,12 +123,13 @@ export async function createBoardItem(
 
 export async function updateBoardItemPosition(
   id: string,
-  position: { x: number; y: number; zIndex?: number },
+  position: { x: number; y: number; zIndex?: number; rotation?: number },
   client?: SupabaseClient
 ): Promise<BoardItemRecord> {
   const supabase = client ?? getSupabaseClient();
   const update: Record<string, unknown> = { x: position.x, y: position.y };
   if (position.zIndex !== undefined) update.z_index = position.zIndex;
+  if (position.rotation !== undefined) update.rotation = position.rotation;
 
   const { data, error } = await supabase
     .from('board_items')
@@ -138,6 +139,26 @@ export async function updateBoardItemPosition(
     .single<BoardItemRow>();
 
   if (error) throw new Error(`Failed to update board item position: ${error.message}`);
+  return mapBoardItemRow(data);
+}
+
+/** Persists a resize — the width/height columns already exist on every item
+ *  (set once at creation), but nothing wrote to them again until the corner-
+ *  resize handles needed somewhere to save to. */
+export async function updateBoardItemSize(
+  id: string,
+  size: { width: number; height: number },
+  client?: SupabaseClient
+): Promise<BoardItemRecord> {
+  const supabase = client ?? getSupabaseClient();
+  const { data, error } = await supabase
+    .from('board_items')
+    .update({ width: size.width, height: size.height })
+    .eq('id', id)
+    .select()
+    .single<BoardItemRow>();
+
+  if (error) throw new Error(`Failed to update board item size: ${error.message}`);
   return mapBoardItemRow(data);
 }
 

@@ -4,6 +4,7 @@ import {
   deleteBoardItem,
   listBoardItems,
   updateBoardItemPosition,
+  updateBoardItemSize,
   updateItemContent,
   updateNoteContent,
 } from '../board';
@@ -64,6 +65,44 @@ describe('updateBoardItemPosition', () => {
     const moved = await updateBoardItemPosition(item.id, { x: 50, y: 75 }, client);
     expect(moved.x).toBe(50);
     expect(moved.y).toBe(75);
+  });
+
+  test('leaves rotation untouched when not provided', async () => {
+    const client = createFakeSupabaseClient();
+    const item = await createBoardItem(
+      { projectId: PROJECT_ID, itemType: 'note', x: 0, y: 0, rotation: 5 },
+      client
+    );
+
+    const moved = await updateBoardItemPosition(item.id, { x: 50, y: 75 }, client);
+    expect(moved.rotation).toBe(5);
+  });
+
+  test('writes rotation when provided — the hybrid snap-to-0 interaction depends on this', async () => {
+    const client = createFakeSupabaseClient();
+    const item = await createBoardItem(
+      { projectId: PROJECT_ID, itemType: 'note', x: 0, y: 0, rotation: 5 },
+      client
+    );
+
+    const moved = await updateBoardItemPosition(item.id, { x: 50, y: 75, rotation: 0 }, client);
+    expect(moved.rotation).toBe(0);
+  });
+});
+
+describe('updateBoardItemSize', () => {
+  test('resizes an item and leaves its position untouched', async () => {
+    const client = createFakeSupabaseClient();
+    const item = await createBoardItem(
+      { projectId: PROJECT_ID, itemType: 'note', x: 10, y: 20, width: 240, height: 180 },
+      client
+    );
+
+    const resized = await updateBoardItemSize(item.id, { width: 400, height: 300 }, client);
+    expect(resized.width).toBe(400);
+    expect(resized.height).toBe(300);
+    expect(resized.x).toBe(10);
+    expect(resized.y).toBe(20);
   });
 });
 

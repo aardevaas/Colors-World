@@ -17,6 +17,8 @@ import {
   createTypePairingAction,
   deleteItemAction,
   moveItemAction,
+  pinColorAction,
+  resizeItemAction,
   updateGradientAction,
   updateNoteAction,
   updateTypePairingAction,
@@ -29,6 +31,12 @@ import {
   findFontPair,
   fontPairStylesheetUrl,
 } from '@/lib/typography/font-pairs';
+import { findSnap, type AlignmentGuide, type SnapCandidate } from '@/lib/studio/snapping';
+import { autoArrange } from '@/lib/studio/auto-arrange';
+import { computeExportBounds, compositeWatermark, downloadDataUrl } from '@/lib/studio/export-png';
+import { useDock } from '@/lib/dock/dock-context';
+import { useCanvasCamera } from './useCanvasCamera';
+import { Minimap } from './Minimap';
 import styles from './studio-wall.module.css';
 
 const injectedFontStylesheets = new Set<string>();
@@ -60,7 +68,7 @@ export type BoardCard =
   | (BoardCardBase & { kind: 'note'; text: string })
   | (BoardCardBase & { kind: 'palette'; paletteId: string; name: string; swatches: string[] })
   | (BoardCardBase & { kind: 'gradient'; colors: string[] })
-  | (BoardCardBase & { kind: 'image'; path: string; url: string | null })
+  | (BoardCardBase & { kind: 'image'; path: string; url: string | null; colors: string[] })
   | (BoardCardBase & { kind: 'color'; hex: string; name: string | null })
   | (BoardCardBase & { kind: 'link'; url: string; title: string })
   | (BoardCardBase & { kind: 'type-pairing'; pairId: string });
@@ -73,6 +81,28 @@ interface StudioWallBoardProps {
 
 const NOTE_SAVE_DEBOUNCE_MS = 600;
 const DEFAULT_GRADIENT_COLORS = ['#7c5cff', '#ffb454'];
+const MIN_CARD_WIDTH = 120;
+const MIN_CARD_HEIGHT = 90;
+const AUTO_FORMAT_STAGGER_MS = 40;
+const UNDO_WINDOW_MS = 10_000;
+
+// Ambient glow fades out as the camera zooms out — with many cards on
+// screen at once its render cost isn't free, and at a distance it just
+// reads as noise anyway. Below GLOW_MIN_ZOOM it's fully off; at or above
+// GLOW_FULL_ZOOM it's fully on; linear in between.
+const GLOW_MIN_ZOOM = 0.3;
+const GLOW_FULL_ZOOM = 0.8;
+
+/** High-DPI multiplier for PNG export — 2x renders crisp on retina/4K
+ *  displays without the file size exploding the way 3x+ would. */
+const EXPORT_DPR = 2;
+
+interface UndoSnapshotEntry {
+  readonly id: string;
+  readonly x: number;
+  readonly y: number;
+  readonly rotation: number;
+}
 
 /** How close two cards' edges need to get, in canvas px, before their
  * contrast/distance reads out — near-touching, not merely on-screen together. */
@@ -85,6 +115,15 @@ interface ActiveDrag {
   readonly startY: number;
   readonly originX: number;
   readonly originY: number;
+}
+
+interface ActiveResize {
+  readonly id: string;
+  readonly pointerId: number;
+  readonly startX: number;
+  readonly startY: number;
+  readonly originWidth: number;
+  readonly originHeight: number;
 }
 
 interface ProximityReadout {
@@ -100,6 +139,21 @@ function representativeHex(card: BoardCard): string | null {
   if (card.kind === 'gradient') return card.colors[0] ?? null;
   if (card.kind === 'color') return card.hex;
   return null;
+}
+
+/** Shapes a card for lib/studio/snapping.ts, which only needs to know the
+ *  rect and the two kind-flags a snap decision actually turns on — decoupled
+ *  from the full BoardCard union on purpose (see snapping.ts's own header). */
+function toSnapCandidate(card: BoardCard): SnapCandidate {
+  return {
+    id: card.id,
+    x: card.x,
+    y: card.y,
+    width: card.width,
+    height: card.height,
+    isColorBearing: representativeHex(card) !== null,
+    isImage: card.kind === 'image',
+  };
 }
 
 /** Gap between two axis-aligned rects, 0 when they overlap or touch. */
@@ -121,15 +175,42 @@ function rectGap(
 export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBoardProps) {
   const [cards, setCards] = useState<BoardCard[]>([...initialCards]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [resizingId, setResizingId] = useState<string | null>(null);
   const [proximity, setProximity] = useState<ProximityReadout | null>(null);
+  const [guides, setGuides] = useState<readonly AlignmentGuide[]>([]);
   const [addingLink, setAddingLink] = useState(false);
   const [linkDraft, setLinkDraft] = useState('');
+  const [undoSnapshot, setUndoSnapshot] = useState<readonly UndoSnapshotEntry[] | null>(null);
+  const [openPin, setOpenPin] = useState<{ cardId: string; index: number } | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const { addToDock } = useDock();
   const maxZRef = useRef(initialCards.reduce((max, c) => Math.max(max, c.zIndex), 0));
   const dragRef = useRef<ActiveDrag | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Precomputed once at drag start — the other cards don't move mid-drag, so
+  // there's no reason to re-filter/re-map cards on every pointermove tick.
+  const dragCandidatesRef = useRef<readonly SnapCandidate[]>([]);
+  const resizeRef = useRef<ActiveResize | null>(null);
   const cardsRef = useRef(cards);
   const noteSaveTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const gradientSaveTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const worldLayerRef = useRef<HTMLDivElement>(null);
+
+  const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
+
+  const {
+    camera,
+    viewportSize,
+    viewportRef,
+    worldTransform,
+    isPanning,
+    handleBackgroundPointerDown,
+    handleBackgroundPointerMove,
+    handleBackgroundPointerUp,
+    frameRects,
+    flyTo,
+  } = useCanvasCamera(initialCards);
 
   useEffect(() => {
     cardsRef.current = cards;
@@ -144,6 +225,29 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(
+    () => () => {
+      if (undoTimerRef.current !== null) clearTimeout(undoTimerRef.current);
+    },
+    []
+  );
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.shiftKey && event.key === '0') {
+        event.preventDefault();
+        frameRects(cardsRef.current);
+        setFocusedCardId(null);
+      }
+      if (event.key === 'Escape' && focusedCardId !== null) {
+        setFocusedCardId(null);
+        frameRects(cardsRef.current);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [frameRects, focusedCardId]);
+
   function bringToFront(id: string): void {
     maxZRef.current += 1;
     const z = maxZRef.current;
@@ -151,6 +255,7 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>, card: BoardCard) {
+    event.stopPropagation(); // don't also start a background camera pan
     event.currentTarget.setPointerCapture(event.pointerId);
     bringToFront(card.id);
     setDraggingId(card.id);
@@ -162,6 +267,7 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
       originX: card.x,
       originY: card.y,
     };
+    dragCandidatesRef.current = cardsRef.current.filter((c) => c.id !== card.id).map(toSnapCandidate);
   }
 
   /**
@@ -177,11 +283,16 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
       return;
     }
 
+    // Authored as a screen-space threshold, converted to world units by the
+    // current zoom — otherwise "close" would mean something different at
+    // every zoom level, matching the same pattern lib/studio/snapping.ts uses.
+    const thresholdWorld = PROXIMITY_THRESHOLD_PX / camera.zoom;
+
     let nearest: { card: BoardCard; gap: number } | null = null;
     for (const other of others) {
       if (representativeHex(other) === null) continue;
       const gap = rectGap(dragged, other);
-      if (gap <= PROXIMITY_THRESHOLD_PX && (nearest === null || gap < nearest.gap)) {
+      if (gap <= thresholdWorld && (nearest === null || gap < nearest.gap)) {
         nearest = { card: other, gap };
       }
     }
@@ -206,15 +317,35 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
     const drag = dragRef.current;
     if (drag === null || drag.pointerId !== event.pointerId) return;
-    const nextX = drag.originX + (event.clientX - drag.startX);
-    const nextY = drag.originY + (event.clientY - drag.startY);
-    setCards((prev) => prev.map((c) => (c.id === drag.id ? { ...c, x: nextX, y: nextY } : c)));
+    // Screen-space pointer delta -> world-space card delta: at zoom 2 the
+    // cursor moves twice as many screen px as the card should move in world
+    // units, so without this the card would drift away from the cursor at
+    // any zoom other than 1.
+    const rawX = drag.originX + (event.clientX - drag.startX) / camera.zoom;
+    const rawY = drag.originY + (event.clientY - drag.startY) / camera.zoom;
 
     const draggedBase = cardsRef.current.find((c) => c.id === drag.id);
-    if (draggedBase !== undefined) {
-      const others = cardsRef.current.filter((c) => c.id !== drag.id);
-      updateProximity({ ...draggedBase, x: nextX, y: nextY }, others);
-    }
+    if (draggedBase === undefined) return;
+
+    const snap = findSnap(
+      { ...toSnapCandidate(draggedBase), x: rawX, y: rawY },
+      dragCandidatesRef.current,
+      camera.zoom
+    );
+    const nextX = snap.x;
+    const nextY = snap.y;
+    setGuides(snap.guides);
+
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === drag.id
+          ? { ...c, x: nextX, y: nextY, rotation: snap.snapped ? 0 : c.rotation }
+          : c
+      )
+    );
+
+    const others = cardsRef.current.filter((c) => c.id !== drag.id);
+    updateProximity({ ...draggedBase, x: nextX, y: nextY }, others);
   }
 
   function handlePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
@@ -223,10 +354,55 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
     dragRef.current = null;
     setDraggingId(null);
     setProximity(null);
+    setGuides([]);
 
     const card = cards.find((c) => c.id === drag.id);
     if (card !== undefined) {
-      void moveItemAction(card.id, card.x, card.y, card.zIndex);
+      void moveItemAction(card.id, card.x, card.y, card.zIndex, card.rotation);
+    }
+  }
+
+  function handleResizePointerDown(event: ReactPointerEvent<HTMLDivElement>, card: BoardCard) {
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setResizingId(card.id);
+    resizeRef.current = {
+      id: card.id,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originWidth: card.width,
+      originHeight: card.height,
+    };
+  }
+
+  function handleResizePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const resize = resizeRef.current;
+    if (resize === null || resize.pointerId !== event.pointerId) return;
+    // Same screen-delta / zoom conversion as card dragging — a corner grip
+    // has to track the cursor 1:1 on screen regardless of zoom level.
+    const nextWidth = Math.max(
+      MIN_CARD_WIDTH,
+      resize.originWidth + (event.clientX - resize.startX) / camera.zoom
+    );
+    const nextHeight = Math.max(
+      MIN_CARD_HEIGHT,
+      resize.originHeight + (event.clientY - resize.startY) / camera.zoom
+    );
+    setCards((prev) =>
+      prev.map((c) => (c.id === resize.id ? { ...c, width: nextWidth, height: nextHeight } : c))
+    );
+  }
+
+  function handleResizePointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    const resize = resizeRef.current;
+    if (resize === null || resize.pointerId !== event.pointerId) return;
+    resizeRef.current = null;
+    setResizingId(null);
+
+    const card = cards.find((c) => c.id === resize.id);
+    if (card !== undefined) {
+      void resizeItemAction(card.id, card.width, card.height);
     }
   }
 
@@ -293,6 +469,7 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
           kind: 'image',
           path: typeof result.imageItem.content?.path === 'string' ? result.imageItem.content.path : '',
           url: objectUrl,
+          colors,
         },
       ];
       if (result.paletteItem !== null && result.paletteItem.refId !== null) {
@@ -403,24 +580,203 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
     );
   }
 
+  function handleCardDoubleClick(card: BoardCard) {
+    setFocusedCardId(card.id);
+    frameRects([card]);
+  }
+
+  function handleBackgroundDoubleClick() {
+    if (focusedCardId === null) return;
+    setFocusedCardId(null);
+    frameRects(cardsRef.current);
+  }
+
+  /**
+   * Lays every card out into a tidy editorial grid via auto-arrange.ts.
+   * Destructive to whatever hand-placed layout was there, so: (1) it
+   * snapshots current positions first so Undo can restore them exactly,
+   * and (2) each card settles in on its own staggered delay rather than
+   * all teleporting at once, so the reshuffle reads as one motion instead
+   * of a jump-cut.
+   */
+  function handleAutoFormat() {
+    const snapshot: UndoSnapshotEntry[] = cardsRef.current.map((c) => ({
+      id: c.id,
+      x: c.x,
+      y: c.y,
+      rotation: c.rotation,
+    }));
+    const zIndexById = new Map(cardsRef.current.map((c) => [c.id, c.zIndex]));
+    const arranged = autoArrange(cardsRef.current.map((c) => ({ id: c.id, width: c.width, height: c.height })));
+
+    arranged.forEach((position, index) => {
+      setTimeout(() => {
+        setCards((prev) =>
+          prev.map((c) => (c.id === position.id ? { ...c, x: position.x, y: position.y, rotation: 0 } : c))
+        );
+        void moveItemAction(position.id, position.x, position.y, zIndexById.get(position.id) ?? 0, 0);
+      }, index * AUTO_FORMAT_STAGGER_MS);
+    });
+
+    setFocusedCardId(null);
+    const dimensionById = new Map(cardsRef.current.map((c) => [c.id, { width: c.width, height: c.height }]));
+    setTimeout(
+      () =>
+        frameRects(
+          arranged.map((position) => ({
+            x: position.x,
+            y: position.y,
+            width: dimensionById.get(position.id)?.width ?? 0,
+            height: dimensionById.get(position.id)?.height ?? 0,
+          }))
+        ),
+      arranged.length * AUTO_FORMAT_STAGGER_MS + 100
+    );
+
+    setUndoSnapshot(snapshot);
+    if (undoTimerRef.current !== null) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setUndoSnapshot(null), UNDO_WINDOW_MS);
+  }
+
+  function handleUndoAutoFormat() {
+    if (undoSnapshot === null) return;
+    const snapshot = undoSnapshot;
+    setUndoSnapshot(null);
+    if (undoTimerRef.current !== null) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+
+    const zIndexById = new Map(cardsRef.current.map((c) => [c.id, c.zIndex]));
+    setCards((prev) =>
+      prev.map((c) => {
+        const original = snapshot.find((entry) => entry.id === c.id);
+        return original === undefined
+          ? c
+          : { ...c, x: original.x, y: original.y, rotation: original.rotation };
+      })
+    );
+    for (const original of snapshot) {
+      void moveItemAction(original.id, original.x, original.y, zIndexById.get(original.id) ?? 0, original.rotation);
+    }
+  }
+
+  async function handlePromotePinToCard(hex: string) {
+    setOpenPin(null);
+    const created = await pinColorAction(hex);
+    setCards((prev) => [
+      ...prev,
+      {
+        id: created.id,
+        x: created.x,
+        y: created.y,
+        width: created.width,
+        height: created.height,
+        rotation: created.rotation,
+        zIndex: created.zIndex,
+        kind: 'color',
+        hex,
+        name: null,
+      },
+    ]);
+  }
+
+  function handlePinToDock(hex: string) {
+    setOpenPin(null);
+    addToDock(hex, parseColor(hex));
+  }
+
+  /**
+   * Captures every card at world-natural scale (1 world unit = 1 px,
+   * independent of whatever zoom the visitor is currently looking through)
+   * at a high-DPI multiplier, watermarks it, and downloads the PNG.
+   * Temporarily overrides the world layer's own transform for the capture
+   * — domToPng renders a node as it's actually laid out, so the live pan/
+   * zoom transform has to be swapped out and restored around the capture,
+   * not worked around after the fact.
+   */
+  async function handleExportPng() {
+    const worldLayerEl = worldLayerRef.current;
+    if (worldLayerEl === null || cardsRef.current.length === 0 || isExporting) return;
+
+    setIsExporting(true);
+    setFocusedCardId(null);
+    const originalTransform = worldLayerEl.style.transform;
+
+    try {
+      const bounds = computeExportBounds(cardsRef.current);
+      worldLayerEl.style.transform = `translate(${-bounds.x}px, ${-bounds.y}px) scale(1)`;
+
+      const { domToPng } = await import('modern-screenshot');
+      const rawDataUrl = await domToPng(worldLayerEl, {
+        width: bounds.width,
+        height: bounds.height,
+        scale: EXPORT_DPR,
+        backgroundColor: '#0b0b0c',
+      });
+
+      const watermarked = await compositeWatermark(
+        rawDataUrl,
+        bounds.width * EXPORT_DPR,
+        bounds.height * EXPORT_DPR,
+        'Colors World'
+      );
+      downloadDataUrl(watermarked, `studio-board-${Date.now()}.png`);
+    } finally {
+      worldLayerEl.style.transform = originalTransform;
+      setIsExporting(false);
+    }
+  }
+
   function handleDelete(id: string) {
     setCards((prev) => prev.filter((c) => c.id !== id));
     void deleteItemAction(id);
   }
 
+  const glowOpacity = Math.min(
+    1,
+    Math.max(0, (camera.zoom - GLOW_MIN_ZOOM) / (GLOW_FULL_ZOOM - GLOW_MIN_ZOOM))
+  );
+
   return (
-    <div className={styles.scrollArea}>
-      <div className={styles.canvas}>
+    <div
+      ref={viewportRef}
+      className={isPanning ? `${styles.viewport} ${styles.panning}` : styles.viewport}
+      onPointerDown={handleBackgroundPointerDown}
+      onPointerMove={handleBackgroundPointerMove}
+      onPointerUp={handleBackgroundPointerUp}
+      onPointerCancel={handleBackgroundPointerUp}
+      onDoubleClick={handleBackgroundDoubleClick}
+      onClick={() => setOpenPin(null)}
+    >
+      <div ref={worldLayerRef} className={styles.worldLayer} style={{ transform: worldTransform }}>
+        <div className={styles.canvas} />
+
         {cards.length === 0 && (
           <p className={styles.emptyHint}>
             Pin your first palette from Scale Lab, or add a note below.
           </p>
         )}
 
-        {cards.map((card) => (
+        {cards.map((card) => {
+          const glowHex = representativeHex(card);
+          return (
           <div
             key={card.id}
-            className={card.id === draggingId ? `${styles.card} ${styles.dragging}` : styles.card}
+            className={[
+              styles.card,
+              card.id === draggingId ? styles.dragging : '',
+              card.id === resizingId ? styles.resizing : '',
+              focusedCardId !== null && card.id !== focusedCardId ? styles.dimmed : '',
+              glowHex !== null ? styles.colorBearing : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            onPointerDown={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => {
+              event.stopPropagation();
+              handleCardDoubleClick(card);
+            }}
             style={
               {
                 left: card.x,
@@ -429,6 +785,9 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
                 height: card.height,
                 zIndex: card.zIndex,
                 '--rotation': `${card.rotation}deg`,
+                ...(glowHex !== null
+                  ? { '--glow-color': glowHex, '--glow-opacity': glowOpacity }
+                  : {}),
               } as CSSProperties
             }
           >
@@ -451,6 +810,16 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
                   ×
                 </button>
               </div>
+            )}
+
+            {!readOnly && (
+              <div
+                className={styles.resizeHandle}
+                onPointerDown={(event) => handleResizePointerDown(event, card)}
+                onPointerMove={handleResizePointerMove}
+                onPointerUp={handleResizePointerUp}
+                aria-hidden="true"
+              />
             )}
 
             {card.kind === 'palette' &&
@@ -566,15 +935,60 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
               </a>
             )}
 
-            {card.kind === 'image' &&
-              (card.url !== null ? (
-                // eslint-disable-next-line @next/next/no-img-element -- a private, per-project signed URL isn't a candidate for next/image's remote-pattern allowlist.
-                <img src={card.url} alt="" className={styles.imageBody} draggable={false} />
-              ) : (
-                <div className={styles.imageBody} />
-              ))}
+            {card.kind === 'image' && (
+              <>
+                {card.url !== null ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- a private, per-project signed URL isn't a candidate for next/image's remote-pattern allowlist.
+                  <img src={card.url} alt="" className={styles.imageBody} draggable={false} />
+                ) : (
+                  <div className={styles.imageBody} />
+                )}
+                {card.colors.length > 0 && (
+                  <div className={styles.pinRow}>
+                    {card.colors.map((hex, index) => {
+                      const isOpen = openPin?.cardId === card.id && openPin.index === index;
+                      return (
+                        <div key={index} className={styles.pinWrapper}>
+                          <button
+                            type="button"
+                            className={styles.pin}
+                            style={{ background: hex }}
+                            aria-label={`Extracted colour ${hex}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setOpenPin(isOpen ? null : { cardId: card.id, index });
+                            }}
+                          />
+                          {isOpen && (
+                            <div className={styles.pinPopover} onPointerDown={(event) => event.stopPropagation()}>
+                              {!readOnly && (
+                                <button
+                                  type="button"
+                                  className={styles.pinPopoverButton}
+                                  onClick={() => void handlePromotePinToCard(hex)}
+                                >
+                                  + card
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className={styles.pinPopoverButton}
+                                onClick={() => handlePinToDock(hex)}
+                              >
+                                + dock
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        ))}
+          );
+        })}
 
         {proximity !== null && (
           <div
@@ -583,6 +997,22 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
           >
             {proximity.contrast.toFixed(2)}:1 · ΔE {proximity.deltaE.toFixed(1)}
           </div>
+        )}
+
+        {guides.map((guide, index) =>
+          guide.axis === 'x' ? (
+            <div
+              key={index}
+              className={styles.alignmentGuide}
+              style={{ left: guide.position, top: guide.start, width: 1, height: guide.end - guide.start }}
+            />
+          ) : (
+            <div
+              key={index}
+              className={styles.alignmentGuide}
+              style={{ left: guide.start, top: guide.position, width: guide.end - guide.start, height: 1 }}
+            />
+          )
         )}
       </div>
 
@@ -634,8 +1064,50 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
           <button type="button" className={styles.addButton} onClick={() => void handleAddNote()}>
             + note
           </button>
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={handleAutoFormat}
+            disabled={cards.length < 2}
+            title="Lay every card out into a tidy editorial grid"
+          >
+            auto-format
+          </button>
         </div>
       )}
+
+      {undoSnapshot !== null && (
+        <div className={styles.undoBanner}>
+          <span>Board auto-formatted</span>
+          <button type="button" className={styles.undoButton} onClick={handleUndoAutoFormat}>
+            Undo
+          </button>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className={styles.zoomReadout}
+        onClick={() => {
+          setFocusedCardId(null);
+          frameRects(cardsRef.current);
+        }}
+        title="Reset view to fit every card (Shift+0)"
+      >
+        {Math.round(camera.zoom * 100)}%
+      </button>
+
+      <button
+        type="button"
+        className={styles.exportButton}
+        onClick={() => void handleExportPng()}
+        disabled={cards.length === 0 || isExporting}
+        title="Download a high-resolution PNG of the whole board"
+      >
+        {isExporting ? 'exporting…' : '⬇ export png'}
+      </button>
+
+      <Minimap cardRects={cards} camera={camera} viewportSize={viewportSize} onNavigate={flyTo} />
     </div>
   );
 }

@@ -109,33 +109,130 @@
   color: var(--text-tertiary);
 }
 
-/* ── The wall itself ─────────────────────────────────────── */
+/* ── The wall itself — an infinite, camera-driven canvas ──── */
 
-.scrollArea {
+.viewport {
   position: relative;
-  overflow: auto;
-  overflow-anchor: none;
+  overflow: hidden;
   min-height: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.viewport.panning {
+  cursor: grabbing;
+}
+
+/* Everything in world space lives here; panning/zooming is one CSS
+   transform on this single layer (see useCanvasCamera's worldTransform) —
+   cards keep their real DOM x/y/width/height in world units and never
+   recompute per-frame during a pan or zoom. */
+.worldLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
 .canvas {
-  position: relative;
-  width: 2400px;
-  height: 1600px;
-  /* A faint dot grid reads as a physical surface rather than a void — the
-     board is somewhere, not floating in nothing. */
+  position: absolute;
+  /* Covers lib/studio/camera.ts's WORLD_BOUNDS so the dot grid never runs
+     out no matter how far a visitor pans. A faint dot grid reads as a
+     physical surface rather than a void — the board is somewhere, not
+     floating in nothing. */
+  width: 20000px;
+  height: 20000px;
   background-image: radial-gradient(circle, var(--hairline) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
 .emptyHint {
   position: absolute;
-  top: var(--space-vast);
-  left: var(--space-wide);
+  top: 40px;
+  left: 40px;
   max-width: 22rem;
   font-family: var(--font-mono);
   font-size: var(--text-small);
   color: var(--text-tertiary);
+}
+
+/* ── Zoom readout / reset-view ───────────────────────────────
+   A minimal safety net so a visitor who's panned or zoomed away from their
+   cards can always get back — the fuller minimap/fly-to controls build on
+   top of this same frameRects() capability. */
+
+.zoomReadout {
+  position: fixed;
+  left: var(--space-wide);
+  bottom: var(--space-wide);
+  padding: 0.4rem 0.7rem;
+  background: var(--surface-panel);
+  color: var(--text-secondary);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out-expo);
+}
+
+.zoomReadout:hover {
+  color: var(--text-primary);
+}
+
+.exportButton {
+  position: fixed;
+  right: var(--space-wide);
+  bottom: calc(var(--space-wide) + 3rem);
+  padding: 0.4rem 0.7rem;
+  background: var(--surface-panel);
+  color: var(--text-secondary);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out-expo);
+}
+
+.exportButton:hover {
+  color: var(--text-primary);
+}
+
+.exportButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Minimap ──────────────────────────────────────────────── */
+
+.minimap {
+  position: fixed;
+  left: var(--space-wide);
+  bottom: calc(var(--space-wide) + 2.5rem);
+  background: oklch(10% 0 0 / 0.7);
+  backdrop-filter: blur(6px);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.minimapCard {
+  position: absolute;
+  background: var(--text-tertiary);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.minimapViewport {
+  position: absolute;
+  border: 1px solid var(--text-primary);
+  background: oklch(100% 0 0 / 0.06);
+  pointer-events: none;
 }
 
 /* ── Cards — pinned, not gridded ─────────────────────────── */
@@ -151,9 +248,18 @@
     0 14px 30px -10px oklch(0% 0 0 / 0.55),
     0 2px 8px oklch(0% 0 0 / 0.35);
   transform: rotate(var(--rotation));
+  /* left/top are layout-triggering, not compositor-friendly — normally
+     avoided for animation. Accepted here deliberately: cards live in world
+     space (left/top), not screen space, so a position change has nothing
+     else to animate on. The cost is bounded — Auto-Format is the only path
+     that changes position outside a drag, and drag itself overrides this
+     via .dragging's transition:none, so this never runs at 60fps. */
   transition:
+    left var(--duration-normal) var(--ease-out-expo),
+    top var(--duration-normal) var(--ease-out-expo),
     transform var(--duration-normal) var(--ease-out-expo),
-    box-shadow var(--duration-normal) var(--ease-out-expo);
+    box-shadow var(--duration-normal) var(--ease-out-expo),
+    opacity var(--duration-normal) var(--ease-out-expo);
   cursor: default;
 }
 
@@ -171,6 +277,68 @@
   box-shadow:
     0 24px 48px -6px oklch(0% 0 0 / 0.65),
     0 6px 16px oklch(0% 0 0 / 0.45);
+}
+
+.card.resizing {
+  box-shadow:
+    0 24px 48px -6px oklch(0% 0 0 / 0.65),
+    0 6px 16px oklch(0% 0 0 / 0.45);
+}
+
+/* Double-click focus zoom: every other card fades back so the one you
+   zoomed into reads as the subject, not just the closest thing on screen. */
+.card.dimmed {
+  opacity: 0.25;
+}
+
+/* ── Ambient radiance glow ────────────────────────────────────
+   A soft wash of a card's own colour behind it — reads as the card
+   radiating its hue onto the board rather than just sitting flat on it.
+   Pure CSS (radial-gradient + blur), capped size regardless of card
+   dimensions, opacity driven by --glow-opacity (fades out on zoom-out —
+   see GLOW_MIN_ZOOM/GLOW_FULL_ZOOM in StudioWallBoard.tsx). */
+.card.colorBearing::before {
+  content: '';
+  position: absolute;
+  inset: -24px;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+  filter: blur(20px);
+  opacity: var(--glow-opacity, 0);
+  pointer-events: none;
+}
+
+/* Glassmorphic corner grip — invisible until the card is hovered or already
+   mid-resize, so it never competes with a card's own content at rest. */
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out-expo);
+  background: linear-gradient(
+    135deg,
+    transparent 45%,
+    oklch(100% 0 0 / 0.16) 45%,
+    oklch(100% 0 0 / 0.16) 55%,
+    transparent 55%,
+    transparent 70%,
+    oklch(100% 0 0 / 0.16) 70%,
+    oklch(100% 0 0 / 0.16) 80%,
+    transparent 80%
+  );
+  backdrop-filter: blur(3px);
+  border-bottom-right-radius: 3px;
+}
+
+.card:hover .resizeHandle,
+.card.resizing .resizeHandle {
+  opacity: 1;
 }
 
 .dragHandle {
@@ -276,6 +444,18 @@
 .gradientStopInput::-webkit-color-swatch {
   border: none;
   border-radius: 50%;
+}
+
+/* ── Alignment guides ─────────────────────────────────────────
+   Rendered live while dragging near a snap target (lib/studio/snapping.ts)
+   — a thin accent line at exactly the edge/center/dock line the dragged
+   card is about to lock onto. */
+
+.alignmentGuide {
+  position: absolute;
+  background: var(--accent, oklch(75% 0.18 250));
+  pointer-events: none;
+  z-index: 9998;
 }
 
 /* ── Proximity readout ───────────────────────────────────────
@@ -411,6 +591,68 @@
   background: var(--surface-recessed, oklch(20% 0 0));
 }
 
+/* ── Extracted-colour pins ────────────────────────────────────
+   One pin per dominant colour the k-means extraction found — click one to
+   promote it to its own card or send it to the Harmonic Dock. */
+
+.pinRow {
+  position: absolute;
+  left: var(--space-tight);
+  bottom: var(--space-tight);
+  display: flex;
+  gap: 0.3rem;
+}
+
+.pinWrapper {
+  position: relative;
+}
+
+.pin {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid oklch(100% 0 0 / 0.8);
+  box-shadow: 0 2px 6px oklch(0% 0 0 / 0.5);
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+
+.pin:hover {
+  transform: scale(1.2);
+}
+
+.pinPopover {
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  background: var(--surface-panel);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 6px;
+  box-shadow: 0 10px 24px -6px oklch(0% 0 0 / 0.5);
+  z-index: 50;
+  white-space: nowrap;
+}
+
+.pinPopoverButton {
+  padding: 0.25rem 0.5rem;
+  background: none;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  cursor: pointer;
+}
+
+.pinPopoverButton:hover {
+  border-color: var(--text-tertiary);
+}
+
 /* ── Note cards ───────────────────────────────────────────── */
 
 .noteBody {
@@ -473,4 +715,47 @@
 .addButton:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 30px -6px oklch(0% 0 0 / 0.55);
+}
+
+.addButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.addButton:disabled:hover {
+  transform: none;
+  box-shadow: 0 10px 24px -6px oklch(0% 0 0 / 0.5);
+}
+
+/* ── Auto-Format undo banner ──────────────────────────────── */
+
+.undoBanner {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-wide);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-snug);
+  padding: 0.6rem 0.9rem;
+  background: var(--text-primary);
+  color: var(--surface-void);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  box-shadow: 0 10px 24px -6px oklch(0% 0 0 / 0.5);
+  z-index: 40;
+}
+
+.undoButton {
+  padding: 0.25rem 0.6rem;
+  background: var(--surface-void);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
 }
