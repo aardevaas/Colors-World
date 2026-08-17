@@ -749,14 +749,19 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
       onDoubleClick={handleBackgroundDoubleClick}
       onClick={() => setOpenPin(null)}
     >
+      {/* Viewport-anchored, not world-anchored: as world content it sat at
+          world (40,40) while the camera starts at (600,480), so it rendered
+          clipped off the left edge of the screen — and would drift away
+          entirely the moment anyone panned. It is a UI affordance, not a
+          thing on the board. */}
+      {cards.length === 0 && (
+        <p className={styles.emptyHint}>
+          Pin your first palette from the Builder, or add a card below.
+        </p>
+      )}
+
       <div ref={worldLayerRef} className={styles.worldLayer} style={{ transform: worldTransform }}>
         <div className={styles.canvas} />
-
-        {cards.length === 0 && (
-          <p className={styles.emptyHint}>
-            Pin your first palette from Scale Lab, or add a note below.
-          </p>
-        )}
 
         {cards.map((card) => {
           const glowHex = representativeHex(card);

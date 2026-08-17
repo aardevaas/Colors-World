@@ -147,14 +147,18 @@
   background-size: 28px 28px;
 }
 
+/* Anchored to the viewport, not the world — see the note at its render site.
+   pointer-events:none so it never blocks a pan starting under it. */
 .emptyHint {
   position: absolute;
-  top: 40px;
-  left: 40px;
+  top: var(--space-wide);
+  left: var(--space-wide);
   max-width: 22rem;
   font-family: var(--font-mono);
   font-size: var(--text-small);
   color: var(--text-tertiary);
+  pointer-events: none;
+  z-index: 5;
 }
 
 /* ── Zoom readout / reset-view ───────────────────────────────

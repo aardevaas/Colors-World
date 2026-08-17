@@ -127,6 +127,26 @@ export function useCanvasCamera(initialRects: readonly Rect[]): UseCanvasCameraR
 
   function handleBackgroundPointerDown(event: ReactPointerEvent<HTMLDivElement>): void {
     if (event.button !== 0) return;
+
+    // A pointer-down that started on a HUD control must not begin a camera pan
+    // — and critically, must not reach setPointerCapture below.
+    //
+    // Pointer capture retargets every subsequent pointer event, including
+    // pointerup, to the capturing element. A `click` only fires when pointerdown
+    // and pointerup resolve to the same target, so capturing here silently
+    // swallows the click of any control rendered inside the viewport. That made
+    // every HUD button (the whole add-card toolbar, auto-format, reset view,
+    // export PNG, the minimap) completely dead to real mouse input while still
+    // working via a programmatic .click() — which is exactly why unit tests and
+    // a typecheck could not see it, and only a live pointer pass caught it.
+    if (
+      (event.target as HTMLElement).closest(
+        'button, a, input, select, textarea, label, [role="button"]'
+      ) !== null
+    ) {
+      return;
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId);
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
