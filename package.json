@@ -1,6 +1,7 @@
 {
   "name": "colors-world",
   "version": "0.1.0",
+  "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "description": "Colors World — an open-source studio for color, palettes, branding, and typography. Perceptual color engine (OKLCH), a computed 16.7-million-colour Spectrum, and a freeform Studio Wall for assembling a brand.",
   "type": "module",

@@ -1,3 +1,23 @@
+# Colors World — licensing
+
+> **This repository is dual-licensed. Read this before assuming which terms
+> apply to the file you are looking at.**
+>
+> | Path | Licence |
+> |---|---|
+> | `src/lib/color-engine/**` — the colour engine | **MIT** (see `src/lib/color-engine/LICENSE`) |
+> | Everything else — the application | **PolyForm Noncommercial 1.0.0** (below) |
+>
+> The colour engine — OKLCH conversion, perceptual scale generation, WCAG and
+> APCA contrast, gamut mapping across sRGB/P3/Rec2020, CMYK, colour-vision-
+> deficiency simulation, and perceptual distance — is released under MIT so
+> that anyone, commercial users included, can depend on it, embed it, fork it,
+> and build on it without restriction.
+>
+> The application built on top of that engine remains noncommercial.
+
+---
+
 # PolyForm Noncommercial License 1.0.0
 
 <https://polyformproject.org/licenses/noncommercial/1.0.0>

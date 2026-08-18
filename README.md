@@ -1,40 +1,58 @@
 <div align="center">
 
-  <br />
+<br />
 
-  <h1>COLORS WORLD</h1>
-  <p><strong>The ultimate studio for color discovery, spatial moodboards & typography.</strong></p>
-  <p><i>Created by: aardevaas</i></p>
+<h1>COLORS WORLD</h1>
 
-  <br />
+<p><strong>A creative studio for colour and brand — where 16.7 million colours are a place you explore, and your dashboard is your studio wall.</strong></p>
 
-  <p>
-    <a href="https://github.com/aardevaas/Colors-World"><img src="https://img.shields.io/badge/🚀_LAUNCH_LIVE_STUDIO-050508?style=for-the-badge&logoColor=white" alt="Launch Live Studio"></a>
-    <a href="https://github.com/aardevaas/Colors-World/stargazers"><img src="https://img.shields.io/badge/⭐_STAR_THIS_REPO-8A2BE2?style=for-the-badge&logo=github&logoColor=white" alt="Star Repo"></a>
-    <a href="https://github.com/aardevaas/Colors-World/network/members"><img src="https://img.shields.io/badge/🍴_FORK-00F5FF?style=for-the-badge&logo=github&logoColor=black" alt="Fork Repo"></a>
-    <img src="https://img.shields.io/badge/100%25_Free-Personal_Use-00FF88?style=for-the-badge" alt="Free for Personal Use">
-  </p>
+<p>
+  <a href="https://colors-world.vercel.app"><img src="https://img.shields.io/badge/⚡_TRY_IT_LIVE-050508?style=for-the-badge&logoColor=white" alt="Try it live" /></a>
+  <a href="https://github.com/aardevaas/Colors-World/stargazers"><img src="https://img.shields.io/badge/⭐_STAR_THIS_REPO-8A2BE2?style=for-the-badge&logo=github&logoColor=white" alt="Star this repo" /></a>
+  <a href="./src/lib/color-engine/LICENSE"><img src="https://img.shields.io/badge/colour_engine-MIT-00FF88?style=for-the-badge" alt="Colour engine: MIT" /></a>
+</p>
 
-  <br />
+<p><em>No sign-up. No paywall. Open the link and start.</em></p>
 
-  <!-- Retro 80s TV image sourced directly from your repository -->
-  <p align="center">
-    <img src="./Retro%20TV" alt="Retro 80s TV Static" width="480" style="border-radius: 12px; border: 4px solid #1a1a1a;" />
-  </p>
+<br />
 
-  <br />
+<img src="./docs/assets/retro-tv.gif" alt="Colors World" width="380" />
+
+<br />
+<br />
 
 </div>
 
 ---
 
-## 💌 A Letter from the Founder
+## The thing that makes this different
 
-> *"Every time I kick off a new branding or web project, I find myself opening 10 different browser tabs—one for picking swatches, another for building color scales, a third for extracting colors from reference photos, one to test UI contrast, and yet another just to pair typography.*
+Most colour tools ship a **list** of colours. Colors World doesn't have one.
+
+All **16,777,216** colours are **computed arithmetically** from their index — there is no 16.7M-row table, no pagination, no "load more". A colour's position *is* its definition, so you can jump anywhere in the space instantly and it renders the same colour every time, on every device.
+
+That engine underneath is the real work, and it is the part you can take:
+
+| | |
+|---|---|
+| **OKLCH throughout** | Perceptually uniform. Lightness means lightness. |
+| **WCAG 2.1 + APCA** | Both contrast models, including APCA's polarity-dependent maths |
+| **Gamut mapping** | sRGB · Display P3 · Rec. 2020, plus a print-safe CMYK check |
+| **CVD simulation** | Protanopia, deuteranopia, tritanopia, achromatopsia |
+| **Perceptual distance** | ΔE in OKLab, not the RGB euclidean distance most tools use |
+| **95 tests** | On the engine alone. 503 across the project. |
+
+**The colour engine is MIT licensed** — commercial use included. See [licensing](#licensing).
+
+---
+
+## 💌 A letter from the founder
+
+> *"Every time I kick off a new branding or web project, I find myself opening 10 different browser tabs — one for picking swatches, another for building color scales, a third for extracting colors from reference photos, one to test UI contrast, and yet another just to pair typography.*
 >
 > *It was fragmented, clunky, and exhausting. It pulled me out of my creative flow every single time.*
 >
-> *The community has given me the foundation for almost everything I’ve ever built. I reached a point where I wanted to stop complaining about broken design workflows and build the studio I always dreamed existed—an all-in-one, beautifully visual workspace—and hand it straight back to creators.*
+> *The community has given me the foundation for almost everything I've ever built. I reached a point where I wanted to stop complaining about broken design workflows and build the studio I always dreamed existed — an all-in-one, beautifully visual workspace — and hand it straight back to creators.*
 >
 > *No paywalls. No subscriptions. No ads. Just raw creative freedom."*
 >
@@ -42,76 +60,100 @@
 
 ---
 
+## The studio, tab by tab
 
-## ✨ Why You'll Love Colors World
+Colors World is five workspaces that share one colour engine and one collector dock. **Three are live today; two are in active development.** Each tab has its own typographic and atmospheric identity — the shell stays constant, the world inside it changes.
 
-* 🎨 **Visual First:** Designed for designers, creators, and builders who want an intuitive, inspiring creative studio.
-* ⚡ **100% Web-Based & Free:** No downloads, no sign-up gates, zero friction. Works directly in your browser.
-* 🔒 **Private & Client-Side:** Everything runs instantly in your browser with zero latency or telemetry.
-* 🛠️ **Seamless Export:** Move from visual exploration to production code in a single click.
+### ✅ 01 · Library — `/library`
+Wander a continuous, infinite field of every colour there is.
+- **Vibe search** — type a mood (*"ocean at dusk"*, *"1970s Italian cafe"*) and get a genuinely varied palette back, not twelve near-identical hexes
+- **Colour genetics** — open any colour to see its family, harmonies, and perceptual neighbours
+- **Harmonic Dock** — collect as you browse; the dock follows you across every tab
 
----
+### ✅ 02 · Builder — `/builder`
+Turn one anchor colour into a complete, production-ready scale.
+- **Curve manipulation** — shape lightness, chroma and hue torsion independently across the ramp
+- **Contrast matrix** — every step against every other, WCAG and APCA, directional
+- **Export vault** — CSS variables, Tailwind v4 `@theme`, shadcn tokens, JSON. Honest about the tokens it *can't* derive rather than inventing plausible ones.
 
-## 🗺️ Explore the Studio (Tab-by-Tab)
+### ✅ 03 · Studio — `/studio`
+An infinite spatial canvas where a brand actually comes together.
+- **Real pan and zoom** — zoom-to-cursor, rubber-banded bounds, minimap, fly-to
+- **Drop an image** → its palette extracts automatically (k-means clustered in OKLab, so perceptually distinct colours don't get merged)
+- **Bento snapping** and editorial palette docking along an image's edge
+- **Ambient radiance** — colour cards glow in their own hue
+- **Export a watermarked PNG** of the whole board, at world-natural resolution
 
-Here is a quick tour of what you can do inside **Colors World**:
+### 🚧 04 · Visualizer — `/visualizer`
+*In development.* Test palettes on real UI templates, audit contrast live, auto-fix failures while preserving hue, and export Tailwind/shadcn code.
 
-### 01 / The Spectrum — Endless Color Exploration
-* **Wander 16.7 Million Colors:** Scroll through a continuous, visual field of every shade imaginable.
-* **Vibe & Natural Search:** Type a mood or aesthetic (*"Cyberpunk Tokyo rain"*, *"1970s Italian cafe"*, or *"Melancholic autumn"*) to surface instant palette inspiration.
-* **Quick-Save Tray:** Collect colors into your personal tray with a single tap as you explore.
-
----
-
-### 02 / Scale Lab — Effortless Color Ramps
-* **Instant Tonal Ramps:** Pick any anchor color and generate smooth, balanced shades for your brand or UI.
-* **Preset Mechanics:** Create classic 3-step brand trios, 5-step UI systems, or full design token scales instantly.
-* **Readability Guides:** Built-in indicators automatically show you which color combinations read clearly together.
-
----
-
-### 03 / Studio Wall — Your Creative Moodboard
-* **Freeform Canvas:** Organize your swatches, palettes, notes, and visual references on an infinite studio wall.
-* **Instant Image Extraction:** Drop any photo or design reference onto the wall to extract its dominant color palette automatically.
-* **Ambient Glows:** Swatches and cards visually radiate on a dark obsidian background, giving your project a true studio feel.
+### 🚧 05 · Typography — `/typography`
+*In development.* Pair type with colour, scan your local system fonts via `queryLocalFonts()`, drive variable-font axes, and generate fluid `clamp()` scales.
 
 ---
 
-### 04 / Visualizer — Test on Real UI
-* **Live Sandbox:** Test your color palettes on real interactive UI mockups—SaaS dashboards, e-commerce cards, editorial heroes, and mobile apps.
-* **1-Click Auto-Fix:** Automatically tune background or text swatches so your UI is clear and accessible without losing your brand identity.
-* **Inclusive Vision Preview:** View your design through real-time filters for all forms of color vision deficiency.
+## Screenshots
+
+> **Contributors welcome here** — the fastest way to help right now is a good screen recording. See [issue: add product media](https://github.com/aardevaas/Colors-World/issues).
+
+<!--
+  TODO — replace with real captures, placed in docs/assets/:
+    docs/assets/studio.png   — /studio with a populated board (glow + minimap visible)
+    docs/assets/library.png  — /library mid-scroll
+    docs/assets/builder.png  — /builder with a curve + contrast matrix open
+    docs/assets/demo.gif     — 8-12s: drop an image → palette extracts → auto-format
+-->
 
 ---
 
-### 05 / Typography — Type & Color Pairing
-* **Font Pairing Engine:** Preview curated Google Fonts and CDN typefaces side-by-side with your active color swatches.
-* **Live Heading & Body Preview:** Instantly see how contrast, font size, and color tone work together on real typography samples.
-* **Responsive Fluid Math:** Automatically generates clean CSS code for responsive typography sizes.
+## Tech
+
+**Next.js 15** (App Router, RSC) · **TypeScript** strict · **Supabase** (Postgres + RLS + Storage) · **React Three Fiber** for the landing globe · **Vitest**
+
+Colour work is pure and isolated in `src/lib/` with unit tests; UI is verified live in a browser before anything is called done. Every dependency is permissively licensed by policy.
+
+```bash
+git clone https://github.com/aardevaas/Colors-World.git
+cd Colors-World
+npm install
+cp .env.example .env.local   # add your Supabase keys
+npm run dev
+```
+
+Database setup lives in `supabase/` — run `schema.sql`, then `storage.sql`, `sharing.sql`, `brand-assets.sql`, then `policies.sql`.
 
 ---
 
-### 🤝 Join the Movement & Contribute
-This project is built for the community, by the community. Whether you want to suggest new mockups, improve color tools, or add features, your ideas are welcome!
+## Contributing
 
-#### Help Us Spread the Word ⭐
-* **Star** this repository on GitHub so more creators can find it.
+This is built in the open and contributions are genuinely wanted.
 
-* **Share** it with fellow designers & developers on X / Twitter, LinkedIn, or Discord.
+**Good first contributions right now:**
+- 📸 Product screenshots or a demo GIF (see above — highest impact)
+- 🎨 UI templates for the Visualizer tab
+- ♿ Accessibility fixes — keyboard navigation across the canvas especially
+- 🌍 Anything in the MIT colour engine — it's yours to extend
 
-* Open an Issue or PR to share feedback or **build** something cool together!
+Read [`ROADMAP.md`](./ROADMAP.md) for where this is going and what's honestly unfinished. [`ARCHITECTURE.md`](./ARCHITECTURE.md) explains how it fits together.
 
----
-
-### 📜 Source-Available & License
-Colors World is free and source-available software licensed under the PolyForm Noncommercial License 1.0.0.
-
-🟢 Personal & Educational Use: 100% free to view, modify, and build upon.
-
-🏷️ Attribution Required: You must credit aardevaas in any public forks or implementations.
-
-💼 Commercial Use & Monetization: Any commercial use, paid integration, or monetization requires a formal commercial license and financial compensation.
+**If it's useful to you, star it.** That's what makes other designers find it.
 
 ---
 
-Now that your repo files are locked in, would you like to review the updated Reddit, Hacker News, and social posts to start getting community traction?
+## Licensing
+
+This repository is **dual-licensed**, deliberately:
+
+| | |
+|---|---|
+| **`src/lib/color-engine/**`** | **MIT** — use it anywhere, including commercially |
+| **Everything else** | **PolyForm Noncommercial 1.0.0** |
+
+The colour engine is MIT because the maths should belong to everyone — if OKLCH scale generation or APCA contrast is useful in your product, take it, no strings.
+
+The application around it is noncommercial: free to use, study, modify and share, but not to resell or run as a paid service. Commercial licensing enquiries → [aardevaas](https://github.com/aardevaas).
+
+<div align="center">
+<br />
+<sub>Built by <a href="https://github.com/aardevaas">aardevaas</a></sub>
+</div>
