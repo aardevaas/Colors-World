@@ -497,6 +497,15 @@
   flex-shrink: 0;
 }
 
+/* The colour card stacks swatch → name → ColorValues inside a flex column.
+   ColorValues is tall enough to overflow the default card, and without an
+   explicit flex-shrink:0 the single-line name row is the thing flex chooses
+   to collapse — so the colour's own name gets crushed under the HEX readout.
+   Caught in a product screenshot; it affects every pinned colour card. */
+.colorBody > .paletteName {
+  flex-shrink: 0;
+}
+
 /* ── Typography-pairing cards ─────────────────────────────── */
 
 .typeBody {

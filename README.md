@@ -16,7 +16,9 @@
 
 <br />
 
-<img src="./docs/assets/retro-tv.gif" alt="Colors World" width="380" />
+<img src="./docs/assets/studio.png" alt="The Colors World Studio — a palette, gradient, colour card, note and type specimen on an infinite canvas" width="100%" />
+
+<sub><em>The Studio — an infinite canvas where a brand comes together.</em></sub>
 
 <br />
 <br />
@@ -94,15 +96,15 @@ An infinite spatial canvas where a brand actually comes together.
 
 ## Screenshots
 
-> **Contributors welcome here** — the fastest way to help right now is a good screen recording. See [issue: add product media](https://github.com/aardevaas/Colors-World/issues).
+**Library** — the full 16.7M-colour space, generated on demand.
 
-<!--
-  TODO — replace with real captures, placed in docs/assets/:
-    docs/assets/studio.png   — /studio with a populated board (glow + minimap visible)
-    docs/assets/library.png  — /library mid-scroll
-    docs/assets/builder.png  — /builder with a curve + contrast matrix open
-    docs/assets/demo.gif     — 8-12s: drop an image → palette extracts → auto-format
--->
+<img src="./docs/assets/library.png" alt="Colors World Library — an infinite grid of computed colours with vibe search" width="100%" />
+
+**Builder** — a ten-step scale with per-channel curve control and live gamut badges.
+
+<img src="./docs/assets/builder.png" alt="Colors World Builder — a ten-step violet scale with lightness, chroma and hue-torsion curves" width="100%" />
+
+> Screenshots are reproducible: `node scripts/capture-screenshots.mjs` drives headless Chrome over CDP and rewrites `docs/assets/`. A short demo GIF is still wanted — see [contributing](#contributing).
 
 ---
 
@@ -129,7 +131,7 @@ Database setup lives in `supabase/` — run `schema.sql`, then `storage.sql`, `s
 This is built in the open and contributions are genuinely wanted.
 
 **Good first contributions right now:**
-- 📸 Product screenshots or a demo GIF (see above — highest impact)
+- 🎬 A short demo GIF — drop an image, watch the palette extract, hit auto-format
 - 🎨 UI templates for the Visualizer tab
 - ♿ Accessibility fixes — keyboard navigation across the canvas especially
 - 🌍 Anything in the MIT colour engine — it's yours to extend
