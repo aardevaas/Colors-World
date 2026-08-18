@@ -77,9 +77,9 @@ strategy, so it should be decided before, not after, the launch push.**
 
 Worth being blunt, because it changes the ordering below:
 
-1. **A live URL you can try in five seconds, with no signup.** Non-negotiable
-   and currently missing. A design tool nobody can touch cannot grow, no matter
-   how good the code is.
+1. **A live URL you can try in five seconds, with no signup.** Non-negotiable —
+   and ✅ **already true**: colors-world.vercel.app, with anonymous sessions so
+   there is no signup wall. This is the hardest prerequisite and it is met.
 2. **The README is the product page.** For most visitors it *is* the product.
    Ours has good bones (founder letter, tab-by-tab) but **no screenshots, no
    demo GIF**, and it still describes tabs by their retired names ("The
@@ -103,7 +103,7 @@ Worth being blunt, because it changes the ordering below:
 | Tabs built | 3 of 5 (`/library`, `/builder`, `/studio`) |
 | Tests | 500 passing, 54 files, `tsc` clean, production build clean |
 | Live data | 100,000 colour rows · 6 profiles · 1 project |
-| **Deployed** | **No. Nothing is live.** |
+| **Deployed** | ✅ **Live** — [colors-world.vercel.app](https://colors-world.vercel.app), GitHub→Vercel auto-deploy on every push to `main` |
 | README | No demo media; tab names stale |
 | Licence | PolyForm NC (see above) |
 | `/studio` live verification | **Still blocked** — one SQL run outstanding |
@@ -135,19 +135,31 @@ Worth being blunt, because it changes the ordering below:
 Ruthlessly ordered by what compounds. Steps 1–4 are, I'd argue, worth more than
 Tabs 04 and 05 combined.
 
-### 0 · Unblock — minutes
-Run `supabase/policies.sql`. Then I finish the live `/studio` pass that has
-never happened: pan/zoom, snap + image docking, resize persistence, auto-format
-+ undo, PNG export, glow performance on a populated board, and the read-only
-share page.
+### 0 · Unblock — ✅ done 2026-08-17
+`policies.sql` run; anonymous sign-in, project self-provisioning and the full
+RLS chain verified live. `/studio` verification pass completed — it found a
+severe pointer-capture bug that had made every HUD control dead to real mouse
+input, plus three layout/UX defects. All fixed, shipped, and confirmed in
+production.
 
-### 1 · Deploy 🔴 highest leverage item in this document
-Vercel import + env secrets. **Nothing else on this list compounds until there
-is a URL.** Every day undeployed is a day the growth loops (share links, PNG
-watermarks, "try it") produce exactly zero.
+### 1 · Deploy — ✅ already done, and I was wrong about this
+**Correction (2026-08-17):** an earlier revision of this document claimed
+"nothing is deployed" and made deploying the single highest-leverage item. That
+was false. The GitHub repo has been connected to Vercel with auto-deploy since
+2026-07-25; **[colors-world.vercel.app](https://colors-world.vercel.app) is live
+and every push to `main` ships automatically.** The error came from checking for
+a local `.vercel` link and the Vercel CLI — neither of which exists when
+deployment runs through the GitHub integration — instead of checking Vercel
+itself. Recorded rather than quietly edited out, because the whole v5 ordering
+was built on it.
 
-### 2 · Decide the licence
-See above. It determines whether steps 3–5 are worth doing at full intensity.
+The growth loops (share links, watermarked PNG exports, "try it in five
+seconds") are therefore **already running**. What they lack is anyone pointed at
+them — which moves the README, not the deploy, to the top of the list.
+
+### 2 · Decide the licence 🔴 now the highest-leverage open decision
+See above. It determines whether the remaining steps are worth doing at full
+intensity, and it is the one thing that structurally caps growth.
 
 ### 3 · Make the README world-class
 The single highest-ROI artefact for GitHub growth.
