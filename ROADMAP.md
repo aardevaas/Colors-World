@@ -157,18 +157,26 @@ The growth loops (share links, watermarked PNG exports, "try it in five
 seconds") are therefore **already running**. What they lack is anyone pointed at
 them — which moves the README, not the deploy, to the top of the list.
 
-### 2 · Decide the licence 🔴 now the highest-leverage open decision
-See above. It determines whether the remaining steps are worth doing at full
-intensity, and it is the one thing that structurally caps growth.
+### 2 · Decide the licence — ✅ decided 2026-08-18
+**Split licence, option 1.** `src/lib/color-engine/**` is now **MIT**; the
+application stays PolyForm Noncommercial. Engine `LICENSE` added, scope table on
+the root `LICENSE`, and the `license` field `package.json` was missing entirely
+is now set. The growth ceiling described above is lifted for the part that
+actually attracts dependency adoption.
 
-### 3 · Make the README world-class
-The single highest-ROI artefact for GitHub growth.
-- A demo GIF above the fold — the globe assembling, or a palette dragged onto a
-  board. This is what makes someone stop scrolling.
-- Fix the stale tab names (`Spectrum`/`Scale Lab` → `Library`/`Builder`).
-- Lead with the genuinely rare thing: **16.7M colours computed arithmetically,
-  not stored.** That's the hook, and right now it's buried.
-- Live demo link, badges, contribution pointers.
+### 3 · Make the README world-class — ✅ done 2026-08-18
+Rewritten and shipped with **real product screenshots** (Studio, Library,
+Builder), captured from the running app at 2880×1800 and reproducible via
+`scripts/capture-screenshots.mjs` (drives Chrome over CDP so localStorage-backed
+state like the Harmonic Dock can be seeded before capture).
+
+Also corrected on the way through: a leftover AI prompt as the closing line, a
+"LAUNCH LIVE STUDIO" badge pointing at GitHub rather than the live site, Tabs 04
+and 05 written as if shipped, a false "client-side / zero telemetry" claim, and
+a hero image referencing a GIF with no file extension.
+
+**Still open here:** a demo GIF. Motion is the one thing a static capture can't
+sell, and it needs a screen recording — flagged as the top contributor ask.
 
 ### 4 · Finish the landing page
 It stops dead after the globe. The unbuilt sections include the
@@ -176,21 +184,24 @@ It stops dead after the globe. The unbuilt sections include the
 avatars) — which is precisely the section that converts visitors into
 stargazers.
 
-### 5 · Then Tab 04 `/visualizer`
+### 5 · Shared `<TabNav>` shell — **promoted; it is a V1 blocker, not V2 polish**
+Navigation is hand-rolled four times with four different link sets, and **no tab
+links to all five**. Tabs 04 and 05 therefore have *nowhere to appear* — they
+would ship unreachable. Originally filed under the V2 audit; it has to come
+before the last two tabs, not after. One shared component driven by a single
+route manifest. Small job, unblocks both remaining tabs.
+
+### 6 · Tab 04 `/visualizer`
 Completes the palette → UI → audit → export loop, the most defensible product
 story. `/studio` already deferred its live-UI-preview nodes here, so it has a
 dependency waiting.
 
-### 6 · Tab 05 `/typography`
+### 7 · Tab 05 `/typography`
 The `queryLocalFonts()` approach is elegant — $0 hosting, zero copyright
-exposure. Worth building, but it is the fifth-most-important thing here, not
-the next thing.
+exposure. Worth building, but it is the last of the five, not the next thing.
 
-### 7 · The V2 audit
+### 8 · The V2 audit
 The consolidated cross-tab pass, once all five V1s exist:
-- **Shared `<TabNav>` shell.** Navigation is hand-rolled four times with four
-  different link sets; no tab links to all five, and Tabs 04/05 have nowhere to
-  appear. This violates the locked "shell stays structurally constant" decision.
 - **`/merge`** — orphaned, zero inbound links, unreachable, still ships 129 kB.
 - **`/palettes` and `/assets`** — pre-tab-era surfaces, conceptually homeless.
 - **`/spectrum`, `/scale-lab`** — redirect stubs; keep or drop before launch.
@@ -218,9 +229,10 @@ own launch moment rather than one big anticlimactic reveal.
 
 ## Needs your call
 
-1. **Licence** — split MIT engine / protected app (recommended), AGPL, or keep
-   PolyForm NC and retire the top-100 goal?
-2. **Launch timing** — ship at three tabs (recommended) or hold for five?
+1. ~~**Licence**~~ — ✅ resolved 2026-08-18: MIT engine, protected app.
+2. **Launch timing** — announce now at three tabs (recommended), or hold the
+   launch moment until all five ship? The site is already live either way; this
+   is about when you spend the HN / Product Hunt / Designer News shot.
 3. **`/palettes` and `/assets`** — fold into the tab model, keep as secondary
    routes, or retire?
 4. **`/merge`** — wire into a real history UI, or delete the route?
@@ -250,6 +262,30 @@ Pure logic in `lib/` with unit tests · UI verified live in a browser · `tsc`
 clean · full suite green · production build clean, before anything is called
 done.
 
-**`/studio` is the one current exception** — 500-test coverage and a clean
-build, but its live browser pass has never run because the database was
-unreachable, then misconfigured. Step 0 closes that.
+No current exceptions — `/studio`'s live browser pass ran on 2026-08-17 and its
+findings are fixed and shipped. 503 tests, `tsc` clean, production build clean.
+
+---
+
+## What "V1 of the full website" still needs
+
+Scoped to the original plan: **first pass of all five tabs, then one
+consolidated audit → V2.**
+
+| # | Item | State |
+|---|---|---|
+| 1 | Tab 01 `/library` | ✅ shipped |
+| 2 | Tab 02 `/builder` | ✅ shipped |
+| 3 | Tab 03 `/studio` | ✅ shipped + live-verified |
+| 4 | Deployment, anonymous access, RLS | ✅ live |
+| 5 | Licence split | ✅ done |
+| 6 | README + product screenshots | ✅ done |
+| 7 | **Shared `<TabNav>`** | ❌ **blocks 8 and 9** |
+| 8 | **Tab 04 `/visualizer`** | ❌ not started |
+| 9 | **Tab 05 `/typography`** | ❌ not started |
+| 10 | Landing page sections 3–6 | ❌ stops after the globe |
+| 11 | Demo GIF | ❌ needs a screen recording |
+
+**Three substantial pieces of work remain** (7 is small, 10 and 11 are
+marketing-surface rather than product). Everything else on the critical path is
+done.
