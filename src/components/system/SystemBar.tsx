@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type DragEvent } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSystem } from '@/lib/system/system-context';
 import { SEMANTIC_ROLES } from '@/lib/roles/semantic-roles';
 import { readSwatchDragPayload } from '@/lib/system/drag-payload';
+import { SystemLink } from './SystemLink';
 import styles from './system-bar.module.css';
 
 /**
@@ -150,9 +150,9 @@ export function SystemBar() {
       {palette.length === 0 ? (
         <p className={styles.empty}>
           Every tab reads from here. Collect a colour in{' '}
-          <Link href="/library" className={styles.inlineLink}>
+          <SystemLink href="/library" className={styles.inlineLink}>
             Library
-          </Link>{' '}
+          </SystemLink>{' '}
           and it becomes your palette, your roles and your type colours at once.
         </p>
       ) : (
@@ -214,9 +214,9 @@ export function SystemBar() {
         </>
       )}
 
-      <Link href="/builder" className={styles.primaryAction}>
+      <SystemLink href="/builder" className={styles.primaryAction}>
         Open in Builder
-      </Link>
+      </SystemLink>
     </div>
   );
 }

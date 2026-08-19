@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { SystemLink } from '@/components/system/SystemLink';
 import { TABS, tabById, type TabId } from '@/lib/nav/tabs';
 import styles from './tab-nav.module.css';
 
@@ -16,6 +16,10 @@ interface TabNavProps {
  * `current` is passed in rather than read from `usePathname()` so this stays a
  * server component: navigation is the same on every render of a given route,
  * and shipping a client bundle plus a hydration pass for it would be waste.
+ * The links themselves are `SystemLink`, a tiny client component, because the
+ * one part of this that does depend on live state is the href — every room
+ * link has to carry the System so the address stays true when someone opens a
+ * tab in a new window or copies a link out of the nav.
  *
  * Styling deliberately routes through CSS custom properties rather than fixed
  * values. The locked product decision is that each tab is its own world —
@@ -50,9 +54,9 @@ export function TabNav({ current, children }: TabNavProps) {
             );
           }
           return (
-            <Link key={tab.id} href={tab.href} className={styles.navLink}>
+            <SystemLink key={tab.id} href={tab.href} className={styles.navLink}>
               {tab.label}
-            </Link>
+            </SystemLink>
           );
         })}
       </nav>
