@@ -1,0 +1,188 @@
+/*
+ * Size across, weight down. The grid is the argument: a contrast checker
+ * reports one number, and this shows the region that number is sufficient in.
+ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.7rem;
+}
+
+.ratio {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-small, 0.8125rem);
+  color: var(--text-primary);
+}
+
+.apca {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-micro, 0.7rem);
+  color: var(--text-tertiary);
+}
+
+.verdict {
+  flex-basis: 100%;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.gridScroll {
+  overflow-x: auto;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  border-radius: 8px;
+}
+
+.grid {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6rem;
+}
+
+.caption {
+  caption-side: bottom;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-family: var(--font-ui), sans-serif;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.grid th {
+  padding: 0.25rem 0.3rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.corner abbr {
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.cellWrap {
+  padding: 0;
+  border-top: var(--rule-width, 1px) solid var(--hairline);
+}
+
+.cellPass,
+.cellFail {
+  display: block;
+  width: 100%;
+  min-width: 1.6rem;
+  padding: 0.28rem 0;
+  border: 0;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* The shaded region is the whole point, so it is a fill rather than a tint on
+   the glyph -- the shape has to be readable before any single cell is. */
+.cellPass {
+  background: oklch(78% 0.16 155 / 0.16);
+  color: oklch(82% 0.16 155);
+}
+
+.cellFail {
+  background: transparent;
+  color: var(--text-tertiary);
+}
+
+.cellPass:hover,
+.cellFail:hover {
+  outline: 1px solid var(--text-tertiary);
+  outline-offset: -1px;
+}
+
+/* Where the specimen actually sits. Without this the grid is an abstraction;
+   with it, a failure is a position. */
+.cellPass[data-current='true'],
+.cellFail[data-current='true'] {
+  outline: 2px solid var(--accent, oklch(70% 0.17 45));
+  outline-offset: -2px;
+  color: var(--text-primary);
+}
+
+/* ---------- the three ways out ---------- */
+
+.exits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.exitsLabel {
+  font-size: var(--text-micro, 0.7rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.exitList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.exitList li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-micro, 0.7rem);
+}
+
+.exitOn {
+  color: var(--text-secondary);
+}
+
+/* An exit that does not exist is said so plainly rather than hidden -- "no
+   weight helps here" is the useful answer, and hiding it invites the reader
+   to keep trying. */
+.exitOff {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--hairline);
+}
+
+.exitButton {
+  font: inherit;
+  font-size: 0.62rem;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.exitButton:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.mono {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  color: var(--text-primary);
+}
+
+.note {
+  margin: 0.2rem 0 0;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}

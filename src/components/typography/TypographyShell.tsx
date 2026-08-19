@@ -15,6 +15,7 @@ import {
   type LocalFontOutcome,
 } from '@/lib/typography/font-sources';
 import { TabNav } from '@/components/nav/TabNav';
+import { LegibilityField } from './LegibilityField';
 import { SPECIMENS, specimenById, type SpecimenId } from './specimens';
 import styles from './typography.module.css';
 
@@ -288,6 +289,19 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
               </p>
             )}
           </div>
+
+          <h2 className={styles.inspectorTitle}>Legibility field</h2>
+          <LegibilityField
+            text={textColor}
+            background={bgColor}
+            fontSizePx={bodyEntry.px}
+            fontWeight={weight}
+            onPick={(px, nextWeight) => {
+              // Size is set by moving the base of the scale, so the whole
+              // ladder stays proportional rather than one rung drifting.
+              setType({ baseRem: (px / bodyEntry.px) * baseRem, weight: nextWeight });
+            }}
+          />
 
           <h2 className={styles.inspectorTitle}>Fluid CSS</h2>
           <pre className={styles.cssOutput}>
