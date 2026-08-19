@@ -211,3 +211,66 @@
     transform: none;
   }
 }
+
+/* ---------- declared targets ---------- */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-micro, 0.7rem);
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  align-self: center;
+}
+
+.toggle input {
+  accent-color: var(--accent, oklch(70% 0.17 45));
+  cursor: pointer;
+}
+
+/* The requirements, stated and checked. This is the difference between
+   rolling until the numbers happen to be green and saying what the palette
+   has to survive before it is generated. */
+.targets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.targetList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.target {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: var(--text-micro, 0.7rem);
+}
+
+.targetLabel {
+  color: var(--text-secondary);
+}
+
+.tick {
+  color: oklch(78% 0.16 155);
+}
+
+.cross {
+  color: oklch(72% 0.19 25);
+}
+
+.shortfall {
+  margin: 0;
+  max-width: 70ch;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.55;
+  color: oklch(80% 0.12 60);
+}

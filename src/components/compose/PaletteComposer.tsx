@@ -6,6 +6,12 @@ import { deriveRoles } from '@/lib/roles/semantic-roles';
 import { HARMONY_RULES, type ChromaStrategy, type HarmonyRule } from '@/lib/harmony/harmony';
 import { PALETTE_SIZES, generatePalette, type PaletteColor } from '@/lib/harmony/palette';
 import { nextSeedAwayFrom, randomSeed } from '@/lib/harmony/seed';
+import {
+  DEFAULT_CONTRAST_TARGETS,
+  describeShortfall,
+  solvePalette,
+  type UnmetTarget,
+} from '@/lib/harmony/solver';
 import { useSystem } from '@/lib/system/system-context';
 import styles from './palette-composer.module.css';
 
@@ -52,10 +58,18 @@ export function PaletteComposer() {
   const [seed, setSeed] = useState<Oklch | null>(null);
   const [draft, setDraft] = useState<readonly PaletteColor[]>([]);
   const [locked, setLocked] = useState<ReadonlySet<string>>(new Set());
+  const [enforce, setEnforce] = useState(true);
+  const [unmet, setUnmet] = useState<readonly UnmetTarget[]>([]);
 
   const build = useCallback(
     (nextSeed: Oklch, keep: ReadonlySet<string>, previous: readonly PaletteColor[]) => {
-      const generated = generatePalette(nextSeed, { rule, chroma: strategy, count });
+      // With targets on, the palette is solved rather than rolled: the ladder
+      // is adjusted until the contrast requirements hold. This is what fixes
+      // the invisible panel edge that no amount of rolling ever could, because
+      // it is a property of the ladder rather than the seed.
+      const generated = enforce
+        ? solveInto(nextSeed, rule, strategy, count, setUnmet)
+        : rollInto(nextSeed, rule, strategy, count, setUnmet);
       // Locked colours hold their slot; the rest are replaced. Matching by
       // position rather than by colour is what makes a lock feel like a lock —
       // the swatch under your cursor does not move when you roll.
@@ -66,7 +80,7 @@ export function PaletteComposer() {
       setSeed(nextSeed);
       setDraft(dedupe(merged));
     },
-    [rule, strategy, count]
+    [rule, strategy, count, enforce]
   );
 
   const roll = useCallback(() => {
@@ -84,7 +98,7 @@ export function PaletteComposer() {
     // Intentionally keyed on the controls alone: including draft or locked
     // would rebuild on every roll and every lock, undoing both.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rule, strategy, count]);
+  }, [rule, strategy, count, enforce]);
 
   // Spacebar rolls, the way it does everywhere else in this category. Guarded
   // against firing while a control has focus — pressing space on a focused
@@ -123,6 +137,8 @@ export function PaletteComposer() {
 
   const preview = draft.length > 0 ? previewRoles(draft) : null;
   const isApplied = draft.length > 0 && samePalette(draft, system.palette);
+  const measured = draft.length > 0 ? measureTargets(draft) : {};
+  const shortfall = describeShortfall(unmet);
 
   return (
     <section className={styles.composer} aria-label="Compose a palette">
@@ -172,6 +188,15 @@ export function PaletteComposer() {
               </option>
             ))}
           </select>
+        </label>
+
+        <label className={styles.toggle}>
+          <input
+            type="checkbox"
+            checked={enforce}
+            onChange={(event) => setEnforce(event.target.checked)}
+          />
+          <span>Meet contrast targets</span>
         </label>
 
         <div className={styles.actions}>
@@ -228,21 +253,69 @@ export function PaletteComposer() {
 
           <div className={styles.readout}>
             <span>{RULE_HINTS[rule]}</span>
-            {preview !== null && (
+            {!enforce && preview !== null && (
               <span className={preview.passes ? styles.pass : styles.fail}>
                 text on surface {preview.ratio.toFixed(2)}:1
               </span>
             )}
-            {seed !== null && draft.some((c) => locked.has(c.hex)) && (
+            {draft.some((c) => locked.has(c.hex)) && (
               <span className={styles.muted}>
                 {[...locked].filter((hex) => draft.some((c) => c.hex === hex)).length} locked
               </span>
             )}
           </div>
+
+          {enforce && (
+            <div className={styles.targets}>
+              <ul className={styles.targetList}>
+                {DEFAULT_CONTRAST_TARGETS.map((target) => {
+                  const ratio = measured[target.label];
+                  if (ratio === undefined) return null;
+                  const met = ratio >= target.min;
+                  return (
+                    <li key={target.label} className={styles.target}>
+                      <span className={met ? styles.tick : styles.cross} aria-hidden="true">
+                        {met ? '\u2713' : '\u2717'}
+                      </span>
+                      <span className={styles.targetLabel}>{target.label}</span>
+                      <span className={met ? styles.pass : styles.fail}>
+                        {ratio.toFixed(2)}:1
+                      </span>
+                      <span className={styles.muted}>needs {target.min}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {shortfall !== null && <p className={styles.shortfall}>{shortfall}</p>}
+            </div>
+          )}
         </>
       )}
     </section>
   );
+}
+
+function solveInto(
+  seed: Oklch,
+  rule: HarmonyRule,
+  chroma: ChromaStrategy,
+  count: number,
+  report: (unmet: readonly UnmetTarget[]) => void
+) {
+  const result = solvePalette(seed, { rule, chroma, count });
+  report(result.unmet);
+  return result.palette;
+}
+
+function rollInto(
+  seed: Oklch,
+  rule: HarmonyRule,
+  chroma: ChromaStrategy,
+  count: number,
+  report: (unmet: readonly UnmetTarget[]) => void
+) {
+  report([]);
+  return generatePalette(seed, { rule, chroma, count });
 }
 
 /** A generated palette should never be judged only by its swatches — this is
@@ -251,6 +324,20 @@ function previewRoles(colors: readonly PaletteColor[]): { ratio: number; passes:
   const roles = deriveRoles(colors.map((c) => ({ hex: c.hex, oklch: c.oklch })));
   const ratio = contrastRatio(roles.text.oklch, roles.surface.oklch);
   return { ratio, passes: ratio >= 4.5 };
+}
+
+/** Every declared target, measured against the draft as it stands, so the
+ *  report shows what was achieved rather than only what failed. */
+function measureTargets(colors: readonly PaletteColor[]): Record<string, number> {
+  const roles = deriveRoles(colors.map((c) => ({ hex: c.hex, oklch: c.oklch })));
+  const out: Record<string, number> = {};
+  for (const target of DEFAULT_CONTRAST_TARGETS) {
+    out[target.label] = contrastRatio(
+      roles[target.foreground].oklch,
+      roles[target.background].oklch
+    );
+  }
+  return out;
 }
 
 function samePalette(

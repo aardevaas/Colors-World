@@ -43,12 +43,19 @@ const MAX_BRAND_SLOTS = 4;
  * from `flipPolarity` on the resolved roles rather than a second generator, so
  * there is one ladder to reason about instead of two.
  */
-const NEUTRAL_LADDER = {
+export interface NeutralLadder {
+  readonly background: number;
+  readonly surface: number;
+  readonly border: number;
+  readonly text: number;
+}
+
+export const DEFAULT_NEUTRAL_LADDER: NeutralLadder = {
   background: 0.15,
   surface: 0.22,
   border: 0.34,
   text: 0.95,
-} as const;
+};
 
 /** Where harmony colours are placed so they read as brand against the ladder. */
 const BRAND_LIGHTNESS = 0.62;
@@ -77,6 +84,13 @@ export interface PaletteOptions {
   /** Chroma carried by the neutrals. Zero gives true greys. */
   readonly neutralChroma?: number;
   readonly spread?: number;
+  /**
+   * Lightness of each neutral slot. Exposed because it is what the constraint
+   * solver moves: contrast between two neutrals is almost entirely a function
+   * of how far apart they sit on this ladder, so it is the one set of numbers
+   * worth searching over.
+   */
+  readonly ladder?: NeutralLadder;
 }
 
 export interface GeneratedPalette {
@@ -90,6 +104,7 @@ export function generatePalette(seed: Oklch, options: PaletteOptions = {}): Gene
   const rule = options.rule ?? 'triad';
   const count = clampCount(options.count ?? DEFAULT_SIZE);
   const neutralChroma = Math.max(0, options.neutralChroma ?? DEFAULT_NEUTRAL_CHROMA);
+  const ladder = options.ladder ?? DEFAULT_NEUTRAL_LADDER;
 
   const harmony = generateHarmony(
     { ...seed, l: BRAND_LIGHTNESS },
@@ -113,12 +128,12 @@ export function generatePalette(seed: Oklch, options: PaletteOptions = {}): Gene
   const safeNeutral = Math.min(neutralChroma, brandChroma * NEUTRAL_CHROMA_HEADROOM);
 
   const candidates: PaletteColor[] = [
-    neutral(NEUTRAL_LADDER.background, seed.h, safeNeutral, gamut),
-    neutral(NEUTRAL_LADDER.text, seed.h, safeNeutral * 0.5, gamut),
+    neutral(ladder.background, seed.h, safeNeutral, gamut),
+    neutral(ladder.text, seed.h, safeNeutral * 0.5, gamut),
     brands[0] ?? null,
-    neutral(NEUTRAL_LADDER.surface, seed.h, safeNeutral, gamut),
+    neutral(ladder.surface, seed.h, safeNeutral, gamut),
     brands[1] ?? null,
-    neutral(NEUTRAL_LADDER.border, seed.h, safeNeutral * 1.6, gamut),
+    neutral(ladder.border, seed.h, safeNeutral * 1.6, gamut),
     brands[2] ?? null,
     brands[3] ?? null,
   ].filter((color): color is PaletteColor => color !== null);
