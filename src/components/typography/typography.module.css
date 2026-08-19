@@ -1,0 +1,407 @@
+/* /typography's own world: a near-white reading surface for the specimen, with
+   the instrument itself kept dark and quiet around it. The other tabs judge
+   colour, so they stay on obsidian — this one judges *reading*, and type has to
+   be assessed on the kind of surface it will actually be read on. */
+
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  background: #050508;
+}
+
+.controlBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-base);
+  flex-wrap: wrap;
+  padding: var(--space-snug) var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.pillRow {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 0.4rem 0.85rem;
+  background: transparent;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: var(--text-micro);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out-expo);
+}
+
+/* Excluding the active state is deliberate: a bare :hover (0,2,0) outranks
+   .pillActive (0,1,0) and renders the label invisible on its own pill. This
+   exact bug shipped twice in /visualizer before being caught live. */
+.pill:not(.pillActive):hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.pillActive {
+  background: var(--text-primary);
+  color: var(--surface-void);
+  border-color: var(--text-primary);
+}
+
+.localTray {
+  padding: var(--space-snug) var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.localList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-height: 8rem;
+  overflow-y: auto;
+}
+
+.localChip {
+  padding: 0.25rem 0.6rem;
+  background: transparent;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.inlineButton {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  margin-left: 0.4rem;
+}
+
+/* ── Body ──────────────────────────────────────────────────── */
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  min-height: 0;
+}
+
+@media (max-width: 960px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stage {
+  padding: var(--space-wide);
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+/* The reading surface. Every size, family, leading and colour below resolves
+   through the custom properties set on this element, so changing the ratio
+   repaints the entire specimen with no React re-render. */
+.specimen {
+  width: 100%;
+  max-width: 780px;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border-radius: 12px;
+  background: var(--type-bg);
+  color: var(--type-fg);
+  font-family: var(--type-body-family), system-ui, sans-serif;
+  font-weight: var(--type-weight);
+  line-height: var(--type-leading);
+  letter-spacing: var(--type-tracking);
+  box-shadow: 0 30px 70px -30px oklch(0% 0 0 / 0.8);
+}
+
+/* ── Magazine specimen ─────────────────────────────────────── */
+
+.magazine {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.kicker {
+  margin: 0;
+  font-family: var(--type-mono-family), ui-monospace, monospace;
+  font-size: var(--type-caption);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.magazineHeadline {
+  margin: 0;
+  font-family: var(--type-display-family), Georgia, serif;
+  font-size: var(--type-display);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+
+.standfirst {
+  margin: 0;
+  font-size: var(--type-h4);
+  opacity: 0.78;
+  max-width: 46ch;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.4rem;
+  font-size: var(--type-body);
+}
+
+.columns p {
+  margin: 0;
+}
+
+.dropCapParagraph {
+  margin: 0;
+}
+
+.dropCap {
+  float: left;
+  font-family: var(--type-display-family), Georgia, serif;
+  font-size: 3.2em;
+  line-height: 0.82;
+  padding-right: 0.08em;
+  font-weight: 700;
+}
+
+.pullQuote {
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+  border-left: 3px solid currentColor;
+  font-family: var(--type-display-family), Georgia, serif;
+  font-size: var(--type-h2);
+  line-height: 1.18;
+  opacity: 0.88;
+}
+
+/* ── Document specimen ─────────────────────────────────────── */
+
+.document {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: var(--type-body);
+}
+
+.document p {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.docHeading {
+  margin: 0;
+  font-family: var(--type-display-family), Georgia, serif;
+  font-size: var(--type-h2);
+  line-height: 1.15;
+}
+
+.codeBlock {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--type-fg) 8%, transparent);
+  font-family: var(--type-mono-family), ui-monospace, monospace;
+  font-size: var(--type-small);
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.inlineCode {
+  font-family: var(--type-mono-family), ui-monospace, monospace;
+  font-size: 0.92em;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--type-fg) 10%, transparent);
+}
+
+.callout {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  border-left: 3px solid currentColor;
+  background: color-mix(in oklab, var(--type-fg) 6%, transparent);
+  font-size: var(--type-small);
+  opacity: 0.85;
+}
+
+/* ── Ladder specimen ───────────────────────────────────────── */
+
+.ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.ladderRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--type-fg) 12%, transparent);
+  padding-bottom: 0.5rem;
+}
+
+.ladderSample {
+  font-family: var(--type-display-family), Georgia, serif;
+  line-height: 1.1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ladderMeta {
+  font-family: var(--type-mono-family), ui-monospace, monospace;
+  font-size: 0.7rem;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+.ladderMeta::after {
+  content: attr(data-token);
+}
+
+/* ── Inspector ─────────────────────────────────────────────── */
+
+.inspector {
+  border-left: var(--rule-width) solid var(--hairline);
+  padding: var(--space-base) var(--space-snug);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-snug);
+  overflow-y: auto;
+  background: oklch(8% 0 0 / 0.5);
+}
+
+.inspectorTitle {
+  margin: 0;
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-secondary);
+}
+
+.field input[type='range'] {
+  width: 100%;
+}
+
+.fieldValue {
+  color: var(--text-primary);
+  font-style: normal;
+  float: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldNote {
+  color: var(--text-tertiary);
+  font-style: normal;
+  font-size: 0.9em;
+}
+
+.select {
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 6px;
+  padding: 0.3rem 0.45rem;
+  font-family: inherit;
+  font-size: var(--text-micro);
+}
+
+.legibility {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.legibilityRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-secondary);
+}
+
+.pass {
+  color: oklch(78% 0.16 150);
+  font-variant-numeric: tabular-nums;
+}
+
+.fail {
+  color: oklch(72% 0.17 30);
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.mono {
+  font-family: var(--font-dock-mono), var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.fixButton {
+  align-self: flex-start;
+  background: none;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.fixButton:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.cssOutput {
+  margin: 0;
+  padding: 0.6rem;
+  border-radius: 6px;
+  background: var(--surface-void);
+  border: var(--rule-width) solid var(--hairline);
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  max-height: 14rem;
+  overflow-y: auto;
+}

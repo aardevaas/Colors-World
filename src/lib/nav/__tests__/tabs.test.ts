@@ -42,9 +42,11 @@ describe('tab manifest', () => {
   // This is the regression guard for the bug that made TabNav necessary: the
   // nav must always render all five, so a tab can never again be built with
   // nowhere to appear. Unbuilt tabs are marked, not omitted.
-  it('marks unbuilt tabs rather than dropping them from the manifest', () => {
-    const unbuilt = TABS.filter((t) => !t.built).map((t) => t.id);
-    expect(unbuilt).toEqual(['typography']);
+  it('keeps the built flag on every tab so an unbuilt one can never be dropped', () => {
+    // All five now ship. The flag stays because the failure it guards against
+    // — building a tab with nowhere to appear — returns the moment a sixth is
+    // added and someone omits it from the nav rather than marking it.
     expect(TABS.every((t) => typeof t.built === 'boolean')).toBe(true);
+    expect(TABS.filter((t) => !t.built)).toEqual([]);
   });
 });
