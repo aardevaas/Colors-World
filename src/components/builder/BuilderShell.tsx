@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useReducer, useRef, useState, useTransition, type ReactNode } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   CVD_TYPES,
@@ -16,6 +15,7 @@ import {
 import { snapshotFromScales } from '@/lib/versioning';
 import { createPaletteFromScale } from '@/app/palettes/actions';
 import { useDock } from '@/lib/dock/dock-context';
+import { TabNav } from '@/components/nav/TabNav';
 import {
   builderReducer,
   EMPTY_BUILDER_STATE,
@@ -158,23 +158,7 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
 
   return (
     <div className={styles.shell}>
-      <header className={styles.masthead}>
-        <h1 className={styles.wordmark}>
-          Colors World <span className={styles.wordmarkDim}>/ builder</span>
-        </h1>
-        <nav className={styles.navGroup}>
-          <Link href="/studio" className={styles.navLink}>
-            studio
-          </Link>
-          <Link href="/library" className={styles.navLink}>
-            library
-          </Link>
-          <Link href="/palettes" className={styles.navLink}>
-            palettes
-          </Link>
-        </nav>
-        {accountSlot}
-      </header>
+      <TabNav current="builder">{accountSlot}</TabNav>
 
       <div className={styles.globalControls}>
         <StepControls

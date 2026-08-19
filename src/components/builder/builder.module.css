@@ -674,3 +674,14 @@
     transition: none;
   }
 }
+
+/* /builder is its own world typographically — it uses Plus Jakarta Sans, not
+   the mono every other tab uses. TabNav exposes these hooks precisely so a tab
+   can keep its own voice without forking the shell's markup. Scoped to .shell
+   so it cannot leak into another route. */
+.shell {
+  --tab-nav-font: inherit;
+  --tab-nav-size: 0.75rem;
+  --tab-nav-idle: oklch(75% 0.006 265 / 0.75);
+  --tab-nav-active: oklch(96% 0.004 265);
+}

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { TABS } from '@/lib/nav/tabs';
 import { redirect } from 'next/navigation';
 import { BOARD_ASSETS_BUCKET } from '@/lib/supabase/board';
 import { listBrandAssets, type BrandAssetRecord } from '@/lib/supabase/brand-assets';
@@ -56,16 +57,16 @@ export default async function AssetsPage() {
         <h1 className={styles.wordmark}>
           Colors World <span className={styles.wordmarkDim}>/ assets</span>
         </h1>
-        <nav className={styles.navGroup}>
-          <Link href="/studio" className={styles.navLink}>
-            studio
-          </Link>
-          <Link href="/builder" className={styles.navLink}>
-            builder
-          </Link>
-          <Link href="/library" className={styles.navLink}>
-            library
-          </Link>
+        {/* /assets is not one of the five tabs — it predates the tab model and
+            its long-term home is an open question in ROADMAP.md. It links back
+            into the tabs rather than rendering TabNav, which would falsely
+            imply it is one of them. */}
+        <nav className={styles.navGroup} aria-label="Primary">
+          {TABS.filter((tab) => tab.built).map((tab) => (
+            <Link key={tab.id} href={tab.href} className={styles.navLink}>
+              {tab.label}
+            </Link>
+          ))}
           <Link href="/palettes" className={styles.navLink}>
             palettes
           </Link>

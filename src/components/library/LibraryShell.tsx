@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import Link from 'next/link';
 import { randomSeed } from '@/lib/spectrum/discovery-feed';
 import {
   createInitialFeedState,
@@ -12,6 +11,7 @@ import { vibeSearchAction } from '@/app/actions/vibe-search';
 import { fetchSemanticMatchesAction } from '@/app/actions/semantic-matches';
 import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import type { ColorRecord } from '@/lib/supabase/colors';
+import { TabNav } from '@/components/nav/TabNav';
 import { LibraryGrid, LIBRARY_BATCH_SIZE } from './LibraryGrid';
 import { GeneticsDrawer } from './GeneticsDrawer';
 import styles from './library.module.css';
@@ -135,22 +135,7 @@ export function LibraryShell() {
 
   return (
     <div className={styles.shell}>
-      <header className={styles.masthead}>
-        <h1 className={styles.wordmark}>
-          Colors World <span className={styles.wordmarkDim}>/ library</span>
-        </h1>
-        <nav>
-          <Link href="/studio" className={styles.navLink}>
-            studio
-          </Link>{' '}
-          <Link href="/builder" className={styles.navLink}>
-            builder
-          </Link>{' '}
-          <Link href="/assets" className={styles.navLink}>
-            assets
-          </Link>
-        </nav>
-      </header>
+      <TabNav current="library" />
 
       <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
         <input

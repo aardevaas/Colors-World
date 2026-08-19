@@ -1,0 +1,90 @@
+/* The persistent shell's navigation.
+ *
+ * Every value a tab might legitimately want to differ on is exposed as a custom
+ * property with a sensible default. A tab overrides them in its own scope
+ * (see /builder, which uses its display typeface here rather than the mono the
+ * other tabs use) without touching this markup or forking the component.
+ */
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-wide);
+  flex-wrap: wrap;
+  padding: var(--space-base) var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.wordmark {
+  font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.wordmarkDim {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.navGroup {
+  display: flex;
+  gap: var(--space-base);
+  flex-wrap: wrap;
+}
+
+.navLink,
+.navCurrent,
+.navSoon {
+  font-family: var(--tab-nav-font, var(--font-mono));
+  font-size: var(--tab-nav-size, var(--text-micro));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.navLink {
+  color: var(--tab-nav-idle, var(--text-tertiary));
+  transition: color var(--duration-fast) var(--ease-out-expo);
+}
+
+.navLink:hover {
+  color: var(--tab-nav-active, var(--text-primary));
+}
+
+/* The current tab reads as a location, not a destination — so it is not a
+   link at all, which also removes the "click the page you're on" dead end
+   every hand-rolled copy of this nav used to have. */
+.navCurrent {
+  color: var(--tab-nav-active, var(--text-primary));
+  position: relative;
+}
+
+.navCurrent::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.35em;
+  height: 1px;
+  background: currentColor;
+}
+
+/* Tabs that exist in the product's shape but are not built yet. Shown rather
+   than hidden so the five-tab structure is legible from any tab, but inert and
+   visibly quieter so it never reads as a broken link. */
+.navSoon {
+  color: var(--tab-nav-idle, var(--text-tertiary));
+  opacity: 0.4;
+  cursor: default;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+  margin-left: auto;
+}
