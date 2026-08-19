@@ -76,7 +76,11 @@
   cursor: pointer;
 }
 
-.toggleButton:hover {
+/* Same specificity trap as .templateTab, and I walked straight back into it:
+   a bare `:hover` (0,2,0) outranks the `.toggleButtonOn` active state (0,1,0),
+   so the toggle you just clicked went white-on-white under the resting
+   pointer. Excluding the active state is what actually fixes it. */
+.toggleButton:not(.toggleButtonOn):hover {
   color: var(--text-primary);
 }
 
@@ -123,11 +127,29 @@
   min-width: 0;
 }
 
+.toggleButtonOn {
+  background: var(--text-primary);
+  color: var(--surface-void);
+  border-color: var(--text-primary);
+}
+
+.toggleButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Positioning context for the audit badges, sized by the stage it wraps so
+   badge offsets measured against the stage land in the right place. */
+.stageFrame {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+}
+
 /* The framed viewport the mockup lives in. Fixed aspect so switching templates
    doesn't reflow the whole page, and so an exported PNG is a predictable size. */
 .stageInner {
   width: 100%;
-  max-width: 760px;
   aspect-ratio: 16 / 10;
   border-radius: 12px;
   overflow: hidden;
@@ -291,4 +313,64 @@
   border: 1px solid currentColor;
   border-radius: 4px;
   padding: 0.05rem 0.28rem;
+}
+
+/* ── Audit overlay ─────────────────────────────────────────────
+   Live WCAG readouts pinned to the real rendered boxes. Failures are loud and
+   passes are quiet on purpose: 25 equally-prominent badges would bury the two
+   that actually need attention. */
+
+.auditOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.auditBadge {
+  position: absolute;
+  transform: translateY(-58%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.08rem 0.32rem;
+  border-radius: 4px;
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: 0.56rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  border: 1px solid transparent;
+}
+
+/* Passing badges drop their chip entirely — bare text at low opacity. On a
+   dense template 25 equally-weighted chips read as noise and bury the one
+   failure, which is the only thing the overlay exists to surface. */
+.auditBadgePass {
+  background: transparent;
+  backdrop-filter: none;
+  color: oklch(84% 0.14 150);
+  opacity: 0.38;
+  font-size: 0.5rem;
+  padding: 0;
+}
+
+.auditBadgeFail {
+  background: oklch(25% 0.08 30 / 0.82);
+  color: oklch(88% 0.15 30);
+  border-color: oklch(60% 0.18 30 / 0.7);
+  font-weight: 700;
+}
+
+.auditBadgeLarge {
+  opacity: 0.65;
+  font-size: 0.5rem;
+}
+
+.exportError {
+  margin: 0;
+  font-family: var(--font-dock-mono), var(--font-mono);
+  font-size: var(--text-micro);
+  color: oklch(72% 0.17 30);
 }

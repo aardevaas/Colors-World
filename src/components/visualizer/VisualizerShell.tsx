@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { CVD_TYPES, contrastRatio, formatHex, simulateCvd, type CvdType } from '@/lib/color-engine';
 import { useDock } from '@/lib/dock/dock-context';
 import {
@@ -13,9 +13,17 @@ import {
   type SemanticRole,
 } from '@/lib/visualizer/semantic-roles';
 import { WCAG_AA_NORMAL, autoFixContrast } from '@/lib/visualizer/auto-fix';
+import { appendWatermarkFooter } from '@/lib/visualizer/export-showcase';
+import { downloadDataUrl } from '@/lib/studio/export-png';
 import { TabNav } from '@/components/nav/TabNav';
+import { AuditOverlay } from './AuditOverlay';
 import { TEMPLATES, templateById, type TemplateId } from './templates';
 import styles from './visualizer.module.css';
+
+const EXPORT_DPR = 2;
+const EXPORT_TIMEOUT_MS = 15_000;
+const PAINT_WAIT_MS = 120;
+const WATERMARK = 'Colors World by: aardevaas';
 
 type CvdMode = 'none' | CvdType;
 
@@ -46,6 +54,10 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
   const [isLight, setIsLight] = useState(false);
   const [cvd, setCvd] = useState<CvdMode>('none');
   const [assigningRole, setAssigningRole] = useState<SemanticRole | null>(null);
+  const [showAudit, setShowAudit] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   const palette = useMemo<RoleColor[]>(
     () => dock.items.map((item) => ({ hex: item.hex, oklch: item.oklch })),
@@ -88,6 +100,52 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
     });
   }
 
+  /**
+   * Captures the stage only — not the surrounding instrument — then appends the
+   * credit bar underneath. The audit badges are hidden for the duration: they
+   * are a working tool, not something anyone wants baked into a shared image.
+   */
+  async function handleExport() {
+    const stage = stageRef.current;
+    if (stage === null || isExporting) return;
+
+    const wasShowingAudit = showAudit;
+    setShowAudit(false);
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      // Let the badge removal actually paint before capturing — but never
+      // *depend* on a frame arriving. Browsers pause requestAnimationFrame in
+      // backgrounded tabs, so a bare rAF await hangs indefinitely the moment
+      // someone switches tab mid-export, with no timeout inside the try block
+      // able to rescue it. Racing a timer makes the wait best-effort.
+      await Promise.race([
+        new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+        new Promise((resolve) => setTimeout(resolve, PAINT_WAIT_MS)),
+      ]);
+      const { domToPng } = await import('modern-screenshot');
+
+      // Bounded rather than open-ended. domToPng inlines every external
+      // resource it finds, so one unreachable font or image otherwise leaves
+      // the button disabled and spinning forever with nothing to diagnose —
+      // a hang is a worse failure than an error message.
+      const raw = await Promise.race([
+        domToPng(stage, { scale: EXPORT_DPR, timeout: EXPORT_TIMEOUT_MS }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Capture timed out.')), EXPORT_TIMEOUT_MS)
+        ),
+      ]);
+
+      const withCredit = await appendWatermarkFooter(raw, WATERMARK);
+      downloadDataUrl(withCredit, `colors-world-${templateId}-${Date.now()}.png`);
+    } catch (cause) {
+      setExportError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setIsExporting(false);
+      setShowAudit(wasShowingAudit);
+    }
+  }
+
   function handleAutoFix(fg: SemanticRole, bg: SemanticRole) {
     const outcome = autoFixContrast(roles[fg].oklch, roles[bg].oklch);
     if (outcome.status !== 'fixed') return;
@@ -118,6 +176,23 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
             {isLight ? '☾ dark' : '☀ light'}
           </button>
 
+          <button
+            type="button"
+            className={showAudit ? `${styles.toggleButton} ${styles.toggleButtonOn}` : styles.toggleButton}
+            onClick={() => setShowAudit((v) => !v)}
+          >
+            ◎ audit
+          </button>
+
+          <button
+            type="button"
+            className={styles.toggleButton}
+            onClick={() => void handleExport()}
+            disabled={isExporting}
+          >
+            {isExporting ? 'exporting…' : '⬇ export'}
+          </button>
+
           <label className={styles.selectField}>
             <span>Vision</span>
             <select
@@ -138,12 +213,22 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
 
       <div className={styles.body}>
         <section className={styles.stage}>
-          <div className={styles.stageInner} style={stageStyle}>
-            <template.Component />
+          <div className={styles.stageFrame}>
+            <div ref={stageRef} className={styles.stageInner} style={stageStyle}>
+              <template.Component />
+            </div>
+            {showAudit && (
+              <AuditOverlay
+                stageRef={stageRef}
+                roles={shownRoles}
+                measureKey={`${templateId}-${isLight}-${cvd}`}
+              />
+            )}
           </div>
           <p className={styles.stageCaption}>
             {template.label} — stresses {template.stresses}
           </p>
+          {exportError !== null && <p className={styles.exportError}>Export failed: {exportError}</p>}
         </section>
 
         <aside className={styles.inspector}>
