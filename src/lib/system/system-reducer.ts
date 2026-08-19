@@ -9,10 +9,10 @@
  * on is simply now the whole document rather than one tray.
  */
 
-import type { Oklch } from '@/lib/color-engine';
+import type { Gamut, Oklch } from '@/lib/color-engine';
 import type { SemanticRole } from '@/lib/roles/semantic-roles';
 import { EMPTY_SYSTEM } from './defaults';
-import type { System, SystemMode, TypeSettings } from './types';
+import type { ScaleSettings, System, SystemMode, TypeSettings } from './types';
 
 /** Matches the codec's cap, so no route into the System can exceed it. */
 const MAX_PALETTE = 32;
@@ -30,7 +30,13 @@ export type SystemAction =
   | { readonly type: 'setRoleOverride'; readonly role: SemanticRole; readonly hex: string }
   | { readonly type: 'clearRoleOverride'; readonly role: SemanticRole }
   | { readonly type: 'setType'; readonly patch: Partial<TypeSettings> }
-  | { readonly type: 'setMode'; readonly mode: SystemMode };
+  | { readonly type: 'setMode'; readonly mode: SystemMode }
+  | { readonly type: 'setScale'; readonly hex: string; readonly settings: ScaleSettings }
+  | {
+      readonly type: 'setScaleGlobals';
+      readonly steps?: number;
+      readonly gamut?: Gamut;
+    };
 
 export function systemReducer(state: System, action: SystemAction): System {
   switch (action.type) {
@@ -59,7 +65,11 @@ export function systemReducer(state: System, action: SystemAction): System {
       // colour absent from the palette, with no swatch to explain where it
       // came from. Drop those pins and let the role derive again.
       const roleOverrides = dropOverridesFor(state.roleOverrides, hex);
-      return { ...state, palette, anchorHex, roleOverrides };
+      // The scale belonged to a colour that is gone; keeping its curves would
+      // reattach them to whatever colour later took that hex.
+      const byHex = { ...state.scales.byHex };
+      delete byHex[hex];
+      return { ...state, palette, anchorHex, roleOverrides, scales: { ...state.scales, byHex } };
     }
 
     case 'setAnchor': {
@@ -72,7 +82,13 @@ export function systemReducer(state: System, action: SystemAction): System {
     }
 
     case 'clearPalette':
-      return { ...state, palette: [], anchorHex: null, roleOverrides: {} };
+      return {
+        ...state,
+        palette: [],
+        anchorHex: null,
+        roleOverrides: {},
+        scales: { ...state.scales, byHex: {} },
+      };
 
     case 'setPalette': {
       // Replacing the palette wholesale, as the generator does. Overrides are
@@ -92,6 +108,10 @@ export function systemReducer(state: System, action: SystemAction): System {
         palette,
         anchorHex: palette[0]?.hex ?? null,
         roleOverrides: {},
+        // Curves were drawn against colours that are being replaced wholesale;
+        // step count and gamut are settings about the scales themselves and
+        // survive.
+        scales: { ...state.scales, byHex: {} },
       };
     }
 
@@ -113,6 +133,27 @@ export function systemReducer(state: System, action: SystemAction): System {
 
     case 'setMode':
       return state.mode === action.mode ? state : { ...state, mode: action.mode };
+
+    case 'setScale': {
+      const hex = action.hex.toLowerCase();
+      const byHex = { ...state.scales.byHex };
+      // An entry with nothing in it is not a setting, it is noise: it would
+      // survive in storage and the URL forever, describing a scale nobody
+      // ever touched.
+      if (Object.keys(action.settings).length === 0) delete byHex[hex];
+      else byHex[hex] = action.settings;
+      return { ...state, scales: { ...state.scales, byHex } };
+    }
+
+    case 'setScaleGlobals':
+      return {
+        ...state,
+        scales: {
+          ...state.scales,
+          steps: action.steps ?? state.scales.steps,
+          gamut: action.gamut ?? state.scales.gamut,
+        },
+      };
 
     default:
       return state;

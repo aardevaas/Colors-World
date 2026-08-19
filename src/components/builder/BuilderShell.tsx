@@ -13,6 +13,7 @@ import {
   type ScaleSpec,
 } from '@/lib/color-engine';
 import { snapshotFromScales } from '@/lib/versioning';
+import type { ScaleSettings } from '@/lib/system/types';
 import { createPaletteFromScale } from '@/app/palettes/actions';
 import { useSystem } from '@/lib/system/system-context';
 import { TabNav } from '@/components/nav/TabNav';
@@ -72,7 +73,7 @@ interface BuilderShellProps {
 
 export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellProps) {
   const router = useRouter();
-  const { system, addColor } = useSystem();
+  const { system, addColor, setScale, setScaleGlobals } = useSystem();
   const [state, dispatch] = useReducer(builderReducer, EMPTY_BUILDER_STATE);
   const [paletteName, setPaletteName] = useState('brand');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -114,13 +115,34 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
       type: 'syncFromDock',
       items: system.palette.map((color) => ({ hex: color.hex, oklch: color.oklch })),
       primaryAnchorHex: system.anchorHex,
+      // Authoritative: following a link has to reproduce its author's curves
+      // exactly, including the ones they never drew.
+      settings: system.scales.byHex,
     });
     // system.palette is a new array identity on every provider render; the
     // sync itself is cheap and idempotent (createScaleEntry only runs for
     // genuinely new hexes), so re-running on every System change is correct
     // and intentional rather than a dependency to prune.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [system.palette, system.anchorHex]);
+  }, [system.palette, system.anchorHex, system.scales.byHex]);
+
+  // Curve work back out to the System, so a shared link carries it. Guarded by
+  // comparison rather than by dependency-array cleverness: the reducer returns
+  // the identical state when a sync changes nothing, so an echo terminates
+  // here instead of looping.
+  useEffect(() => {
+    for (const scale of state.scales) {
+      const next = settingsFromScale(scale);
+      const current = system.scales.byHex[scale.hex.toLowerCase()];
+      if (!sameSettings(next, current)) setScale(scale.hex, next);
+    }
+    if (state.stepCount !== system.scales.steps || state.gamut !== system.scales.gamut) {
+      setScaleGlobals({ steps: state.stepCount, gamut: state.gamut });
+    }
+    // `setScale`/`setScaleGlobals` are stable dispatch wrappers; including
+    // them would re-run this on every provider render for no benefit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.scales, state.stepCount, state.gamut, system.scales]);
 
   const generatedScales = useMemo<readonly GeneratedScale[]>(
     () => state.scales.map((entry) => generateScale(specFor(entry, state.stepCount, state.gamut))),
@@ -274,4 +296,33 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
       )}
     </div>
   );
+}
+
+/**
+ * The decisions a scale carries, stripped of everything derivable. Defaults
+ * are omitted rather than written out, so a scale nobody has touched adds
+ * nothing to the URL.
+ */
+function settingsFromScale(scale: BuilderScaleEntry): ScaleSettings {
+  const settings: {
+    name?: string;
+    chromaIntensity?: number;
+    hueTorsion?: number;
+    lightnessCurve?: readonly ControlPoint[];
+    chromaCurve?: readonly ControlPoint[];
+    hueTorsionCurve?: readonly ControlPoint[];
+  } = {};
+  if (scale.nameIsCustom && scale.name !== '') settings.name = scale.name;
+  if (scale.chromaIntensity !== 1) settings.chromaIntensity = scale.chromaIntensity;
+  if (scale.hueTorsion !== 0) settings.hueTorsion = scale.hueTorsion;
+  if (scale.lightnessCurve !== null) settings.lightnessCurve = scale.lightnessCurve;
+  if (scale.chromaCurve !== null) settings.chromaCurve = scale.chromaCurve;
+  if (scale.hueTorsionCurve !== null) settings.hueTorsionCurve = scale.hueTorsionCurve;
+  return settings;
+}
+
+function sameSettings(a: ScaleSettings, b: ScaleSettings | undefined): boolean {
+  const left = JSON.stringify(a);
+  const right = JSON.stringify(b ?? {});
+  return left === right;
 }

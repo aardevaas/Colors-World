@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseColor } from '@/lib/color-engine';
 import { SEMANTIC_ROLES } from '@/lib/roles/semantic-roles';
-import { EMPTY_SYSTEM } from '../defaults';
+import { DEFAULT_SCALES, EMPTY_SYSTEM } from '../defaults';
 import { decodeSystem, encodeSystem, isDefaultSystem } from '../codec';
 import type { System, SystemColor } from '../types';
 
@@ -17,7 +17,30 @@ const FULL: System = {
   anchorHex: '#19D368',
   roleOverrides: { primary: '#CFA15D', text: '#FFFFFF' },
   type: { presetId: 'editorial', ratio: 1.333, baseRem: 1.125, lineHeight: 1.7, tracking: 0.02, weight: 500 },
+  scales: DEFAULT_SCALES,
   mode: 'light',
+};
+
+/** The curve work: what a shared link used to drop on the floor. */
+const WITH_SCALES: System = {
+  ...FULL,
+  scales: {
+    steps: 8,
+    gamut: 'p3',
+    byHex: {
+      '#5a3f73': {
+        name: 'brand',
+        chromaIntensity: 1.2,
+        hueTorsion: 15,
+        lightnessCurve: [
+          { x: 0, y: 0 },
+          { x: 0.5, y: 0.42 },
+          { x: 1, y: 1 },
+        ],
+      },
+      '#cfa15d': { hueTorsion: -30 },
+    },
+  },
 };
 
 describe('encodeSystem / decodeSystem', () => {
@@ -137,6 +160,128 @@ describe('decodeSystem — hostile and hand-edited input', () => {
 
   it('tolerates a leading question mark', () => {
     expect(decodeSystem('?c=5a3f73').palette).toHaveLength(1);
+  });
+});
+
+describe('encodeSystem / decodeSystem — the scales', () => {
+  it('round-trips curves, intensity, torsion and names', () => {
+    const back = decodeSystem(encodeSystem(WITH_SCALES));
+    const violet = back.scales.byHex['#5a3f73']!;
+    expect(violet.name).toBe('brand');
+    expect(violet.chromaIntensity).toBe(1.2);
+    expect(violet.hueTorsion).toBe(15);
+    expect(violet.lightnessCurve).toEqual([
+      { x: 0, y: 0 },
+      { x: 0.5, y: 0.42 },
+      { x: 1, y: 1 },
+    ]);
+    expect(back.scales.byHex['#cfa15d']!.hueTorsion).toBe(-30);
+  });
+
+  it('round-trips step count and gamut', () => {
+    const back = decodeSystem(encodeSystem(WITH_SCALES));
+    expect(back.scales.steps).toBe(8);
+    expect(back.scales.gamut).toBe('p3');
+  });
+
+  it('costs nothing when no scale has been touched', () => {
+    // A palette of six colours nobody has customised must not lengthen the
+    // URL by a single character.
+    const encoded = encodeSystem(FULL);
+    expect(encoded).not.toContain('s=');
+    expect(encoded).not.toContain('sg=');
+  });
+
+  it('writes only the scales that differ from default', () => {
+    const one: System = {
+      ...FULL,
+      scales: { ...DEFAULT_SCALES, byHex: { '#19d368': { hueTorsion: 12 } } },
+    };
+    // Index 1 in the palette, and nothing about the other two.
+    expect(encodeSystem(one)).toContain('s=1~t:12');
+  });
+
+  it('drops a settings object that carries only defaults', () => {
+    const noop: System = {
+      ...FULL,
+      scales: { ...DEFAULT_SCALES, byHex: { '#5a3f73': { chromaIntensity: 1, hueTorsion: 0 } } },
+    };
+    expect(encodeSystem(noop)).not.toContain('s=');
+  });
+
+  it('keeps settings attached to their colour when the palette is reordered', () => {
+    // The reason the model keys by hex even though the URL writes indices.
+    const reordered: System = {
+      ...WITH_SCALES,
+      palette: [...WITH_SCALES.palette].reverse(),
+    };
+    const back = decodeSystem(encodeSystem(reordered));
+    expect(back.scales.byHex['#5a3f73']!.name).toBe('brand');
+    expect(back.scales.byHex['#cfa15d']!.hueTorsion).toBe(-30);
+  });
+
+  it('survives a double round-trip unchanged', () => {
+    const once = encodeSystem(WITH_SCALES);
+    expect(encodeSystem(decodeSystem(once))).toBe(once);
+  });
+
+  it('keeps a name with grammar characters in it intact', () => {
+    const awkward: System = {
+      ...FULL,
+      scales: { ...DEFAULT_SCALES, byHex: { '#5a3f73': { name: 'a~b,c:d e' } } },
+    };
+    expect(decodeSystem(encodeSystem(awkward)).scales.byHex['#5a3f73']!.name).toBe('a~b,c:d e');
+  });
+});
+
+describe('decodeSystem — hostile scale input', () => {
+  it('never throws on malformed scale data', () => {
+    const nasty = [
+      's=', 's=~~~', 's=99~n:x', 's=-1~t:5', 's=0', 's=abc~c:1.5',
+      's=0~l:', 's=0~l:0_0', 's=0~l:1_1|0_0', 's=0~l:a_b|c_d',
+      's=0~n:%', 'sg=', 'sg=~', 'sg=99~fake', 's=0~' + 'x:1~'.repeat(500),
+      's=0~l:' + Array.from({length: 400}, (_, i) => `${i / 400}_0.5`).join('|'),
+    ];
+    for (const input of nasty) {
+      expect(() => decodeSystem('c=5a3f73-19d368&' + input)).not.toThrow();
+    }
+  });
+
+  it('rejects a curve whose x values are not ascending and distinct', () => {
+    // The interpolator throws on those, so taking one on trust would crash a
+    // render rather than show a wrong shape.
+    expect(decodeSystem('c=5a3f73&s=0~l:1_1|0_0').scales.byHex['#5a3f73']).toBeUndefined();
+    expect(decodeSystem('c=5a3f73&s=0~l:0.5_1|0.5_0').scales.byHex['#5a3f73']).toBeUndefined();
+  });
+
+  it('rejects a curve of fewer than two points rather than half-drawing it', () => {
+    expect(decodeSystem('c=5a3f73&s=0~l:0_0').scales.byHex['#5a3f73']).toBeUndefined();
+  });
+
+  it('caps curve length so a hand-edited URL cannot hang a render', () => {
+    const huge = Array.from({ length: 400 }, (_, i) => `${i / 400}_0.5`).join('|');
+    expect(decodeSystem(`c=5a3f73&s=0~l:${huge}`).scales.byHex['#5a3f73']).toBeUndefined();
+  });
+
+  it('ignores a scale pointing past the end of the palette', () => {
+    expect(decodeSystem('c=5a3f73&s=9~t:12').scales.byHex).toEqual({});
+  });
+
+  it('clamps out-of-range scale values', () => {
+    const back = decodeSystem('c=5a3f73&sg=99~srgb&s=0~c:99~t:9999');
+    expect(back.scales.steps).toBeLessThanOrEqual(10);
+    expect(back.scales.byHex['#5a3f73']!.chromaIntensity).toBeLessThanOrEqual(2);
+    expect(Math.abs(back.scales.byHex['#5a3f73']!.hueTorsion!)).toBeLessThanOrEqual(180);
+  });
+
+  it('falls back to a real gamut for an invented one', () => {
+    expect(decodeSystem('sg=8~fake').scales.gamut).toBe('srgb');
+  });
+
+  it('caps a very long scale name', () => {
+    const long = 'x'.repeat(400);
+    const name = decodeSystem(`c=5a3f73&s=0~n:${long}`).scales.byHex['#5a3f73']!.name!;
+    expect(name.length).toBeLessThanOrEqual(24);
   });
 });
 

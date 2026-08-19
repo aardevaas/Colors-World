@@ -7,6 +7,10 @@ import {
   type Oklch,
   type ScaleSpec,
 } from '@/lib/color-engine';
+// Type-only, and therefore erased at build time: the Builder depends on the
+// document model's shape, not the other way round, and nothing at runtime
+// crosses back.
+import type { ScaleSettings } from '@/lib/system/types';
 
 /**
  * Pure state transitions for /builder — the Palette Builder & Scale Lab.
@@ -71,7 +75,15 @@ export interface DockSourceItem {
 }
 
 export type BuilderAction =
-  | { readonly type: 'syncFromDock'; readonly items: readonly DockSourceItem[]; readonly primaryAnchorHex: string | null }
+  | {
+      readonly type: 'syncFromDock';
+      readonly items: readonly DockSourceItem[];
+      readonly primaryAnchorHex: string | null;
+      /** Curve work carried by the System, keyed by hex. Absent fields mean
+       *  "the default", so following a link that has no curve on a scale
+       *  clears one that was drawn locally. */
+      readonly settings?: Readonly<Record<string, ScaleSettings>>;
+    }
   | { readonly type: 'hydrateSpecs'; readonly specs: readonly ScaleSpec[] }
   | { readonly type: 'setStepCount'; readonly count: number }
   | { readonly type: 'setPrimary'; readonly hex: string }
@@ -88,6 +100,62 @@ export type BuilderAction =
   | { readonly type: 'setCvd'; readonly cvd: CvdMode }
   | { readonly type: 'toggleMatrix' }
   | { readonly type: 'setExportFormat'; readonly format: ExportFormat };
+
+/**
+ * Folds the System's stored decisions onto a scale entry.
+ *
+ * Within a supplied settings map, an absent field means the default rather
+ * than "leave whatever is there": following a link whose author never touched
+ * a curve has to clear a curve drawn locally, or the link shows something its
+ * author never made. The distinction between an absent *field* and an absent
+ * *map* is the whole contract -- see the call site.
+ */
+function applyScaleSettings(
+  entry: BuilderScaleEntry,
+  settings: ScaleSettings | undefined
+): BuilderScaleEntry {
+  const name = settings?.name;
+  return {
+    ...entry,
+    name: name ?? entry.name,
+    nameIsCustom: name !== undefined && name !== '',
+    chromaIntensity: settings?.chromaIntensity ?? 1,
+    hueTorsion: settings?.hueTorsion ?? 0,
+    lightnessCurve: settings?.lightnessCurve ?? null,
+    chromaCurve: settings?.chromaCurve ?? null,
+    hueTorsionCurve: settings?.hueTorsionCurve ?? null,
+  };
+}
+
+function scalesAreEqual(
+  a: readonly BuilderScaleEntry[],
+  b: readonly BuilderScaleEntry[]
+): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((entry, i) => {
+    const other = b[i]!;
+    return (
+      entry.hex === other.hex &&
+      entry.name === other.name &&
+      entry.nameIsCustom === other.nameIsCustom &&
+      entry.anchorStep === other.anchorStep &&
+      entry.chromaIntensity === other.chromaIntensity &&
+      entry.hueTorsion === other.hueTorsion &&
+      curvesAreEqual(entry.lightnessCurve, other.lightnessCurve) &&
+      curvesAreEqual(entry.chromaCurve, other.chromaCurve) &&
+      curvesAreEqual(entry.hueTorsionCurve, other.hueTorsionCurve)
+    );
+  });
+}
+
+function curvesAreEqual(
+  a: readonly ControlPoint[] | null,
+  b: readonly ControlPoint[] | null
+): boolean {
+  if (a === null || b === null) return a === b;
+  if (a.length !== b.length) return false;
+  return a.every((point, i) => point.x === b[i]!.x && point.y === b[i]!.y);
+}
 
 function clampStepCount(count: number): number {
   return Math.min(MAX_STEPS, Math.max(MIN_STEPS, Math.round(count)));
@@ -158,14 +226,25 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
   switch (action.type) {
     case 'syncFromDock': {
       const existingByHex = new Map(state.scales.map((scale) => [scale.hex, scale]));
-      const nextScales = action.items.map(
-        (item) => existingByHex.get(item.hex) ?? createScaleEntry(item, state.stepCount)
-      );
-      return {
-        ...state,
-        scales: withDerivedNames(nextScales, action.primaryAnchorHex),
-        primaryHex: action.primaryAnchorHex,
-      };
+      const nextScales = action.items.map((item) => {
+        const base = existingByHex.get(item.hex) ?? createScaleEntry(item, state.stepCount);
+        // No settings map at all means the caller is not speaking about
+        // curve work -- a plain re-sync after a palette reorder, say -- and
+        // local edits must survive it. Only a supplied map is authoritative.
+        return action.settings === undefined
+          ? base
+          : applyScaleSettings(base, action.settings[item.hex.toLowerCase()]);
+      });
+      const named = withDerivedNames(nextScales, action.primaryAnchorHex);
+
+      // Returning the identical object when nothing changed is what keeps the
+      // two-way sync with the System from oscillating: the System writes back
+      // whatever the Builder holds, which arrives here again a moment later,
+      // and a fresh object every time would re-render and re-write forever.
+      if (state.primaryHex === action.primaryAnchorHex && scalesAreEqual(state.scales, named)) {
+        return state;
+      }
+      return { ...state, scales: named, primaryHex: action.primaryAnchorHex };
     }
 
     case 'hydrateSpecs': {

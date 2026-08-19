@@ -284,3 +284,84 @@ describe('builderReducer — global settings', () => {
     expect(state.exportFormat).toBe('shadcn');
   });
 });
+
+describe('builderReducer — syncFromDock carrying System settings', () => {
+  const violet: DockSourceItem = { hex: '#5a3f73', oklch: { l: 0.42, c: 0.089, h: 307 } };
+  const curve = [
+    { x: 0, y: 0 },
+    { x: 0.5, y: 0.4 },
+    { x: 1, y: 1 },
+  ];
+
+  function seeded() {
+    return builderReducer(EMPTY_BUILDER_STATE, {
+      type: 'syncFromDock',
+      items: [violet],
+      primaryAnchorHex: violet.hex,
+    });
+  }
+
+  it('applies curve work carried by a link', () => {
+    const after = builderReducer(seeded(), {
+      type: 'syncFromDock',
+      items: [violet],
+      primaryAnchorHex: violet.hex,
+      settings: { '#5a3f73': { name: 'brand', chromaIntensity: 1.4, lightnessCurve: curve } },
+    });
+    const scale = after.scales[0]!;
+    expect(scale.name).toBe('brand');
+    expect(scale.nameIsCustom).toBe(true);
+    expect(scale.chromaIntensity).toBe(1.4);
+    expect(scale.lightnessCurve).toEqual(curve);
+  });
+
+  it('clears local curve work when the link it follows has none', () => {
+    // The link has to show what its author made, not a blend of theirs and
+    // whatever happened to be on this machine.
+    const edited = builderReducer(seeded(), {
+      type: 'setCurve',
+      hex: violet.hex,
+      axis: 'lightness',
+      points: curve,
+    });
+    expect(edited.scales[0]!.lightnessCurve).toEqual(curve);
+
+    const followed = builderReducer(edited, {
+      type: 'syncFromDock',
+      items: [violet],
+      primaryAnchorHex: violet.hex,
+      settings: {},
+    });
+    expect(followed.scales[0]!.lightnessCurve).toBeNull();
+  });
+
+  it('leaves local work alone when no settings map is supplied at all', () => {
+    // An absent map means the caller is not speaking about curves -- a plain
+    // re-sync after a palette reorder -- and must not be read as "clear them".
+    const edited = builderReducer(seeded(), {
+      type: 'setChromaIntensity',
+      hex: violet.hex,
+      value: 0.6,
+    });
+    const resynced = builderReducer(edited, {
+      type: 'syncFromDock',
+      items: [violet],
+      primaryAnchorHex: violet.hex,
+    });
+    expect(resynced.scales[0]!.chromaIntensity).toBe(0.6);
+  });
+
+  it('returns the identical state when nothing changed', () => {
+    // What stops the two-way sync with the System from oscillating: the
+    // System echoes back whatever the Builder holds, and a fresh object every
+    // time would re-render and re-write forever.
+    const before = seeded();
+    const after = builderReducer(before, {
+      type: 'syncFromDock',
+      items: [violet],
+      primaryAnchorHex: violet.hex,
+      settings: {},
+    });
+    expect(after).toBe(before);
+  });
+});

@@ -9,7 +9,8 @@
 
 import { DEFAULT_RATIO } from '@/lib/typography/type-scale';
 import { DEFAULT_PRESET_ID } from '@/lib/typography/font-sources';
-import type { System, TypeSettings } from './types';
+import { DEFAULT_STEP_COUNT } from '@/lib/builder/builder-reducer';
+import type { ScaleSystem, System, TypeSettings } from './types';
 
 export const DEFAULT_TYPE: TypeSettings = {
   presetId: DEFAULT_PRESET_ID,
@@ -20,10 +21,17 @@ export const DEFAULT_TYPE: TypeSettings = {
   weight: 400,
 };
 
+export const DEFAULT_SCALES: ScaleSystem = {
+  steps: DEFAULT_STEP_COUNT,
+  gamut: 'srgb',
+  byHex: {},
+};
+
 export const EMPTY_SYSTEM: System = {
   palette: [],
   anchorHex: null,
   roleOverrides: {},
   type: DEFAULT_TYPE,
+  scales: DEFAULT_SCALES,
   mode: 'dark',
 };

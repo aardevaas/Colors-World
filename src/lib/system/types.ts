@@ -14,7 +14,7 @@
  * only thing that changes it.
  */
 
-import type { Oklch } from '@/lib/color-engine';
+import type { ControlPoint, Gamut, Oklch } from '@/lib/color-engine';
 import type { SemanticRole } from '@/lib/roles/semantic-roles';
 
 /** A colour held in the System's palette. */
@@ -44,6 +44,41 @@ export interface TypeSettings {
   readonly weight: number;
 }
 
+/**
+ * What a person chose about one colour's scale, and nothing else.
+ *
+ * Deliberately not the Builder's runtime entry, which also carries the anchor
+ * colour, its OKLCH, the anchor step and whether the name was customised --
+ * every one of those is derivable from the palette and the step count, and
+ * storing a derived value is how two sources of truth start disagreeing. Only
+ * the decisions are here, and each is optional because a scale nobody has
+ * touched should cost nothing to carry.
+ */
+export interface ScaleSettings {
+  /** Present only when renamed; auto-names are regenerated, not stored. */
+  readonly name?: string;
+  readonly chromaIntensity?: number;
+  readonly hueTorsion?: number;
+  readonly lightnessCurve?: readonly ControlPoint[];
+  readonly chromaCurve?: readonly ControlPoint[];
+  readonly hueTorsionCurve?: readonly ControlPoint[];
+}
+
+/**
+ * The scale half of the System.
+ *
+ * `byHex` rather than by position: a palette can be reordered or have a colour
+ * removed from the middle, and settings keyed by index would silently attach
+ * themselves to a different colour. The URL still writes indices, because the
+ * palette is right there beside it and six characters per reference is not
+ * worth paying twice.
+ */
+export interface ScaleSystem {
+  readonly steps: number;
+  readonly gamut: Gamut;
+  readonly byHex: Readonly<Record<string, ScaleSettings>>;
+}
+
 export interface System {
   readonly palette: readonly SystemColor[];
   /** The colour scales are built from. Null when the palette is empty. */
@@ -51,5 +86,10 @@ export interface System {
   /** Manual role assignments, by hex. Absent roles are derived. */
   readonly roleOverrides: Readonly<Partial<Record<SemanticRole, string>>>;
   readonly type: TypeSettings;
+  /**
+   * The curve work: the most distinctive thing the product makes, and until
+   * now the only part of it a shared link silently dropped.
+   */
+  readonly scales: ScaleSystem;
   readonly mode: SystemMode;
 }
