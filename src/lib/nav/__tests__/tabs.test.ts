@@ -44,7 +44,7 @@ describe('tab manifest', () => {
   // nowhere to appear. Unbuilt tabs are marked, not omitted.
   it('marks unbuilt tabs rather than dropping them from the manifest', () => {
     const unbuilt = TABS.filter((t) => !t.built).map((t) => t.id);
-    expect(unbuilt).toEqual(['visualizer', 'typography']);
+    expect(unbuilt).toEqual(['typography']);
     expect(TABS.every((t) => typeof t.built === 'boolean')).toBe(true);
   });
 });

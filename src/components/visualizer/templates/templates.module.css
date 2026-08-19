@@ -1,0 +1,471 @@
+/* Every colour in every template resolves through the semantic role custom
+   properties (--ui-background, --ui-surface, --ui-primary, --ui-text,
+   --ui-accent, --ui-border). Nothing here hardcodes a colour.
+   That is what lets a role change repaint the whole mockup instantly, with no
+   React re-render and no prop threading — the stage sets the variables once on
+   its wrapper and the browser does the rest. */
+
+.frame {
+  background: var(--ui-background);
+  color: var(--ui-text);
+  border-radius: 10px;
+  overflow: hidden;
+  height: 100%;
+  container-type: inline-size;
+}
+
+/* ── Shared primitives ─────────────────────────────────────── */
+
+.button {
+  background: var(--ui-primary);
+  color: var(--ui-background);
+  border: none;
+  border-radius: 7px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+
+.buttonGhost {
+  background: transparent;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+  border-radius: 7px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.badge {
+  display: inline-block;
+  background: var(--ui-accent);
+  color: var(--ui-background);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.muted {
+  opacity: 0.62;
+}
+
+/* ── 01 · SaaS dashboard ───────────────────────────────────── */
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  height: 100%;
+}
+
+.sidebar {
+  background: var(--ui-surface);
+  border-right: 1px solid var(--ui-border);
+  padding: 1.1rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.brandDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--ui-primary);
+  flex-shrink: 0;
+}
+
+.navList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.navItem {
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  opacity: 0.62;
+}
+
+.navItemActive {
+  background: var(--ui-primary);
+  color: var(--ui-background);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.main {
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-width: 0;
+}
+
+.mainHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.metricRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.metricCard {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  padding: 0.8rem 0.9rem;
+}
+
+.metricLabel {
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.metricValue {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chartCard {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  padding: 0.9rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-height: 0;
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+  flex: 1;
+  min-height: 70px;
+}
+
+.bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  background: var(--ui-primary);
+}
+
+.barAlt {
+  background: var(--ui-accent);
+}
+
+/* ── 02 · Commerce card ────────────────────────────────────── */
+
+.commerce {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+}
+
+.productCard {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  overflow: hidden;
+  width: min(300px, 100%);
+}
+
+.productImage {
+  height: 150px;
+  background: linear-gradient(135deg, var(--ui-primary), var(--ui-accent));
+  position: relative;
+}
+
+.productImageBadge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+}
+
+.productBody {
+  padding: 0.9rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.productName {
+  font-size: 0.98rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.starFilled {
+  color: var(--ui-accent);
+}
+
+.price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.variants {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.variant {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--ui-border);
+}
+
+.variantSelected {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+/* ── 03 · Editorial hero ───────────────────────────────────── */
+
+.editorial {
+  height: 100%;
+  padding: 2rem 2.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.editorialGlow {
+  position: absolute;
+  inset: -30% 40% 40% -20%;
+  background: radial-gradient(circle, var(--ui-primary) 0%, transparent 65%);
+  opacity: 0.28;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.pillRow {
+  display: flex;
+  gap: 0.45rem;
+  position: relative;
+}
+
+.pill {
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pillAccent {
+  border-color: transparent;
+  background: var(--ui-accent);
+  color: var(--ui-background);
+  font-weight: 700;
+}
+
+.headline {
+  font-size: clamp(1.8rem, 6cqw, 3rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  margin: 0;
+  max-width: 16ch;
+  position: relative;
+}
+
+.subcopy {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 44ch;
+  opacity: 0.72;
+  margin: 0;
+  position: relative;
+}
+
+.ctaRow {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+  position: relative;
+}
+
+.ctaGlass {
+  background: color-mix(in oklab, var(--ui-surface) 70%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-text);
+  border-radius: 8px;
+  padding: 0.65rem 1.2rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── 04 · Mobile frame ─────────────────────────────────────── */
+
+.mobile {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.phone {
+  width: 250px;
+  height: min(430px, 100%);
+  background: var(--ui-background);
+  border: 1px solid var(--ui-border);
+  border-radius: 26px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 18px 40px -18px oklch(0% 0 0 / 0.6);
+}
+
+.statusBar {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.9rem 0.2rem;
+  font-size: 0.62rem;
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+}
+
+.phoneHeader {
+  padding: 0.5rem 0.9rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.phoneTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.phoneBody {
+  flex: 1;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  overflow: hidden;
+}
+
+.listCard {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.listText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.listTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.listMeta {
+  font-size: 0.68rem;
+  opacity: 0.6;
+}
+
+.toggle {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--ui-border);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background: var(--ui-primary);
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ui-background);
+}
+
+.toggleOn .toggleKnob {
+  left: auto;
+  right: 2px;
+}
+
+.tabBar {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.6rem 0.5rem 0.8rem;
+  border-top: 1px solid var(--ui-border);
+}
+
+.tabIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--ui-border);
+}
+
+.tabIconActive {
+  background: var(--ui-primary);
+}
