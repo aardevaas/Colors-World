@@ -374,3 +374,97 @@
   font-size: var(--text-micro);
   color: oklch(72% 0.17 30);
 }
+
+/* ---------- the full pair matrix ---------- */
+
+.titleCount {
+  float: right;
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-micro, 0.7rem);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-tertiary);
+}
+
+.matrixToggle {
+  align-self: flex-start;
+  font: inherit;
+  font-size: var(--text-micro, 0.7rem);
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.matrixToggle:hover {
+  color: var(--text-secondary);
+  border-color: var(--hairline-bright, var(--text-tertiary));
+}
+
+/* Six roles is thirty-six cells; the sidebar is narrow, so the grid gets its
+   own scroll container rather than forcing the inspector wider. */
+.matrixScroll {
+  overflow-x: auto;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  border-radius: 8px;
+}
+
+.matrix {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.matrixCaption {
+  caption-side: bottom;
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  font-family: var(--font-ui), sans-serif;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.matrix th {
+  padding: 0.3rem 0.35rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.matrix td {
+  padding: 0.3rem 0.35rem;
+  text-align: center;
+  border-top: var(--rule-width, 1px) solid var(--hairline);
+}
+
+/* Requirement status is carried by the cell, not by a legend the eye has to
+   hold: a failing pair should be findable without reading anything. */
+.cellPass {
+  color: oklch(80% 0.15 155);
+  background: oklch(80% 0.15 155 / 0.09);
+}
+
+.cellFail {
+  color: oklch(76% 0.18 25);
+  background: oklch(76% 0.18 25 / 0.12);
+}
+
+.cellAdvisory {
+  color: var(--text-tertiary);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

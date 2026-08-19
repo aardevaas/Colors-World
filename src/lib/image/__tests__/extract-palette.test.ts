@@ -36,9 +36,50 @@ describe('extractDominantColors', () => {
     expect(extractDominantColors(pixels, 3)).toEqual(extractDominantColors(pixels, 3));
   });
 
-  test('caps cluster count at the number of available pixels', () => {
+  test('never returns more colours than there are pixels', () => {
     const pixels = repeat({ r: 100, g: 100, b: 100 }, 2);
-    expect(extractDominantColors(pixels, 5)).toHaveLength(2);
+    expect(extractDominantColors(pixels, 5).length).toBeLessThanOrEqual(2);
+  });
+
+  test('returns one colour for an image that only contains one', () => {
+    // Previously this returned as many duplicate centroids as were asked for.
+    // A palette of the same colour repeated is not a palette, and downstream
+    // the repeats collapse anyway -- leaving a palette shorter than it claims.
+    const pixels = repeat({ r: 100, g: 100, b: 100 }, 40);
+    expect(extractDominantColors(pixels, 6)).toEqual([{ r: 100, g: 100, b: 100 }]);
+  });
+
+  test('finds every distinct colour rather than merging two into a blend', () => {
+    // Found by dropping a four-colour image into the browser: orange and
+    // violet came back exactly, while green and near-white were returned as a
+    // single pale green -- at every image size and layout tried. Seeding
+    // spaced centroids by position in the pixel array, so two seeds could land
+    // on the same colour and leave another with none, and its pixels were then
+    // absorbed into whichever cluster was nearest.
+    const pixels = [
+      ...repeat({ r: 230, g: 98, b: 12 }, 25),
+      ...repeat({ r: 25, g: 211, b: 104 }, 25),
+      ...repeat({ r: 90, g: 63, b: 115 }, 25),
+      ...repeat({ r: 242, g: 242, b: 245 }, 25),
+    ];
+    const found = extractDominantColors(pixels, 6).map(rgbToHex);
+    expect(found).toHaveLength(4);
+    for (const expected of ['#e6620c', '#19d368', '#5a3f73', '#f2f2f5']) {
+      expect(found).toContain(expected);
+    }
+  });
+
+  test('finds distinct colours whatever order the pixels arrive in', () => {
+    // Position-based seeding was sensitive to layout; colour-space seeding
+    // must not be. Interleaving is the arrangement that broke it worst.
+    const four = [
+      { r: 230, g: 98, b: 12 },
+      { r: 25, g: 211, b: 104 },
+      { r: 90, g: 63, b: 115 },
+      { r: 242, g: 242, b: 245 },
+    ];
+    const interleaved = Array.from({ length: 100 }, (_, i) => four[i % 4]!);
+    expect(new Set(extractDominantColors(interleaved, 6).map(rgbToHex)).size).toBe(4);
   });
 
   test('rejects an empty pixel sample', () => {

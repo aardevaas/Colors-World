@@ -9,6 +9,7 @@ import {
   type RoleColor,
   type SemanticRole,
 } from '@/lib/roles/semantic-roles';
+import { buildRoleContrastMatrix } from '@/lib/roles/role-contrast';
 import { WCAG_AA_NORMAL, autoFixContrast } from '@/lib/visualizer/auto-fix';
 import { appendWatermarkFooter } from '@/lib/visualizer/export-showcase';
 import { downloadDataUrl } from '@/lib/studio/export-png';
@@ -31,15 +32,6 @@ const CVD_LABELS: Record<CvdType, string> = {
   achromatopsia: 'Achromatopsia',
 };
 
-/** Role pairs the inspector audits, in the order they matter for readability. */
-const AUDIT_PAIRS: readonly (readonly [SemanticRole, SemanticRole])[] = [
-  ['text', 'background'],
-  ['text', 'surface'],
-  ['background', 'primary'],
-  ['background', 'accent'],
-  ['border', 'surface'],
-];
-
 interface VisualizerShellProps {
   readonly accountSlot?: ReactNode;
 }
@@ -54,6 +46,7 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
   const [cvd, setCvd] = useState<CvdMode>('none');
   const [assigningRole, setAssigningRole] = useState<SemanticRole | null>(null);
   const [showAudit, setShowAudit] = useState(false);
+  const [showMatrix, setShowMatrix] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -80,6 +73,12 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
     );
     return mapped as typeof roles;
   }, [roles, cvd]);
+
+  // Every ordered pair, with the requirement each one actually carries. The
+  // five pairs this used to check were the five that fitted in a sidebar, not
+  // the five that matter: text on a filled button was never among them, and on
+  // a three-colour palette that is the worst failure in the whole system.
+  const matrix = useMemo(() => buildRoleContrastMatrix(roles), [roles]);
 
   const template = templateById(templateId);
   const stageStyle = rolesToCssVars(shownRoles) as CSSProperties;
@@ -273,30 +272,97 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
             </div>
           )}
 
-          <h2 className={styles.inspectorTitle}>Contrast</h2>
+          <h2 className={styles.inspectorTitle}>
+            Contrast
+            <span className={styles.titleCount}>
+              {matrix.failures.length === 0
+                ? `${matrix.required.length} checked`
+                : `${matrix.failures.length} of ${matrix.required.length} failing`}
+            </span>
+          </h2>
           <ul className={styles.auditList}>
-            {AUDIT_PAIRS.map(([fg, bg]) => {
-              const ratio = contrastRatio(roles[fg].oklch, roles[bg].oklch);
-              const passes = ratio >= WCAG_AA_NORMAL;
-              return (
-                <li key={`${fg}-${bg}`} className={styles.auditRow}>
-                  <span className={styles.auditPair}>
-                    {fg} <span className={styles.muted}>on</span> {bg}
+            {matrix.required.map((cell) => (
+              <li key={`${cell.foreground}-${cell.background}`} className={styles.auditRow}>
+                <span className={styles.auditPair}>
+                  {cell.foreground} <span className={styles.muted}>on</span> {cell.background}
+                </span>
+                <span className={cell.passes ? styles.ratioPass : styles.ratioFail}>
+                  {cell.ratio.toFixed(2)}:1
+                </span>
+                {cell.passes ? (
+                  <span className={styles.passTag}>
+                    {cell.required === WCAG_AA_NORMAL ? 'AA' : 'UI'}
                   </span>
-                  <span className={passes ? styles.ratioPass : styles.ratioFail}>
-                    {ratio.toFixed(2)}:1
-                  </span>
-                  {passes ? (
-                    <span className={styles.passTag}>AA</span>
-                  ) : (
-                    <button type="button" className={styles.fixButton} onClick={() => handleAutoFix(fg, bg)}>
-                      auto-fix
-                    </button>
-                  )}
-                </li>
-              );
-            })}
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.fixButton}
+                    onClick={() => handleAutoFix(cell.foreground, cell.background)}
+                  >
+                    auto-fix
+                  </button>
+                )}
+              </li>
+            ))}
           </ul>
+
+          <button
+            type="button"
+            className={styles.matrixToggle}
+            onClick={() => setShowMatrix((v) => !v)}
+            aria-expanded={showMatrix}
+          >
+            {showMatrix ? 'hide' : 'show'} every pair
+          </button>
+
+          {showMatrix && (
+            <div className={styles.matrixScroll}>
+              <table className={styles.matrix}>
+                <caption className={styles.matrixCaption}>
+                  Row on column. Pairs no standard has a rule about are shown for
+                  reference rather than scored.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">
+                      <span className={styles.srOnly}>Foreground</span>
+                    </th>
+                    {matrix.roles.map((role) => (
+                      <th key={role} scope="col" title={role}>
+                        {role.slice(0, 2)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {matrix.rows.map((row, i) => (
+                    <tr key={matrix.roles[i]}>
+                      <th scope="row" title={matrix.roles[i]}>
+                        {matrix.roles[i]!.slice(0, 2)}
+                      </th>
+                      {row.map((cell) => (
+                        <td
+                          key={`${cell.foreground}-${cell.background}`}
+                          className={
+                            cell.required === null
+                              ? styles.cellAdvisory
+                              : cell.passes
+                                ? styles.cellPass
+                                : styles.cellFail
+                          }
+                          title={`${cell.foreground} on ${cell.background} — ${cell.ratio.toFixed(2)}:1${
+                            cell.required === null ? ' (no requirement)' : `, needs ${cell.required}`
+                          }`}
+                        >
+                          {cell.foreground === cell.background ? '—' : cell.ratio.toFixed(1)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </aside>
       </div>
     </div>

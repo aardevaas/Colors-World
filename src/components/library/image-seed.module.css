@@ -1,0 +1,75 @@
+/*
+ * The extraction has always existed; what it lacked was a door in the room
+ * where people start. This is that door, sized to sit beside search and
+ * shuffle rather than to announce itself.
+ */
+
+.button {
+  font: inherit;
+  font-size: var(--text-small, 0.8125rem);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--duration-fast, 150ms) var(--ease-out-expo, ease),
+    border-color var(--duration-fast, 150ms) var(--ease-out-expo, ease);
+}
+
+.button:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--hairline-bright, var(--text-tertiary));
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Kept in the layout but unreachable: a hidden input is how a styled button
+   opens a file picker, and display:none would make some browsers skip it. */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.error {
+  margin: 0;
+  flex-basis: 100%;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.5;
+  color: oklch(72% 0.19 25);
+}
+
+/* The whole page is the target, so the confirmation is page-sized too --
+   a small dashed rectangle would imply you had to aim at it. */
+.dropVeil {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: oklch(12% 0.02 280 / 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 2px dashed oklch(80% 0.14 250 / 0.7);
+  pointer-events: none;
+}
+
+.dropLabel {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-body, 1rem);
+  letter-spacing: 0.04em;
+  color: oklch(96% 0.01 265);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}

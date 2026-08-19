@@ -12,6 +12,7 @@ import { fetchSemanticMatchesAction } from '@/app/actions/semantic-matches';
 import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import type { ColorRecord } from '@/lib/supabase/colors';
 import { TabNav } from '@/components/nav/TabNav';
+import { ImageSeed } from './ImageSeed';
 import { LibraryGrid, LIBRARY_BATCH_SIZE } from './LibraryGrid';
 import { GeneticsDrawer } from './GeneticsDrawer';
 import styles from './library.module.css';
@@ -156,6 +157,7 @@ export function LibraryShell() {
         >
           ⤾ shuffle
         </button>
+        <ImageSeed />
 
         <p className={styles.resultMeta}>
           {feedState.mode === 'vibe' && feedState.vibeLabel !== null
