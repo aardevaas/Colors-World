@@ -121,6 +121,51 @@ describe('systemReducer — type and mode', () => {
   });
 });
 
+describe('systemReducer — setPalette', () => {
+  const generated = [VIOLET, GREEN, TAN].map((hex) => ({ hex, oklch: parseColor(hex) }));
+
+  it('replaces the palette wholesale and anchors on the first colour', () => {
+    const after = systemReducer(EMPTY_SYSTEM, { type: 'setPalette', colors: generated });
+    expect(after.palette.map((c) => c.hex)).toEqual([VIOLET, GREEN, TAN]);
+    expect(after.anchorHex).toBe(VIOLET);
+  });
+
+  it('drops role pins, which referred to the palette being replaced', () => {
+    // Keeping them would paint a freshly generated system with colours that
+    // are no longer in it and have no swatch to explain where they came from.
+    const pinned = systemReducer(threeColors(), { type: 'setRoleOverride', role: 'primary', hex: TAN });
+    const after = systemReducer(pinned, { type: 'setPalette', colors: [{ hex: '#ffffff', oklch: parseColor('#ffffff') }] });
+    expect(after.roleOverrides).toEqual({});
+  });
+
+  it('keeps type and mode, which are not the palette', () => {
+    let state = systemReducer(EMPTY_SYSTEM, { type: 'setMode', mode: 'light' });
+    state = systemReducer(state, { type: 'setType', patch: { weight: 700 } });
+    const after = systemReducer(state, { type: 'setPalette', colors: generated });
+    expect(after.mode).toBe('light');
+    expect(after.type.weight).toBe(700);
+  });
+
+  it('dedupes and caps whatever it is handed', () => {
+    const dupes = [...generated, ...generated, { hex: '#5A3F73', oklch: parseColor(VIOLET) }];
+    expect(systemReducer(EMPTY_SYSTEM, { type: 'setPalette', colors: dupes }).palette).toHaveLength(3);
+
+    const huge = Array.from({ length: 90 }, (_, i) => {
+      const hex = '#' + i.toString(16).padStart(6, '0');
+      return { hex, oklch: parseColor(hex) };
+    });
+    expect(
+      systemReducer(EMPTY_SYSTEM, { type: 'setPalette', colors: huge }).palette.length
+    ).toBeLessThanOrEqual(32);
+  });
+
+  it('handles an empty generation without leaving a dangling anchor', () => {
+    const after = systemReducer(threeColors(), { type: 'setPalette', colors: [] });
+    expect(after.palette).toEqual([]);
+    expect(after.anchorHex).toBeNull();
+  });
+});
+
 describe('systemReducer — immutability', () => {
   it('never mutates the state it was given', () => {
     const before = threeColors();

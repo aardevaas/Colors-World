@@ -23,6 +23,10 @@ export type SystemAction =
   | { readonly type: 'removeColor'; readonly hex: string }
   | { readonly type: 'setAnchor'; readonly hex: string }
   | { readonly type: 'clearPalette' }
+  | {
+      readonly type: 'setPalette';
+      readonly colors: readonly { readonly hex: string; readonly oklch: Oklch }[];
+    }
   | { readonly type: 'setRoleOverride'; readonly role: SemanticRole; readonly hex: string }
   | { readonly type: 'clearRoleOverride'; readonly role: SemanticRole }
   | { readonly type: 'setType'; readonly patch: Partial<TypeSettings> }
@@ -69,6 +73,27 @@ export function systemReducer(state: System, action: SystemAction): System {
 
     case 'clearPalette':
       return { ...state, palette: [], anchorHex: null, roleOverrides: {} };
+
+    case 'setPalette': {
+      // Replacing the palette wholesale, as the generator does. Overrides are
+      // dropped rather than carried: they pinned roles to colours from the
+      // previous palette, and keeping them would paint a generated system with
+      // colours that are no longer in it and have no swatch to explain them.
+      const seen = new Set<string>();
+      const palette = [];
+      for (const color of action.colors) {
+        const hex = color.hex.toLowerCase();
+        if (seen.has(hex) || palette.length >= MAX_PALETTE) continue;
+        seen.add(hex);
+        palette.push({ hex, oklch: color.oklch, addedAt: palette.length });
+      }
+      return {
+        ...state,
+        palette,
+        anchorHex: palette[0]?.hex ?? null,
+        roleOverrides: {},
+      };
+    }
 
     case 'setRoleOverride':
       return {

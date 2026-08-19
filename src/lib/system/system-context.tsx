@@ -57,6 +57,7 @@ const HISTORY_ACTIONS: ReadonlySet<SystemAction['type']> = new Set([
   'addColor',
   'removeColor',
   'clearPalette',
+  'setPalette',
   'setAnchor',
   'setRoleOverride',
   'clearRoleOverride',
@@ -72,6 +73,7 @@ interface SystemContextValue {
   removeColor(hex: string): void;
   setAnchor(hex: string): void;
   clearPalette(): void;
+  setPalette(colors: readonly { readonly hex: string; readonly oklch: Oklch }[]): void;
   setRoleOverride(role: SemanticRole, hex: string): void;
   clearRoleOverride(role: SemanticRole): void;
   setType(patch: Partial<TypeSettings>): void;
@@ -169,6 +171,7 @@ export function SystemProvider({ children }: { readonly children: ReactNode }) {
       removeColor: (hex) => dispatch({ type: 'removeColor', hex }),
       setAnchor: (hex) => dispatch({ type: 'setAnchor', hex }),
       clearPalette: () => dispatch({ type: 'clearPalette' }),
+      setPalette: (colors) => dispatch({ type: 'setPalette', colors }),
       setRoleOverride: (role, hex) => dispatch({ type: 'setRoleOverride', role, hex }),
       clearRoleOverride: (role) => dispatch({ type: 'clearRoleOverride', role }),
       setType: (patch) => dispatch({ type: 'setType', patch }),

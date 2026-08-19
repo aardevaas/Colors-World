@@ -16,6 +16,7 @@ import { snapshotFromScales } from '@/lib/versioning';
 import { createPaletteFromScale } from '@/app/palettes/actions';
 import { useSystem } from '@/lib/system/system-context';
 import { TabNav } from '@/components/nav/TabNav';
+import { PaletteComposer } from '@/components/compose/PaletteComposer';
 import {
   builderReducer,
   EMPTY_BUILDER_STATE,
@@ -161,6 +162,13 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
     <div className={styles.shell}>
       <TabNav current="builder">{accountSlot}</TabNav>
 
+      {/* Compose sits above the scales because that is the order of the work:
+          make the palette, then refine each colour in it into a ramp. Before
+          this existed the room could only deepen colours you had already
+          found somewhere else, which is why it opened on an empty state
+          telling you to go and collect some. */}
+      <PaletteComposer />
+
       <div className={styles.globalControls}>
         <StepControls
           stepCount={state.stepCount}
@@ -223,8 +231,8 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
 
       {state.scales.length === 0 ? (
         <p className={styles.emptyState}>
-          Collect a colour into the Harmonic Dock to start building a scale — the first one
-          becomes your Primary Anchor automatically.
+          Generate a palette above, or collect colours in Library — every colour in your
+          System becomes a scale here, and the first one is the anchor.
         </p>
       ) : (
         <div className={styles.scaleList}>

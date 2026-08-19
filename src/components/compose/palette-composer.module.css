@@ -1,0 +1,213 @@
+/*
+ * Compose sits at the top of the Builder, above the scales, because that is
+ * the actual order of the work: make the palette, then refine each colour into
+ * a ramp. It reads as a distinct band rather than another panel so the two
+ * halves of the room stay legible as two steps.
+ */
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base, 1rem);
+  padding: var(--space-base, 1rem) var(--space-wide, 1.5rem) var(--space-wide, 1.5rem);
+  border-bottom: var(--rule-width, 1px) solid var(--hairline);
+  background: linear-gradient(
+    180deg,
+    oklch(from var(--surface-panel, #17171a) l c h / 0.55),
+    transparent
+  );
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1.1rem;
+}
+
+.title {
+  font-size: var(--text-small, 0.875rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  align-self: center;
+  margin-right: 0.35rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fieldLabel {
+  font-size: var(--text-micro, 0.7rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.select {
+  font: inherit;
+  font-size: var(--text-small, 0.8125rem);
+  padding: 0.32rem 0.5rem;
+  border-radius: 6px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: var(--surface-raised, #1e1b19);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.rollButton,
+.applyButton {
+  font: inherit;
+  font-size: var(--text-small, 0.8125rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: var(--surface-raised, #1e1b19);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms) var(--ease-out-expo, ease),
+    border-color var(--duration-fast, 150ms) var(--ease-out-expo, ease);
+}
+
+.rollButton:hover,
+.applyButton:not(:disabled):hover {
+  border-color: var(--hairline-bright, var(--text-tertiary));
+  background: var(--surface-panel, #17171a);
+}
+
+.applyButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.kbd {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.32rem;
+  border-radius: 4px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  color: var(--text-tertiary);
+}
+
+/* ---------- the strip ---------- */
+
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 6.5rem;
+  flex: 1 1 6.5rem;
+}
+
+.swatch {
+  position: relative;
+  height: 4.5rem;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform var(--duration-fast, 150ms) var(--ease-out-expo, ease),
+    border-color var(--duration-fast, 150ms) var(--ease-out-expo, ease);
+}
+
+.swatch:hover {
+  transform: translateY(-2px);
+}
+
+/* A lock has to be unmistakable at a glance -- the whole interaction is
+   "keep this one, change the rest", and a subtle indicator makes every roll
+   a guess about what was held. */
+.swatch[data-locked='true'] {
+  border-color: oklch(92% 0.16 95);
+  box-shadow: 0 0 0 3px oklch(92% 0.16 95 / 0.22);
+}
+
+.lockMark {
+  font-size: 0.85rem;
+  color: oklch(18% 0.01 265);
+  text-shadow: 0 1px 3px oklch(100% 0 0 / 0.5);
+}
+
+.hex {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-micro, 0.7rem);
+  color: var(--text-secondary);
+}
+
+.origin {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ---------- readout ---------- */
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  font-size: var(--text-micro, 0.7rem);
+  color: var(--text-tertiary);
+}
+
+/* The number that decides whether a generated palette is usable, shown
+   before it is applied rather than discovered two tabs later. */
+.pass {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  color: oklch(78% 0.16 155);
+}
+
+.fail {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  color: oklch(72% 0.19 25);
+}
+
+.muted {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  color: var(--text-tertiary);
+}
+
+.empty {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--text-small, 0.8125rem);
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swatch,
+  .rollButton,
+  .applyButton {
+    transition: none;
+  }
+  .swatch:hover {
+    transform: none;
+  }
+}
