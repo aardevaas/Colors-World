@@ -123,7 +123,16 @@ export function HeroHud({
           </div>
         </header>
 
-        <main className={styles.copy}>
+        {/* The skip link in app/page.tsx targets this. It has to carry an id
+            *and* be focusable: `#main` did not exist anywhere in the document
+            before, so "Skip to content" — the one control provided
+            specifically for keyboard and screen-reader visitors — moved focus
+            nowhere at all, and `tabIndex={-1}` is what makes a non-interactive
+            element actually accept that focus rather than silently dropping
+            it. This is the right target because it holds the h1, the sub, and
+            both calls to action: everything the pinned WebGL stage is
+            otherwise in the way of. */}
+        <main id="main" tabIndex={-1} className={styles.copy}>
           <p className={styles.eyebrow}>Open-source · Free forever</p>
           <h1 className={styles.headline}>
             Every colour.
@@ -166,8 +175,14 @@ export function HeroHud({
             <GitHubIcon className={styles.builtByIcon} />
           </a>
           <div className={styles.ctaRow}>
+            {/* /library, not /studio. The headline promises "every colour,
+                all 16.7 million of them" and /library is that promise made
+                good on sight — an infinite grid of computed colour that asks
+                nothing of a first-time visitor. /studio is a blank canvas
+                with a dot grid: the right room once you have something to
+                arrange, and the wrong one to land in. */}
             <Link
-              href="/studio"
+              href="/library"
               className={styles.ctaPrimary}
               onPointerMove={handleCtaPrimaryPointerMove}
               onPointerLeave={handleTiltPointerLeave}
@@ -178,7 +193,7 @@ export function HeroHud({
                   dark-text button instead of the reference's dark pill. */}
               <span className={styles.ctaPrimaryShine} aria-hidden="true" />
               <span className={styles.ctaPrimaryContent}>
-                Enter the studio for free
+                Explore every colour, free
               </span>
             </Link>
             <a

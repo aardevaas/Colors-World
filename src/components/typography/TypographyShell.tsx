@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { formatHex, parseColor, type Oklch } from '@/lib/color-engine';
 import { useDock } from '@/lib/dock/dock-context';
+import { deriveRoles, flipPolarity, type RoleColor } from '@/lib/roles/semantic-roles';
 import { DEFAULT_RATIO, SCALE_RATIOS, buildScale, ROOT_PX } from '@/lib/typography/type-scale';
 import { fluidClamp, toCssVariables, type FluidToken } from '@/lib/typography/fluid-clamp';
 import { assessLegibility, suggestLegibilityFix } from '@/lib/typography/legibility';
@@ -25,9 +25,6 @@ const MAX_VIEWPORT = 1440;
 /** How much smaller the whole scale gets at the narrow end. */
 const MOBILE_SHRINK = 0.8;
 
-const FALLBACK_TEXT = '#F2F2F5';
-const FALLBACK_BG = '#0B0B0C';
-
 interface TypographyShellProps {
   readonly accountSlot?: ReactNode;
 }
@@ -43,6 +40,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
   const [weight, setWeight] = useState(400);
   const [localFonts, setLocalFonts] = useState<LocalFontOutcome | null>(null);
   const [localFamily, setLocalFamily] = useState<string | null>(null);
+  const [isLight, setIsLight] = useState(false);
 
   const preset = presetById(presetId);
 
@@ -52,14 +50,26 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
 
   // Colours come from the dock so type is judged in the palette it will ship
   // in — the whole reason this tab shares a dock with the others.
-  const textColor: Oklch = useMemo(
-    () => (dock.items[0] ? dock.items[0].oklch : parseColor(FALLBACK_TEXT)),
+  //
+  // Which colour becomes text and which becomes the page is decided by the
+  // shared role model, exactly as /visualizer decides it, so one dock means
+  // one thing across the product. This used to map by *position* —
+  // `items[0]` was text and `items[1]` the background — which made the
+  // specimen depend on the order you happened to click colours in: a violet
+  // on a lurid green page scored 4.60:1 and was therefore reported as
+  // passing, so the tool blessed a page nobody could read.
+  const palette = useMemo<RoleColor[]>(
+    () => dock.items.map((item) => ({ hex: item.hex, oklch: item.oklch })),
     [dock.items]
   );
-  const bgColor: Oklch = useMemo(
-    () => (dock.items[1] ? dock.items[1].oklch : parseColor(FALLBACK_BG)),
-    [dock.items]
-  );
+
+  const roles = useMemo(() => {
+    const base = deriveRoles(palette);
+    return isLight ? flipPolarity(base) : base;
+  }, [palette, isLight]);
+
+  const textColor = roles.text.oklch;
+  const bgColor = roles.background.oklch;
 
   const scale = useMemo(() => buildScale(baseRem, ratio), [baseRem, ratio]);
 
@@ -88,12 +98,16 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
       '--type-leading': String(lineHeight),
       '--type-tracking': `${tracking}em`,
       '--type-weight': String(weight),
-      '--type-fg': formatHex(textColor),
-      '--type-bg': formatHex(bgColor),
+      // The role model's own hex, not a re-derivation from its OKLCH: the
+      // inspector prints `roles.*.hex`, so round-tripping through formatHex
+      // here would let the specimen render a colour one step off the one the
+      // readout names.
+      '--type-fg': roles.text.hex,
+      '--type-bg': roles.background.hex,
     };
     for (const token of fluidTokens) vars[`--type-${token.name}`] = token.result.css;
     return vars as CSSProperties;
-  }, [fluidTokens, preset, localFamily, lineHeight, tracking, weight, textColor, bgColor]);
+  }, [fluidTokens, preset, localFamily, lineHeight, tracking, weight, roles]);
 
   // Body copy is the honest test: if that fails, the page fails, whatever the
   // headline scores.
@@ -172,6 +186,32 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
         </section>
 
         <aside className={styles.inspector}>
+          <h2 className={styles.inspectorTitle}>Colour</h2>
+          {palette.length === 0 ? (
+            <p className={styles.hint}>
+              Collect colours in the Harmonic Dock and they map onto text and page
+              automatically — the same roles /visualizer paints with. Until then this
+              specimen is set in a neutral fallback pair.
+            </p>
+          ) : (
+            <p className={styles.hint}>
+              Derived from your {palette.length} dock{' '}
+              {palette.length === 1 ? 'colour' : 'colours'} by lightness, not by the
+              order you collected them.
+            </p>
+          )}
+          <div className={styles.legibility}>
+            <RoleReadout label="text" hex={roles.text.hex} />
+            <RoleReadout label="page" hex={roles.background.hex} />
+          </div>
+          <button
+            type="button"
+            className={styles.fixButton}
+            onClick={() => setIsLight((v) => !v)}
+          >
+            {isLight ? '☾ flip to dark' : '☀ flip to light'}
+          </button>
+
           <h2 className={styles.inspectorTitle}>Scale</h2>
 
           <label className={styles.field}>
@@ -271,6 +311,28 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
           </button>
         </aside>
       </div>
+    </div>
+  );
+}
+
+interface RoleReadoutProps {
+  readonly label: string;
+  readonly hex: string;
+}
+
+/**
+ * Names the colour each role actually resolved to. The mapping was previously
+ * invisible, so a surprising specimen read as a bug rather than as a palette
+ * that needs another colour in it.
+ */
+function RoleReadout({ label, hex }: RoleReadoutProps) {
+  return (
+    <div className={styles.legibilityRow}>
+      <span>
+        <span className={styles.roleSwatch} style={{ background: hex }} aria-hidden="true" />
+        {label}
+      </span>
+      <span className={styles.mono}>{hex.toUpperCase()}</span>
     </div>
   );
 }

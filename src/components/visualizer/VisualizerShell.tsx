@@ -11,7 +11,7 @@ import {
   type RoleColor,
   type RoleOverrides,
   type SemanticRole,
-} from '@/lib/visualizer/semantic-roles';
+} from '@/lib/roles/semantic-roles';
 import { WCAG_AA_NORMAL, autoFixContrast } from '@/lib/visualizer/auto-fix';
 import { appendWatermarkFooter } from '@/lib/visualizer/export-showcase';
 import { downloadDataUrl } from '@/lib/studio/export-png';

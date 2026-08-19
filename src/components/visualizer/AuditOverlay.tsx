@@ -3,7 +3,7 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 import { contrastRatio } from '@/lib/color-engine';
 import { WCAG_AA_NORMAL, WCAG_AA_LARGE } from '@/lib/visualizer/auto-fix';
-import type { RoleAssignment, SemanticRole } from '@/lib/visualizer/semantic-roles';
+import type { RoleAssignment, SemanticRole } from '@/lib/roles/semantic-roles';
 import styles from './visualizer.module.css';
 
 interface Badge {

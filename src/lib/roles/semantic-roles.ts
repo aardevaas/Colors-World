@@ -1,0 +1,296 @@
+/**
+ * Maps an arbitrary set of colours onto the semantic roles a UI actually needs.
+ *
+ * This is the **one** role model in the product. Every tab that turns dock
+ * colours into an interface goes through here — `/visualizer` paints its
+ * templates with it and `/typography` picks its text and page colours from it —
+ * so the same dock produces the same meaning wherever you look. Before this was
+ * shared, `/typography` mapped by collection *order* (`items[0]` = text,
+ * `items[1]` = background), which made the result depend on the sequence you
+ * happened to click colours in: three colours that read as a considered
+ * interface in one tab read as violet-on-lurid-green in the other.
+ *
+ * The mapping is driven by OKLCH **lightness ordering**, not hue or input
+ * order, because that is what decides whether an interface reads correctly:
+ * the darkest colour makes a sensible background in a dark UI, the lightest
+ * makes readable text on it, and the most chromatic mid-tone is what the eye
+ * takes as "the brand". Ordering by lightness is only meaningful in a
+ * perceptually uniform space — this is the concrete payoff of the engine being
+ * OKLCH throughout rather than HSL.
+ *
+ * Pure: no DOM, no React, no colour parsing of unknown strings. Callers hand in
+ * already-parsed OKLCH values so this module never has to fail on bad input.
+ */
+
+import { formatHex, parseColor, type Oklch } from '@/lib/color-engine';
+
+export type SemanticRole =
+  | 'background'
+  | 'surface'
+  | 'primary'
+  | 'text'
+  | 'accent'
+  | 'border';
+
+export const SEMANTIC_ROLES: readonly SemanticRole[] = [
+  'background',
+  'surface',
+  'primary',
+  'text',
+  'accent',
+  'border',
+];
+
+export interface RoleColor {
+  readonly hex: string;
+  readonly oklch: Oklch;
+}
+
+export type RoleAssignment = Readonly<Record<SemanticRole, RoleColor>>;
+
+/** Manual overrides win over the derived mapping, per role. */
+export type RoleOverrides = Partial<Record<SemanticRole, RoleColor>>;
+
+/**
+ * A dark-UI fallback used to fill any role a palette is too small to supply.
+ * Deliberately neutral: a palette of one brand colour should produce a usable
+ * interface around that colour rather than six tinted variations of it, which
+ * is what naive "just reuse the nearest colour" filling produces.
+ */
+const FALLBACK: RoleAssignment = {
+  background: neutral('#0B0B0C'),
+  surface: neutral('#17171A'),
+  primary: neutral('#7C5CFF'),
+  text: neutral('#F2F2F5'),
+  accent: neutral('#FFB454'),
+  border: neutral('#2A2A30'),
+};
+
+/**
+ * Derives the OKLCH from the hex rather than letting the two be written out
+ * side by side.
+ *
+ * They were written side by side, and every one of the six had drifted apart:
+ * `accent` claimed `#FFB454` while its OKLCH was the visibly different
+ * `#F5B75B`, and `primary` `#7C5CFF` against `#7F6AFC`. That split matters
+ * because the two fields are read by different consumers — `rolesToCssVars`
+ * paints from `hex` while the contrast audit and CVD simulation compute from
+ * `oklch` — so a fallback role was graded against a colour the screen was not
+ * showing. Deriving one from the other makes the pair unable to disagree.
+ */
+function neutral(hex: string): RoleColor {
+  return { hex, oklch: parseColor(hex) };
+}
+
+/** How far a colliding fallback is nudged in OKLCH lightness per attempt. */
+const FALLBACK_NUDGE_L = 0.03;
+/**
+ * Six roles means at most five colours are already claimed when any one
+ * fallback resolves, so six candidate lightnesses always contain a free one.
+ * Doubled for headroom; see `claimFallback`.
+ */
+const FALLBACK_NUDGE_ATTEMPTS = 12;
+
+/**
+ * Tracks which colours a derivation has already handed out, so no two roles
+ * can resolve to the same value.
+ *
+ * Comparison is on the lowercased hex because the two sources disagree on
+ * case: `formatHex` (and therefore every derived colour) emits lowercase,
+ * while the fallback table and colours collected from other tabs are
+ * uppercase. Comparing raw strings would let `#7C5CFF` and `#7c5cff` both be
+ * assigned and report as distinct.
+ */
+class ClaimedColors {
+  private readonly taken = new Set<string>();
+
+  has(color: RoleColor): boolean {
+    return this.taken.has(color.hex.toLowerCase());
+  }
+
+  claim(color: RoleColor): RoleColor {
+    this.taken.add(color.hex.toLowerCase());
+    return color;
+  }
+}
+
+/**
+ * Deterministic ordering: lightness first, hex as the tie-break.
+ *
+ * The tie-break is what makes the mapping genuinely order-independent. Array
+ * sort is stable, so ordering on lightness alone leaves colours of *equal*
+ * lightness in input order — and then the same three colours collected in a
+ * different sequence produce a different interface, which is the exact failure
+ * this module exists to prevent.
+ */
+function byLightnessThenHex(a: RoleColor, b: RoleColor): number {
+  if (a.oklch.l !== b.oklch.l) return a.oklch.l - b.oklch.l;
+  return a.hex.toLowerCase().localeCompare(b.hex.toLowerCase());
+}
+
+function byChromaThenHex(a: RoleColor, b: RoleColor): number {
+  if (a.oklch.c !== b.oklch.c) return b.oklch.c - a.oklch.c;
+  return a.hex.toLowerCase().localeCompare(b.hex.toLowerCase());
+}
+
+function dedupeByHex(palette: readonly RoleColor[]): RoleColor[] {
+  const seen = new Set<string>();
+  const out: RoleColor[] = [];
+  for (const color of palette) {
+    const key = color.hex.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(color);
+  }
+  return out;
+}
+
+/**
+ * Derives a full role assignment from a palette.
+ *
+ * With enough colours the mapping is: darkest → background, lightest → text,
+ * most chromatic remaining → primary, second-most → accent, the leftover
+ * nearest the background in lightness → surface, and the least chromatic of
+ * what is still unclaimed → border.
+ *
+ * **Every role resolves to a distinct colour.** Each role claims a colour out
+ * of the pool, and a role the palette can no longer supply falls back to the
+ * neutral set above rather than reusing a colour another role already holds.
+ * Without the claiming, palettes of two to five colours — which is what
+ * designers actually collect — handed the same colour to two roles: at three
+ * colours `surface` and `primary` came out identical, so a card and the page
+ * behind it were the same tan and text on them measured 1.19:1.
+ *
+ * Manual overrides are exempt: they are applied after derivation and are not
+ * forced apart, because assigning one colour to two roles on purpose is a
+ * legitimate choice and not this function's to overrule.
+ */
+export function deriveRoles(
+  palette: readonly RoleColor[],
+  overrides: RoleOverrides = {}
+): RoleAssignment {
+  const derived = deriveFromPalette(palette);
+  // Overrides are applied last so a manual choice is never recomputed away.
+  return { ...derived, ...stripUndefined(overrides) };
+}
+
+function stripUndefined(overrides: RoleOverrides): RoleOverrides {
+  const out: RoleOverrides = {};
+  for (const role of SEMANTIC_ROLES) {
+    const value = overrides[role];
+    if (value !== undefined) out[role] = value;
+  }
+  return out;
+}
+
+function deriveFromPalette(palette: readonly RoleColor[]): RoleAssignment {
+  const pool = dedupeByHex(palette).sort(byLightnessThenHex);
+  const claimed = new ClaimedColors();
+
+  const take = (color: RoleColor): RoleColor => {
+    pool.splice(pool.indexOf(color), 1);
+    return claimed.claim(color);
+  };
+
+  // A single colour can serve as background *or* text, never both — a
+  // one-colour palette should read as "this brand colour on a neutral UI",
+  // so the colour is left in the pool for `primary` to claim below.
+  const hasExtremes = pool.length >= 2;
+  const background = hasExtremes ? take(pool[0]!) : claimFallback('background', claimed);
+  const text = hasExtremes ? take(pool[pool.length - 1]!) : claimFallback('text', claimed);
+
+  // "The brand colour" is the most chromatic one — the colour a viewer would
+  // name if asked what this palette *is*. The lightness extremes are already
+  // claimed above, so they are excluded from this without a second rule.
+  const byChroma = [...pool].sort(byChromaThenHex);
+  const primary = byChroma[0] !== undefined ? take(byChroma[0]) : claimFallback('primary', claimed);
+  const accent = byChroma[1] !== undefined ? take(byChroma[1]) : claimFallback('accent', claimed);
+
+  // Surface is the panel the background carries, so of what is left it should
+  // be the colour nearest the background — the smallest step up off the page.
+  const nearestToBackground = [...pool].sort(
+    (a, b) =>
+      Math.abs(a.oklch.l - background.oklch.l) - Math.abs(b.oklch.l - background.oklch.l) ||
+      byLightnessThenHex(a, b)
+  )[0];
+  const surface =
+    nearestToBackground !== undefined
+      ? take(nearestToBackground)
+      : claimFallback('surface', claimed);
+
+  // Border is structure, not colour: the quietest thing still unclaimed.
+  const leastChromatic = [...pool].sort(byChromaThenHex).pop();
+  const border =
+    leastChromatic !== undefined ? take(leastChromatic) : claimFallback('border', claimed);
+
+  return { background, surface, primary, text, accent, border };
+}
+
+/**
+ * Hands back the neutral fallback for a role, or — if the palette happens to
+ * contain that exact neutral and another role already holds it — the nearest
+ * lightness to it that nobody has taken.
+ *
+ * The nudge keeps hue and chroma, so a substituted `border` is still a
+ * neutral border and not some unrelated colour borrowed from elsewhere in the
+ * table. It cannot run out: at most five colours are claimed before any single
+ * fallback resolves, and each attempt produces a distinct lightness.
+ */
+function claimFallback(role: SemanticRole, claimed: ClaimedColors): RoleColor {
+  const base = FALLBACK[role];
+  if (!claimed.has(base)) return claimed.claim(base);
+
+  for (let step = 1; step <= FALLBACK_NUDGE_ATTEMPTS; step++) {
+    for (const direction of [1, -1]) {
+      const l = clamp01(base.oklch.l + direction * step * FALLBACK_NUDGE_L);
+      const oklch: Oklch = { ...base.oklch, l };
+      const candidate: RoleColor = { hex: formatHex(oklch), oklch };
+      if (!claimed.has(candidate)) return claimed.claim(candidate);
+    }
+  }
+
+  /* c8 ignore next 2 -- unreachable: 24 candidate lightnesses, ≤5 claimed */
+  return base;
+}
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
+/** The CSS custom properties a template consumes. */
+export function rolesToCssVars(roles: RoleAssignment): Record<string, string> {
+  return {
+    '--ui-background': roles.background.hex,
+    '--ui-surface': roles.surface.hex,
+    '--ui-primary': roles.primary.hex,
+    '--ui-text': roles.text.hex,
+    '--ui-accent': roles.accent.hex,
+    '--ui-border': roles.border.hex,
+  };
+}
+
+/**
+ * Swaps the light/dark polarity without touching hue or chroma — the
+ * "1-click dark/light flip that doesn't break the brand hue" the spec asks
+ * for. Background/text trade lightness, surface and border move with the
+ * background, and primary/accent are left alone precisely because they *are*
+ * the brand.
+ */
+export function flipPolarity(roles: RoleAssignment): RoleAssignment {
+  // The hex must be recomputed from the mirrored OKLCH, not carried over.
+  // rolesToCssVars emits `hex` — mirroring only the `oklch` field would make
+  // the whole flip a silent no-op on screen while every value in the object
+  // looked correct.
+  const mirror = (color: RoleColor): RoleColor => {
+    const flipped: Oklch = { ...color.oklch, l: 1 - color.oklch.l };
+    return { hex: formatHex(flipped), oklch: flipped };
+  };
+
+  return {
+    ...roles,
+    background: mirror(roles.background),
+    surface: mirror(roles.surface),
+    text: mirror(roles.text),
+    border: mirror(roles.border),
+  };
+}

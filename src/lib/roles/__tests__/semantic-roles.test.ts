@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { parseColor } from '@/lib/color-engine';
+import { contrastRatio, formatHex, parseColor } from '@/lib/color-engine';
 import {
   SEMANTIC_ROLES,
   deriveRoles,
   flipPolarity,
   rolesToCssVars,
   type RoleColor,
+  type SemanticRole,
 } from '../semantic-roles';
 
 function color(hex: string): RoleColor {
@@ -55,6 +56,93 @@ describe('deriveRoles', () => {
   });
 });
 
+/**
+ * The invariant the original tests were missing.
+ *
+ * They asserted every role was *defined* — which it always was, because the
+ * fallback filled the gaps — and never that the roles were *distinct*. So a
+ * derivation that handed the same tan to `surface` and `primary` passed a
+ * green suite while dissolving the visualizer's cards into their own
+ * background on screen. Every assertion below fails against that version.
+ */
+describe('deriveRoles — every role resolves to a distinct colour', () => {
+  /**
+   * The three colours from the live report, in collection order. Chosen
+   * because they are unremarkable — a violet, a green and a tan, no near
+   * duplicates — so any collision is the algorithm's, not the palette's.
+   */
+  const COLLECTED = ['#5A3F73', '#19D368', '#CFA15D', '#0B0B0C', '#F2F2F5', '#2A2A30'];
+
+  function collisions(roles: ReturnType<typeof deriveRoles>): string[] {
+    const byHex = new Map<string, SemanticRole[]>();
+    for (const role of SEMANTIC_ROLES) {
+      const hex = roles[role].hex.toLowerCase();
+      byHex.set(hex, [...(byHex.get(hex) ?? []), role]);
+    }
+    return [...byHex.entries()]
+      .filter(([, held]) => held.length > 1)
+      .map(([hex, held]) => `${held.join('+')} all resolved to ${hex}`);
+  }
+
+  // Sizes 1–6 individually, so a failure names the palette size that broke.
+  for (let size = 1; size <= 6; size++) {
+    it(`assigns six different colours for a ${size}-colour palette`, () => {
+      const roles = deriveRoles(COLLECTED.slice(0, size).map(color));
+      expect(collisions(roles)).toEqual([]);
+      expect(new Set(SEMANTIC_ROLES.map((r) => roles[r].hex.toLowerCase())).size).toBe(
+        SEMANTIC_ROLES.length
+      );
+    });
+  }
+
+  it('stays distinct for an empty palette', () => {
+    expect(collisions(deriveRoles([]))).toEqual([]);
+  });
+
+  it('stays distinct whatever order the colours were collected in', () => {
+    // Order-independence and distinctness are the same guarantee from two
+    // sides: a mapping that changes with input order will collide for some
+    // orders and not others, and pass intermittently.
+    for (let size = 1; size <= 6; size++) {
+      const base = COLLECTED.slice(0, size);
+      for (const permuted of [base, [...base].reverse(), [...base].sort()]) {
+        expect(collisions(deriveRoles(permuted.map(color)))).toEqual([]);
+      }
+    }
+  });
+
+  it('stays distinct when the palette contains the neutral fallbacks themselves', () => {
+    // The one case the fallback table cannot fill naively: the palette
+    // already holds the exact colour a role would fall back to.
+    const roles = deriveRoles([color('#0B0B0C'), color('#17171A'), color('#2A2A30')]);
+    expect(collisions(roles)).toEqual([]);
+  });
+
+  it('stays distinct when the same colour is collected twice in different case', () => {
+    const roles = deriveRoles([color('#5A3F73'), color('#5a3f73'), color('#19D368')]);
+    expect(collisions(roles)).toEqual([]);
+  });
+
+  it('keeps text legible against surface at three colours', () => {
+    // The live consequence of the collision: surface took primary's tan, and
+    // text on a card measured 1.19:1 — invisible. Not a full contrast
+    // guarantee (no palette can promise that), just a floor that the two
+    // roles are no longer the same colour wearing two hats.
+    const roles = deriveRoles(COLLECTED.slice(0, 3).map(color));
+    expect(contrastRatio(roles.text.oklch, roles.surface.oklch)).toBeGreaterThan(4.5);
+  });
+
+  it('still gives the palette its own colours before reaching for fallbacks', () => {
+    // Distinctness must not be bought by ignoring the palette: with six
+    // colours every role is a collected one, and nothing neutral leaks in.
+    const supplied = new Set(COLLECTED.map((hex) => hex.toLowerCase()));
+    const roles = deriveRoles(COLLECTED.map(color));
+    for (const role of SEMANTIC_ROLES) {
+      expect(supplied.has(roles[role].hex.toLowerCase())).toBe(true);
+    }
+  });
+});
+
 describe('deriveRoles — degenerate palettes', () => {
   it('returns a complete usable set for an empty palette', () => {
     const roles = deriveRoles([]);
@@ -99,6 +187,40 @@ describe('deriveRoles — manual overrides', () => {
     const all = Object.fromEntries(SEMANTIC_ROLES.map((r) => [r, color('#123456')]));
     const roles = deriveRoles(PALETTE, all);
     for (const role of SEMANTIC_ROLES) expect(roles[role].hex).toBe('#123456');
+  });
+});
+
+describe('deriveRoles — the fallback set agrees with itself', () => {
+  /**
+   * `hex` and `oklch` are read by different consumers: `rolesToCssVars` paints
+   * from the hex while the contrast audit and the CVD simulation compute from
+   * the OKLCH. When the fallback table carried both as hand-written literals
+   * they had all six drifted apart — `accent` was `#FFB454` as a hex and
+   * `#F5B75B` as an OKLCH — so a fallback role was audited against a colour
+   * that was never on screen. These pin the two together.
+   */
+  const FALLBACK_ROLES = deriveRoles([]);
+
+  for (const role of SEMANTIC_ROLES) {
+    it(`round-trips ${role} between hex and oklch`, () => {
+      expect(formatHex(FALLBACK_ROLES[role].oklch)).toBe(FALLBACK_ROLES[role].hex.toLowerCase());
+    });
+  }
+
+  it('holds for palette colours too, not just fallbacks', () => {
+    // Palette colours arrive already paired by the caller, so this is really a
+    // guard on the derivation never rebuilding one field without the other.
+    const roles = deriveRoles([color('#5A3F73'), color('#19D368'), color('#CFA15D')]);
+    for (const role of SEMANTIC_ROLES) {
+      expect(formatHex(roles[role].oklch)).toBe(roles[role].hex.toLowerCase());
+    }
+  });
+
+  it('survives a polarity flip', () => {
+    const flipped = flipPolarity(deriveRoles([]));
+    for (const role of SEMANTIC_ROLES) {
+      expect(formatHex(flipped[role].oklch)).toBe(flipped[role].hex.toLowerCase());
+    }
   });
 });
 

@@ -405,3 +405,15 @@
   max-height: 14rem;
   overflow-y: auto;
 }
+
+/* Sits inside a .legibilityRow label so the role name reads as "this colour,
+   called text" rather than as a legend the eye has to reconcile separately. */
+.roleSwatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.4rem;
+  border-radius: 2px;
+  border: var(--rule-width) solid var(--hairline);
+  vertical-align: -1px;
+}
