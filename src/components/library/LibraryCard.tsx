@@ -4,8 +4,8 @@ import { useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import { FAMILY_STEPS, familyStepSwatch, type FamilyAxis } from '@/lib/spectrum/swatch-family';
-import { useDock } from '@/lib/dock/dock-context';
-import { setSwatchDragPayload } from '@/lib/dock/drag-payload';
+import { useSystem } from '@/lib/system/system-context';
+import { setSwatchDragPayload } from '@/lib/system/drag-payload';
 import { pinColorAction } from '@/app/actions';
 import type { ColorRecord } from '@/lib/supabase/colors';
 import styles from './library.module.css';
@@ -33,7 +33,7 @@ const TELEPORT_TARGETS: readonly TeleportTarget[] = [
 ];
 
 export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCardProps) {
-  const { addToDock } = useDock();
+  const { addColor } = useSystem();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [previewAxis, setPreviewAxis] = useState<FamilyAxis>('lightness');
   const [previewStep, setPreviewStep] = useState<number | null>(null);
@@ -63,7 +63,7 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
   }
 
   function handleDock() {
-    addToDock(displayed.hex, displayed.oklch);
+    addColor(displayed.hex, displayed.oklch);
   }
 
   async function handlePinToStudio() {

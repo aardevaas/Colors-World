@@ -2,7 +2,7 @@
 
 import { useRef, useState, type MouseEvent } from 'react';
 import type { GeneratedScale } from '@/lib/color-engine';
-import { useDock } from '@/lib/dock/dock-context';
+import { useSystem } from '@/lib/system/system-context';
 import styles from './builder.module.css';
 
 interface GradientRibbonProps {
@@ -16,7 +16,7 @@ interface GradientRibbonProps {
  * intermediate OKLCH shades rather than an RGB-lerp that would drift hue.
  */
 export function GradientRibbon({ scale }: GradientRibbonProps) {
-  const { addToDock } = useDock();
+  const { addColor } = useSystem();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [hoverFraction, setHoverFraction] = useState<number | null>(null);
 
@@ -40,7 +40,7 @@ export function GradientRibbon({ scale }: GradientRibbonProps) {
 
   function handleSample(fraction: number) {
     const step = stepAtFraction(fraction);
-    addToDock(step.hex, step.oklch);
+    addColor(step.hex, step.oklch);
   }
 
   const hoverStep = hoverFraction !== null ? stepAtFraction(hoverFraction) : null;

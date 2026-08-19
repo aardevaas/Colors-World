@@ -34,7 +34,7 @@ import {
 import { findSnap, type AlignmentGuide, type SnapCandidate } from '@/lib/studio/snapping';
 import { autoArrange } from '@/lib/studio/auto-arrange';
 import { computeExportBounds, compositeWatermark, downloadDataUrl } from '@/lib/studio/export-png';
-import { useDock } from '@/lib/dock/dock-context';
+import { useSystem } from '@/lib/system/system-context';
 import { useCanvasCamera } from './useCanvasCamera';
 import { Minimap } from './Minimap';
 import styles from './studio-wall.module.css';
@@ -186,7 +186,7 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
   const [undoSnapshot, setUndoSnapshot] = useState<readonly UndoSnapshotEntry[] | null>(null);
   const [openPin, setOpenPin] = useState<{ cardId: string; index: number } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const { addToDock } = useDock();
+  const { addColor } = useSystem();
   const maxZRef = useRef(initialCards.reduce((max, c) => Math.max(max, c.zIndex), 0));
   const dragRef = useRef<ActiveDrag | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -689,7 +689,7 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
 
   function handlePinToDock(hex: string) {
     setOpenPin(null);
-    addToDock(hex, parseColor(hex));
+    addColor(hex, parseColor(hex));
   }
 
   /**

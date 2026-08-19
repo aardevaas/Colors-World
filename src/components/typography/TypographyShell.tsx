@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { useDock } from '@/lib/dock/dock-context';
-import { deriveRoles, flipPolarity, type RoleColor } from '@/lib/roles/semantic-roles';
+import { useSystem } from '@/lib/system/system-context';
 import { DEFAULT_RATIO, SCALE_RATIOS, buildScale, ROOT_PX } from '@/lib/typography/type-scale';
 import { fluidClamp, toCssVariables, type FluidToken } from '@/lib/typography/fluid-clamp';
 import { assessLegibility, suggestLegibilityFix } from '@/lib/typography/legibility';
@@ -30,17 +29,17 @@ interface TypographyShellProps {
 }
 
 export function TypographyShell({ accountSlot }: TypographyShellProps) {
-  const dock = useDock();
-  const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
+  // Type settings live in the System, so a shared link carries the specimen
+  // exactly as it was set. The locally-scanned family deliberately does not:
+  // a face installed here is not installed on the recipient's machine, and a
+  // link that silently renders in a different typeface is worse than one
+  // that renders in the preset it names.
+  const { system, roles, setType, setMode } = useSystem();
+  const { presetId, ratio, baseRem, lineHeight, tracking, weight } = system.type;
+  const isLight = system.mode === 'light';
   const [specimenId, setSpecimenId] = useState<SpecimenId>('magazine');
-  const [ratio, setRatio] = useState(DEFAULT_RATIO);
-  const [baseRem, setBaseRem] = useState(1);
-  const [lineHeight, setLineHeight] = useState(1.55);
-  const [tracking, setTracking] = useState(0);
-  const [weight, setWeight] = useState(400);
   const [localFonts, setLocalFonts] = useState<LocalFontOutcome | null>(null);
   const [localFamily, setLocalFamily] = useState<string | null>(null);
-  const [isLight, setIsLight] = useState(false);
 
   const preset = presetById(presetId);
 
@@ -58,15 +57,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
   // specimen depend on the order you happened to click colours in: a violet
   // on a lurid green page scored 4.60:1 and was therefore reported as
   // passing, so the tool blessed a page nobody could read.
-  const palette = useMemo<RoleColor[]>(
-    () => dock.items.map((item) => ({ hex: item.hex, oklch: item.oklch })),
-    [dock.items]
-  );
-
-  const roles = useMemo(() => {
-    const base = deriveRoles(palette);
-    return isLight ? flipPolarity(base) : base;
-  }, [palette, isLight]);
+  const palette = system.palette;
 
   const textColor = roles.text.oklch;
   const bgColor = roles.background.oklch;
@@ -120,7 +111,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
   }
 
   function applyFix() {
-    if (bodyFix.status === 'thicken') setWeight(bodyFix.weight);
+    if (bodyFix.status === 'thicken') setType({ weight: bodyFix.weight });
     // A recolour is a palette change, not a type change — surfaced as advice
     // rather than silently rewriting the dock from this tab.
   }
@@ -141,7 +132,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
               title={entry.character}
               className={entry.id === presetId && localFamily === null ? `${styles.pill} ${styles.pillActive}` : styles.pill}
               onClick={() => {
-                setPresetId(entry.id);
+                setType({ presetId: entry.id });
                 setLocalFamily(null);
               }}
             >
@@ -207,7 +198,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
           <button
             type="button"
             className={styles.fixButton}
-            onClick={() => setIsLight((v) => !v)}
+            onClick={() => setMode(isLight ? 'dark' : 'light')}
           >
             {isLight ? '☾ flip to dark' : '☀ flip to light'}
           </button>
@@ -221,7 +212,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
             <select
               className={styles.select}
               value={ratio}
-              onChange={(event) => setRatio(Number(event.target.value))}
+              onChange={(event) => setType({ ratio: Number(event.target.value) })}
             >
               {SCALE_RATIOS.map((entry) => (
                 <option key={entry.value} value={entry.value}>
@@ -238,7 +229,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
             max={1.5}
             step={0.0625}
             format={(v) => `${(v * ROOT_PX).toFixed(0)}px`}
-            onChange={setBaseRem}
+            onChange={(value) => setType({ baseRem: value })}
           />
           <SliderField
             label="Leading"
@@ -247,7 +238,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
             max={2}
             step={0.05}
             format={(v) => v.toFixed(2)}
-            onChange={setLineHeight}
+            onChange={(value) => setType({ lineHeight: value })}
           />
           <SliderField
             label="Tracking"
@@ -256,7 +247,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
             max={0.15}
             step={0.005}
             format={(v) => `${v.toFixed(3)}em`}
-            onChange={setTracking}
+            onChange={(value) => setType({ tracking: value })}
           />
           <SliderField
             label="Weight"
@@ -265,7 +256,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
             max={900}
             step={100}
             format={(v) => String(v)}
-            onChange={setWeight}
+            onChange={(value) => setType({ weight: value })}
           />
 
           <h2 className={styles.inspectorTitle}>Legibility</h2>

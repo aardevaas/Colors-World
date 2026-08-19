@@ -10,7 +10,7 @@ import {
 
 /**
  * Pure state transitions for /builder — the Palette Builder & Scale Lab.
- * Kept separate from React wiring (same discipline as dock-reducer.ts and
+ * Kept separate from React wiring (same discipline as system-reducer.ts and
  * library-feed-reducer.ts) so the state machine is unit-testable without a
  * component, a browser, or the dock's own localStorage.
  *

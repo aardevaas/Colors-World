@@ -2,14 +2,11 @@
 
 import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { CVD_TYPES, contrastRatio, formatHex, simulateCvd, type CvdType } from '@/lib/color-engine';
-import { useDock } from '@/lib/dock/dock-context';
+import { useSystem } from '@/lib/system/system-context';
 import {
   SEMANTIC_ROLES,
-  deriveRoles,
-  flipPolarity,
   rolesToCssVars,
   type RoleColor,
-  type RoleOverrides,
   type SemanticRole,
 } from '@/lib/roles/semantic-roles';
 import { WCAG_AA_NORMAL, autoFixContrast } from '@/lib/visualizer/auto-fix';
@@ -48,10 +45,12 @@ interface VisualizerShellProps {
 }
 
 export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
-  const dock = useDock();
+  // Palette, role overrides and polarity all live in the System now, so a
+  // link carries them and the other tabs see the same answer. Only genuinely
+  // view-local state -- which template is on screen, which vision is being
+  // simulated -- stays in this component.
+  const { system, roles, setRoleOverride, clearRoleOverride, setMode } = useSystem();
   const [templateId, setTemplateId] = useState<TemplateId>('dashboard');
-  const [overrides, setOverrides] = useState<RoleOverrides>({});
-  const [isLight, setIsLight] = useState(false);
   const [cvd, setCvd] = useState<CvdMode>('none');
   const [assigningRole, setAssigningRole] = useState<SemanticRole | null>(null);
   const [showAudit, setShowAudit] = useState(false);
@@ -60,14 +59,12 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
   const stageRef = useRef<HTMLDivElement>(null);
 
   const palette = useMemo<RoleColor[]>(
-    () => dock.items.map((item) => ({ hex: item.hex, oklch: item.oklch })),
-    [dock.items]
+    () => system.palette.map((color) => ({ hex: color.hex, oklch: color.oklch })),
+    [system.palette]
   );
 
-  const roles = useMemo(() => {
-    const base = deriveRoles(palette, overrides);
-    return isLight ? flipPolarity(base) : base;
-  }, [palette, overrides, isLight]);
+  const overrides = system.roleOverrides;
+  const isLight = system.mode === 'light';
 
   // CVD is applied to the resolved role colours rather than as an SVG filter
   // over the mockup: the filter approach also mangles the inspector's own
@@ -88,16 +85,12 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
   const stageStyle = rolesToCssVars(shownRoles) as CSSProperties;
 
   function assign(role: SemanticRole, color: RoleColor) {
-    setOverrides((prev) => ({ ...prev, [role]: color }));
+    setRoleOverride(role, color.hex);
     setAssigningRole(null);
   }
 
   function clearOverride(role: SemanticRole) {
-    setOverrides((prev) => {
-      const next = { ...prev };
-      delete next[role];
-      return next;
-    });
+    clearRoleOverride(role);
   }
 
   /**
@@ -172,7 +165,7 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
         </div>
 
         <div className={styles.controlGroup}>
-          <button type="button" className={styles.toggleButton} onClick={() => setIsLight((v) => !v)}>
+          <button type="button" className={styles.toggleButton} onClick={() => setMode(isLight ? 'dark' : 'light')}>
             {isLight ? '☾ dark' : '☀ light'}
           </button>
 

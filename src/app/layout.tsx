@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist_Mono } from 'next/font/google';
-import { DockProvider } from '@/lib/dock/dock-context';
-import { HarmonicDock } from '@/components/dock/HarmonicDock';
+import { SystemProvider } from '@/lib/system/system-context';
+import { SystemBar } from '@/components/system/SystemBar';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 // with it.
 export const dynamic = 'force-dynamic';
 
-// Loaded here, not per-page, because the Harmonic Dock (mounted below, once,
+// Loaded here, not per-page, because the System Bar (mounted below, once,
 // for every route) needs it regardless of which page it's floating over —
 // a page-local font load the way the landing page loads Unbounded wouldn't
 // be available on, say, /studio. A dedicated CSS variable name
@@ -37,10 +37,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={geistMono.variable}>
       <body>
-        <DockProvider>
+        <SystemProvider>
           {children}
-          <HarmonicDock />
-        </DockProvider>
+          <SystemBar />
+        </SystemProvider>
       </body>
     </html>
   );

@@ -14,7 +14,7 @@ import {
 } from '@/lib/color-engine';
 import { snapshotFromScales } from '@/lib/versioning';
 import { createPaletteFromScale } from '@/app/palettes/actions';
-import { useDock } from '@/lib/dock/dock-context';
+import { useSystem } from '@/lib/system/system-context';
 import { TabNav } from '@/components/nav/TabNav';
 import {
   builderReducer,
@@ -71,7 +71,7 @@ interface BuilderShellProps {
 
 export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellProps) {
   const router = useRouter();
-  const dock = useDock();
+  const { system, addColor } = useSystem();
   const [state, dispatch] = useReducer(builderReducer, EMPTY_BUILDER_STATE);
   const [paletteName, setPaletteName] = useState('brand');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -79,8 +79,8 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
   const hydratedRef = useRef(false);
 
   // Reopening a saved palette: seed the scales directly from its specs (see
-  // builderReducer's hydrateSpecs — self-contained, doesn't wait on a dock
-  // sync), and best-effort add each anchor to the dock too so it's
+  // builderReducer's hydrateSpecs — self-contained, doesn't wait on a
+  // System sync), and best-effort add each anchor to the System too so it's
   // consistent with what /builder is now showing. Runs once per mount only
   // — this is a one-time "load," not something that should re-fire and
   // clobber edits if initialSpecs' identity happens to change.
@@ -92,33 +92,34 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
       const anchor = spec.anchors[0];
       if (anchor === undefined) continue;
       try {
-        dock.addToDock(anchor.color, parseColor(anchor.color));
+        addColor(anchor.color, parseColor(anchor.color));
       } catch {
         // A malformed persisted anchor colour shouldn't block the rest of
-        // the hydrate — that scale just won't also appear in the dock.
+        // the hydrate — that scale just won't also appear in the System.
       }
     }
-    // Deliberately runs once (guarded by hydratedRef) regardless of dock
+    // Deliberately runs once (guarded by hydratedRef) regardless of System
     // identity changes afterward.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSpecs]);
 
-  // The dock is the single source of truth for *which* colours are in play —
-  // /builder never adds or removes a scale on its own, it only customizes
-  // the ones the dock already has. Per-scale curves/intensity/name persist
-  // in the reducer (see builderReducer's syncFromDock) across every re-sync.
+  // The System is the single source of truth for *which* colours are in
+  // play — /builder never adds or removes a scale on its own, it only
+  // customizes the ones the System already has. Per-scale
+  // curves/intensity/name persist in the reducer (see builderReducer's
+  // syncFromDock) across every re-sync.
   useEffect(() => {
     dispatch({
       type: 'syncFromDock',
-      items: dock.items.map((item) => ({ hex: item.hex, oklch: item.oklch })),
-      primaryAnchorHex: dock.primaryAnchorHex,
+      items: system.palette.map((color) => ({ hex: color.hex, oklch: color.oklch })),
+      primaryAnchorHex: system.anchorHex,
     });
-    // dock.items is a new array identity on every DockProvider render; the
+    // system.palette is a new array identity on every provider render; the
     // sync itself is cheap and idempotent (createScaleEntry only runs for
-    // genuinely new hexes), so re-running on every dock change is correct
+    // genuinely new hexes), so re-running on every System change is correct
     // and intentional rather than a dependency to prune.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dock.items, dock.primaryAnchorHex]);
+  }, [system.palette, system.anchorHex]);
 
   const generatedScales = useMemo<readonly GeneratedScale[]>(
     () => state.scales.map((entry) => generateScale(specFor(entry, state.stepCount, state.gamut))),

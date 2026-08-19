@@ -3,7 +3,7 @@ import type { Oklch } from '@/lib/color-engine';
 
 /**
  * Shared drag-and-drop contract between a Library card (drag source) and
- * the Harmonic Dock (drop target) — one custom MIME type both sides agree
+ * the System Bar (drop target) — one custom MIME type both sides agree
  * on, rather than each re-deriving hex/oklch from whatever HTML the drag
  * happened to carry.
  */
