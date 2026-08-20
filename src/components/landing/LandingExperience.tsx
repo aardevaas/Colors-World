@@ -6,6 +6,7 @@ import { CARDS_REVEAL_DELAY_SECONDS } from '@/lib/landing/explosion-timing';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
+import { BloomDoor, BloomStage } from './BloomStage';
 import { FeatureCards } from './FeatureCards';
 import type { HoverInfo } from './ParticleStorm';
 import styles from './landing.module.css';
@@ -35,12 +36,15 @@ import styles from './landing.module.css';
 
 interface LandingExperienceProps {
   /**
-   * The credibility strip and footer, passed in from the page because they are
-   * server components — this shell has to be a client component for the WebGL
-   * and the scroll, and a client component cannot import a server one. Handing
-   * them through as a slot keeps the star fetch on the server where it belongs.
+   * The credibility strip and the footer, passed in from the page because they
+   * are server components — this shell has to be a client component for the
+   * WebGL and the scroll, and a client component cannot import a server one.
+   * Handing them through as slots keeps the star fetch on the server where it
+   * belongs. Two slots rather than one because beat seven's door goes between
+   * them, and it needs the picked colour that only lives in here.
    */
-  readonly belowTheFold?: ReactNode;
+  readonly credibility?: ReactNode;
+  readonly footer?: ReactNode;
 }
 
 /** Three full screen-heights of scroll, per the brief. */
@@ -52,7 +56,7 @@ const ParticleCanvas = dynamic(() => import('./ParticleCanvas'), {
   loading: () => <div className={styles.canvasFallback} />,
 });
 
-export function LandingExperience({ belowTheFold }: LandingExperienceProps) {
+export function LandingExperience({ credibility, footer }: LandingExperienceProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const [motionEnabled, setMotionEnabled] = useState(true);
@@ -168,9 +172,17 @@ export function LandingExperience({ belowTheFold }: LandingExperienceProps) {
         </div>
       </section>
       <div ref={cardsRef}>
+        {/* Beats four to seven. Rendered unconditionally, for the same reason
+            the cards are: a visitor who never clicks the globe still has to be
+            told what this is. Without a pick it blooms the fallback seed, and
+            the copy says "from one colour" rather than "from the colour you
+            picked". */}
+        <BloomStage pickedColorHex={pickedColorHex ?? undefined} />
         <FeatureCards pickedColorHex={pickedColorHex ?? undefined} />
       </div>
-      {belowTheFold}
+      {credibility}
+      <BloomDoor pickedColorHex={pickedColorHex ?? undefined} />
+      {footer}
     </>
   );
 }
