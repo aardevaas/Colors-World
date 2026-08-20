@@ -124,17 +124,20 @@
 /* ---------- centre copy ---------- */
 
 .copy {
-  align-self: center;
-  justify-self: center;
+  /* Bottom-left, not centred. The painted lettering owns the middle of the
+     stage now, and centred copy ran straight through it -- the claim and the
+     word were legible only in the gaps between each other. This is the
+     reference's arrangement too: sculpture in the middle, flat type beneath
+     it, each with its own air. */
+  align-self: end;
+  justify-self: start;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-base);
-  max-width: 78rem;
-  /* Offset down rather than centred: the painted word owns the upper third of
-     the stage, and centred copy runs straight through it. */
-  padding: clamp(9rem, 26vh, 16rem) var(--space-vast) 0;
-  text-align: center;
+  max-width: 46rem;
+  padding: 0 var(--space-vast) clamp(3.5rem, 9vh, 6rem);
+  text-align: left;
   /* Driven per-frame from scroll — the copy clears the stage while the globe
      gathers. The top bar deliberately does not fade; it stays as persistent
      HUD. Defaults to 1 so it's fully visible before JS runs and whenever
@@ -158,7 +161,7 @@
   font-weight: 800;
   /* Tuned so "All 16.7 million of them." holds one line at laptop widths —
      any larger and it breaks into three ragged lines and loses its shape. */
-  font-size: clamp(2.1rem, 0.9rem + 3.9vw, 5.25rem);
+  font-size: clamp(1.9rem, 0.9rem + 3.0vw, 4.0rem);
   line-height: 1.02;
   letter-spacing: -0.03em;
   text-wrap: balance;

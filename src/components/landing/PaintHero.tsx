@@ -1,318 +1,316 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { PAINT_FRAGMENT_SOURCE, PAINT_VERTEX_SOURCE } from '@/lib/landing/paint-shader';
-import { buildPaintSurface } from '@/lib/landing/paint-surface';
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import {
+  composeRotation,
+  dampEuler,
+  idleTumble,
+  pointerRotation,
+  type Euler3,
+} from '@/lib/landing/hero-motion';
 import type { RoomColor } from '@/lib/landing/room-palette';
+import { drawStudioEnvironment } from '@/lib/landing/studio-environment';
 import styles from './paint-hero.module.css';
 
 /**
- * "Colors World", poured rather than typeset.
+ * The hero: "Colors World" as inflated 3D lettering in wet paint.
  *
- * Raw WebGL2 on purpose. The globe this replaced pulled in three.js, fiber,
- * drei and postprocessing — some 34MB installed and the heaviest chunk on the
- * page — to do work that is, in the end, one fullscreen triangle and one
- * texture fetch. None of that machinery earns its place here, and dropping it
- * took the landing page back under its performance budget while making the
- * hero more ambitious rather than less.
+ * Plain three.js rather than react-three-fiber. The scene is one model, one
+ * environment and one loop — a reconciler re-rendering a React tree to drive
+ * that would add weight and a hook-ordering surface for no gain, and the globe
+ * this replaces was lost to exactly that class of bug.
  *
- * The expensive part already happened before this component renders a frame:
- * the letterforms are rasterised to an offscreen canvas, run through an exact
- * distance transform, and baked into a normal map (see `paint-surface.ts`).
- * The GPU then only lights what the CPU already shaped.
+ * Two things here are measured from the reference rather than assumed:
+ *
+ *  - The primary motion is a continuous idle tumble, not pointer tracking. Two
+ *    captures with the mouse unmoved showed the word at different angles. The
+ *    pointer contributes a damped offset on top (see hero-motion.ts).
+ *  - The sweeping highlight is the *environment* sliding across the surface as
+ *    the mesh turns, not an animated specular. Get the env right and it is
+ *    free; animate it by hand and it will always look wrong.
+ *
+ * The colour is ours rather than the reference's flat blue: the six generated
+ * room hues are laid across the strokes, so turning the word sweeps you through
+ * the exact palette the six rooms below are about to be painted in.
  */
+
+const MODEL_URL = '/model/colors-world.glb';
+const DRACO_PATH = '/draco/';
+
+/** How quickly the word swings toward the pointer. Lower is heavier. */
+const POINTER_LAMBDA = 2.6;
+/** Seconds for a touch ripple to decay. */
+const RIPPLE_DECAY = 0.9;
+/** Radius of the ripple in normalised model units. */
+const RIPPLE_RADIUS = 0.42;
 
 interface PaintHeroProps {
-  /** Where on the hue wheel this visit starts. Every visitor gets a different
-   *  spectrum, and the same seed feeds the room colours further down. */
   readonly seedHue: number;
-  /** The six colours the rooms below will be painted in. The word is made of
-   *  exactly these, so the hero shows the palette before it separates. */
   readonly rooms: readonly RoomColor[];
-  readonly reducedMotion: boolean;
+  readonly reducedMotion?: boolean;
 }
 
-/** Texture the word is baked into. Wide enough for the letterforms to hold up
- *  on a large display, small enough that the distance transform is a blink. */
-const SURFACE_WIDTH = 1024;
-const SURFACE_HEIGHT = 288;
-
-/** How fat the tubes are, as a fraction of the cap height. */
-const TUBE_RADIUS_RATIO = 0.055;
-
-/**
- * Where the word sits, in GL texture coordinates — origin bottom-left, so a
- * high `y` is near the top of the screen. Placed in the upper band, which the
- * HUD leaves empty: the flat headline underneath is the claim, and the painted
- * word above it is the name.
- */
-const WORD_RECT = { x: 0.05, y: 0.66, width: 0.9, height: 0.26 } as const;
-
-/** How quickly the rendered pointer catches up with the real one. Low enough
- *  that a flick across the screen still reads as the paint having weight. */
-const POINTER_EASING = 0.09;
-
-export function PaintHero({ seedHue, rooms, reducedMotion }: PaintHeroProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [unsupported, setUnsupported] = useState(false);
-
-  // Read through refs inside the frame loop so changing either never tears
-  // down and rebuilds the GL context.
-  const seedRef = useRef(seedHue);
+export function PaintHero({ rooms, reducedMotion = false }: PaintHeroProps) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  // Pointer and palette live in refs: both change without needing a React
+  // render, and the loop reads them every frame.
+  const pointerRef = useRef({ x: 0, y: 0 });
   const reducedRef = useRef(reducedMotion);
   const roomsRef = useRef(rooms);
-  seedRef.current = seedHue;
   reducedRef.current = reducedMotion;
   roomsRef.current = rooms;
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas === null) return;
+    const mount = mountRef.current;
+    if (mount === null) return;
 
-    const gl = canvas.getContext('webgl2', {
-      antialias: false,
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
       alpha: false,
       powerPreference: 'high-performance',
     });
-    if (gl === null) {
-      setUnsupported(true);
-      return;
-    }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(mount.clientWidth, Math.max(1, mount.clientHeight));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    mount.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#070a1c');
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      mount.clientWidth / Math.max(1, mount.clientHeight),
+      0.1,
+      100
+    );
+    camera.position.set(0, 0, 4.2);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const envSource = new THREE.CanvasTexture(drawStudioEnvironment(768, 384));
+    envSource.mapping = THREE.EquirectangularReflectionMapping;
+    envSource.colorSpace = THREE.SRGBColorSpace;
+    const envRT = pmrem.fromEquirectangular(envSource);
+    scene.environment = envRT.texture;
+    envSource.dispose();
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    // Shader-injected uniforms, shared by the material and the loop.
+    const uniforms = {
+      uRoomColors: { value: paletteToColors(roomsRef.current) },
+      uSpan: { value: new THREE.Vector2(-1, 1) },
+      uHit: { value: new THREE.Vector3(0, 0, 0) },
+      uHitStrength: { value: 0 },
+    };
+
+    const material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color('#ffffff'),
+      roughness: 0.14,
+      metalness: 0.0,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.045,
+      envMapIntensity: 1.35,
+    });
+
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.uRoomColors = uniforms.uRoomColors;
+      shader.uniforms.uSpan = uniforms.uSpan;
+      shader.uniforms.uHit = uniforms.uHit;
+      shader.uniforms.uHitStrength = uniforms.uHitStrength;
+
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vObjectPos;')
+        .replace(
+          '#include <begin_vertex>',
+          '#include <begin_vertex>\n  vObjectPos = position;'
+        );
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+varying vec3 vObjectPos;
+uniform vec3 uRoomColors[6];
+uniform vec2 uSpan;
+uniform vec3 uHit;
+uniform float uHitStrength;
+
+// Six generated hues laid across the word, blended so the seams are not
+// visible as bands -- the point is a spectrum, not a colour chart.
+vec3 spectrumAt(float t) {
+  float scaled = clamp(t, 0.0, 1.0) * 5.0;
+  int i = int(floor(scaled));
+  float f = fract(scaled);
+  vec3 a = uRoomColors[min(i, 5)];
+  vec3 b = uRoomColors[min(i + 1, 5)];
+  return mix(a, b, smoothstep(0.0, 1.0, f));
+}`
+        )
+        .replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+{
+  float t = (vObjectPos.x - uSpan.x) / max(1e-5, uSpan.y - uSpan.x);
+  diffuseColor.rgb *= spectrumAt(t);
+
+  // Touch ripple: a local brightening where the pointer meets a stroke, the
+  // way a finger disturbs wet paint. Decays on its own (see the loop).
+  float d = distance(vObjectPos, uHit);
+  float ring = smoothstep(${RIPPLE_RADIUS.toFixed(3)}, 0.0, d) * uHitStrength;
+  diffuseColor.rgb += ring * 0.55;
+}`
+        );
+    };
 
     let disposed = false;
-    let frame = 0;
-    let program: WebGLProgram | null = null;
-    let texture: WebGLTexture | null = null;
-    let vao: WebGLVertexArrayObject | null = null;
+    const draco = new DRACOLoader();
+    draco.setDecoderPath(DRACO_PATH);
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(draco);
+    const meshes: THREE.Mesh[] = [];
 
-    const pointer = { x: 0.5, y: 0.62 };
-    const target = { x: 0.5, y: 0.62 };
-    let ripple = 0;
+    loader.load(
+      MODEL_URL,
+      (gltf) => {
+        if (disposed) return;
+        gltf.scene.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.material = material;
+            meshes.push(mesh);
+          }
+        });
+        // Normalise whatever transform the export carried, so composition does
+        // not depend on where the sculpt happened to sit in Blender.
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+        gltf.scene.position.sub(center);
+        gltf.scene.scale.setScalar(2.0 / Math.max(size.x, 1e-6));
+        group.add(gltf.scene);
+        // Sits above centre: the flat claim lives bottom-left, and the word
+        // needs to clear it rather than share the same band of the stage.
+        group.position.set(0.42, 0.34, 0);
+
+        // The spectrum ramps across the model's own X extent, measured rather
+        // than assumed, so a re-export at a different size still reads right.
+        const local = new THREE.Box3().setFromObject(gltf.scene);
+        uniforms.uSpan.value.set(local.min.x, local.max.x);
+      },
+      undefined,
+      (err) => {
+        console.error('[PaintHero] model failed to load', err);
+      }
+    );
+
+    const raycaster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
 
     function handlePointerMove(event: PointerEvent) {
-      const rect = canvas!.getBoundingClientRect();
-      target.x = (event.clientX - rect.left) / rect.width;
-      // Flipped: WebGL's origin is bottom-left, the DOM's is top-left.
-      target.y = 1 - (event.clientY - rect.top) / rect.height;
-      ripple = 1;
-    }
-
-    function handlePointerLeave() {
-      target.x = 0.5;
-      target.y = 0.62;
-    }
-
-    function resize() {
-      const ratio = Math.min(2, window.devicePixelRatio || 1);
-      const width = Math.round(canvas!.clientWidth * ratio);
-      const height = Math.round(canvas!.clientHeight * ratio);
-      if (canvas!.width === width && canvas!.height === height) return;
-      canvas!.width = width;
-      canvas!.height = height;
-      gl!.viewport(0, 0, width, height);
-    }
-
-    async function start() {
-      // The word cannot be rasterised until the display face has actually
-      // arrived — measuring against a fallback would bake the wrong shapes.
-      if (document.fonts !== undefined) await document.fonts.ready;
-      if (disposed) return;
-
-      program = createProgram(gl!, PAINT_VERTEX_SOURCE, PAINT_FRAGMENT_SOURCE);
-      if (program === null) {
-        setUnsupported(true);
-        return;
-      }
-
-      const coverage = rasteriseWord(canvas!);
-      const surface = buildPaintSurface(
-        coverage,
-        SURFACE_WIDTH,
-        SURFACE_HEIGHT,
-        SURFACE_HEIGHT * TUBE_RADIUS_RATIO
-      );
-
-      texture = gl!.createTexture();
-      gl!.bindTexture(gl!.TEXTURE_2D, texture);
-      // A 2D canvas numbers its rows from the top and GL numbers them from the
-      // bottom, so uploading as-is renders the word mirrored. Flipping here
-      // rather than inverting v in the shader keeps every coordinate in the
-      // fragment shader in one consistent space.
-      gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, true);
-      gl!.texImage2D(
-        gl!.TEXTURE_2D, 0, gl!.RGBA, SURFACE_WIDTH, SURFACE_HEIGHT, 0,
-        gl!.RGBA, gl!.UNSIGNED_BYTE, surface
-      );
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
-      // Clamped, so the tilt sampling past the edge of the word cannot wrap a
-      // stroke around to the opposite side.
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
-
-      // The vertex shader generates its own positions from gl_VertexID, so
-      // there is nothing to bind — but WebGL2 still requires a bound VAO.
-      vao = gl!.createVertexArray();
-
-      const uniforms = {
-        surface: gl!.getUniformLocation(program, 'uSurface'),
-        resolution: gl!.getUniformLocation(program, 'uResolution'),
-        pointer: gl!.getUniformLocation(program, 'uPointer'),
-        time: gl!.getUniformLocation(program, 'uTime'),
-        seedHue: gl!.getUniformLocation(program, 'uSeedHue'),
-        wordRect: gl!.getUniformLocation(program, 'uWordRect'),
-        ripple: gl!.getUniformLocation(program, 'uRipple'),
-        reduced: gl!.getUniformLocation(program, 'uReduced'),
-        // The location of element zero addresses the whole array.
-        rooms: gl!.getUniformLocation(program, 'uRooms'),
+      const rect = renderer.domElement.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      pointerRef.current = {
+        x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        y: ((event.clientY - rect.top) / rect.height) * 2 - 1,
       };
-      const roomBuffer = new Float32Array(18);
+    }
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
 
-      resize();
-      window.addEventListener('resize', resize);
-      canvas!.addEventListener('pointermove', handlePointerMove);
-      canvas!.addEventListener('pointerleave', handlePointerLeave);
+    // Arrow rather than a declaration: a hoisted function loses the non-null
+    // narrowing `mount` got from the early return above it.
+    const handleResize = () => {
+      const w = mount.clientWidth;
+      const h = Math.max(1, mount.clientHeight);
+      renderer.setSize(w, h);
+      camera.aspect = w / Math.max(1, h);
+      camera.updateProjectionMatrix();
+    };
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(mount);
 
-      const started = performance.now();
+    const clock = new THREE.Clock();
+    let smoothed: Euler3 = { x: 0, y: 0, z: 0 };
+    let frame = 0;
 
-      function render(now: number) {
-        if (disposed) return;
-        const reduced = reducedRef.current;
+    function tick() {
+      frame = requestAnimationFrame(tick);
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const t = clock.elapsedTime;
 
-        pointer.x += (target.x - pointer.x) * POINTER_EASING;
-        pointer.y += (target.y - pointer.y) * POINTER_EASING;
-        // The disturbance fades on its own, so the paint settles when the
-        // pointer stops rather than rippling forever.
-        ripple *= 0.94;
+      const idle = reducedRef.current ? { x: 0, y: 0, z: 0 } : idleTumble(t);
+      const wanted = pointerRotation(pointerRef.current.x, pointerRef.current.y);
+      smoothed = dampEuler(smoothed, wanted, POINTER_LAMBDA, dt);
+      const applied = composeRotation(idle, smoothed);
+      group.rotation.set(applied.x, applied.y, applied.z);
 
-        gl!.useProgram(program);
-        gl!.bindVertexArray(vao);
-        gl!.activeTexture(gl!.TEXTURE0);
-        gl!.bindTexture(gl!.TEXTURE_2D, texture);
-        gl!.uniform1i(uniforms.surface, 0);
-        gl!.uniform2f(uniforms.resolution, canvas!.width, canvas!.height);
-        gl!.uniform2f(uniforms.pointer, pointer.x, pointer.y);
-        gl!.uniform1f(uniforms.time, reduced ? 0 : (now - started) / 1000);
-        gl!.uniform1f(uniforms.seedHue, (seedRef.current * Math.PI) / 180);
-        gl!.uniform4f(
-          uniforms.wordRect,
-          WORD_RECT.x, WORD_RECT.y, WORD_RECT.width, WORD_RECT.height
-        );
-        gl!.uniform1f(uniforms.ripple, reduced ? 0 : ripple);
-        gl!.uniform1f(uniforms.reduced, reduced ? 1 : 0);
-
-        // Packed each frame rather than on change: six colours is eighteen
-        // floats, which is cheaper to just write than to track.
-        const palette = roomsRef.current;
-        for (let i = 0; i < 6; i += 1) {
-          const colour = palette[i % Math.max(1, palette.length)];
-          roomBuffer[i * 3] = colour?.oklch.l ?? 0.68;
-          roomBuffer[i * 3 + 1] = colour?.oklch.c ?? 0.14;
-          roomBuffer[i * 3 + 2] = ((colour?.oklch.h ?? 0) * Math.PI) / 180;
+      // Ripple is raycast against the real mesh, so it only fires when the
+      // pointer is genuinely over a stroke rather than over the gaps.
+      if (meshes.length > 0) {
+        ndc.set(pointerRef.current.x, -pointerRef.current.y);
+        raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObjects(meshes, false);
+        const first = hits[0];
+        if (first !== undefined) {
+          uniforms.uHit.value.copy(first.object.worldToLocal(first.point.clone()));
+          uniforms.uHitStrength.value = 1;
+        } else {
+          uniforms.uHitStrength.value = Math.max(
+            0,
+            uniforms.uHitStrength.value - dt / RIPPLE_DECAY
+          );
         }
-        gl!.uniform3fv(uniforms.rooms, roomBuffer);
-        gl!.drawArrays(gl!.TRIANGLES, 0, 3);
-
-        frame = requestAnimationFrame(render);
       }
 
-      frame = requestAnimationFrame(render);
+      renderer.render(scene, camera);
     }
-
-    void start();
+    frame = requestAnimationFrame(tick);
 
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
-      window.removeEventListener('resize', resize);
-      canvas.removeEventListener('pointermove', handlePointerMove);
-      canvas.removeEventListener('pointerleave', handlePointerLeave);
-      if (texture !== null) gl.deleteTexture(texture);
-      if (vao !== null) gl.deleteVertexArray(vao);
-      if (program !== null) gl.deleteProgram(program);
+      observer.disconnect();
+      window.removeEventListener('pointermove', handlePointerMove);
+      draco.dispose();
+      envRT.dispose();
+      pmrem.dispose();
+      material.dispose();
+      scene.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) mesh.geometry.dispose();
+      });
+      renderer.dispose();
+      renderer.domElement.remove();
     };
   }, []);
 
-  return (
-    <div className={styles.stage} data-unsupported={unsupported}>
-      <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
-      {/* Hidden while the shader is painting it, and promoted to the visible
-          hero when WebGL is unavailable. Not an h1: the HUD carries the page's
-          heading, and two would be a worse document than one. */}
-      <p className={styles.heading} data-fallback={unsupported}>
-        Colors World
-      </p>
-    </div>
-  );
+  // Repaint the spectrum when a new palette is generated, without rebuilding
+  // the scene — the uniform holds the same Color objects the shader reads.
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
+
+  return <div ref={mountRef} className={styles.stage} aria-hidden="true" />;
 }
 
-/** Draws the word to an offscreen canvas and returns its coverage. */
-function rasteriseWord(host: HTMLCanvasElement): Float32Array {
-  const offscreen = document.createElement('canvas');
-  offscreen.width = SURFACE_WIDTH;
-  offscreen.height = SURFACE_HEIGHT;
-  const ctx = offscreen.getContext('2d', { willReadFrequently: true });
-
-  const coverage = new Float32Array(SURFACE_WIDTH * SURFACE_HEIGHT);
-  if (ctx === null) return coverage;
-
-  const family =
-    getComputedStyle(host).getPropertyValue('--font-display').trim() || 'sans-serif';
-
-  // Fitted rather than fixed: the word has to fill the texture at any face,
-  // and a hardcoded size would either clip or leave the letterforms small
-  // enough that the tubes lose their roundness.
-  let size = SURFACE_HEIGHT * 0.78;
-  ctx.font = `800 ${size}px ${family}, sans-serif`;
-  const measured = ctx.measureText('Colors World').width;
-  const maxWidth = SURFACE_WIDTH * 0.94;
-  if (measured > maxWidth) size *= maxWidth / measured;
-
-  ctx.font = `800 ${size}px ${family}, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#fff';
-  ctx.fillText('Colors World', SURFACE_WIDTH / 2, SURFACE_HEIGHT / 2);
-
-  const { data } = ctx.getImageData(0, 0, SURFACE_WIDTH, SURFACE_HEIGHT);
-  for (let i = 0; i < coverage.length; i += 1) {
-    coverage[i] = data[i * 4 + 3]! / 255;
+function paletteToColors(rooms: readonly RoomColor[]): THREE.Color[] {
+  const out: THREE.Color[] = [];
+  for (let i = 0; i < 6; i += 1) {
+    const room = rooms[i % Math.max(1, rooms.length)];
+    // No convertSRGBToLinear here: three's ColorManagement already treats a
+    // hex as sRGB and converts it for the linear pipeline. Doing it twice
+    // crushed the generated hues into muddy near-blacks on screen.
+    out.push(new THREE.Color(room?.hex ?? '#7c5cff'));
   }
-  return coverage;
+  return out;
 }
 
-function createProgram(
-  gl: WebGL2RenderingContext,
-  vertexSource: string,
-  fragmentSource: string
-): WebGLProgram | null {
-  const vertex = compile(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragment = compile(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  if (vertex === null || fragment === null) return null;
-
-  const program = gl.createProgram();
-  gl.attachShader(program, vertex);
-  gl.attachShader(program, fragment);
-  gl.linkProgram(program);
-  // Shaders are reference-counted by the program, so they can go now.
-  gl.deleteShader(vertex);
-  gl.deleteShader(fragment);
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    gl.deleteProgram(program);
-    return null;
-  }
-  return program;
-}
-
-function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
-  const shader = gl.createShader(type);
-  if (shader === null) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
+export default PaintHero;

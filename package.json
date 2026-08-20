@@ -19,6 +19,7 @@
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/react-virtual": "^3.14.8",
+    "@types/three": "^0.185.4",
     "culori": "^4.0.1",
     "framer-motion": "^12.42.2",
     "lenis": "^1.3.25",
@@ -27,7 +28,8 @@
     "postprocessing": "^6.39.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",
