@@ -214,8 +214,8 @@ export function SystemBar() {
         </>
       )}
 
-      <SystemLink href="/builder" className={styles.primaryAction}>
-        Open in Builder
+      <SystemLink href="/scales" className={styles.primaryAction}>
+        Open in Scales
       </SystemLink>
     </div>
   );

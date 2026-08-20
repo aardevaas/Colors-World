@@ -1,0 +1,107 @@
+/*
+ * Compose gets room to breathe in a way it never could as a strip: the wheel
+ * needs to be big enough to read the lopsidedness off, and the palette needs
+ * to be big enough to judge.
+ */
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-void);
+  font-family: var(--font-builder-body), var(--font-ui), system-ui, sans-serif;
+}
+
+.intro {
+  padding: var(--space-wide, 1.5rem) var(--space-wide, 1.5rem) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 62ch;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-builder-display), var(--font-ui), sans-serif;
+  font-size: var(--text-display, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.lede {
+  margin: 0;
+  font-size: var(--text-small, 0.875rem);
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+/* ---------- hand-off ---------- */
+
+.handoff {
+  margin-top: auto;
+  padding: var(--space-wide, 1.5rem);
+  border-top: var(--rule-width, 1px) solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.handoffCopy {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--text-small, 0.8125rem);
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+.handoffLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* The primary hand-off points at the Visualizer, not at Scales: what you want
+   after rolling a palette is to see it carry an interface. */
+.primaryHandoff,
+.secondaryHandoff {
+  text-decoration: none;
+  font-size: var(--text-small, 0.8125rem);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  transition: border-color var(--duration-fast, 150ms) var(--ease-out-expo, ease),
+    background var(--duration-fast, 150ms) var(--ease-out-expo, ease);
+}
+
+.primaryHandoff {
+  background: var(--text-primary);
+  color: var(--surface-void);
+  border-color: transparent;
+}
+
+.primaryHandoff:hover {
+  background: oklch(100% 0 0);
+}
+
+.secondaryHandoff {
+  color: var(--text-secondary);
+}
+
+.secondaryHandoff:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.inlineLink {
+  color: var(--text-secondary);
+  text-underline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryHandoff,
+  .secondaryHandoff {
+    transition: none;
+  }
+}

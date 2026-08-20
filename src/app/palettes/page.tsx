@@ -18,7 +18,7 @@ export default async function PalettesPage() {
       {palettes.length === 0 ? (
         <p className={styles.empty}>
           No palettes yet — save one from{' '}
-          <Link href="/builder" className={styles.link}>
+          <Link href="/scales" className={styles.link}>
             Builder
           </Link>
           .

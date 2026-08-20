@@ -1,0 +1,65 @@
+/*
+ * The wheel earns its space by being a measurement rather than an ornament,
+ * so the styling stays out of the way: the only decorative decision here is
+ * that the ideal circle is dotted and the real edge is solid, because the
+ * comparison between them is the point.
+ */
+
+.wheel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  align-items: center;
+}
+
+.svg {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.idealCircle {
+  fill: none;
+  stroke: var(--text-tertiary);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.55;
+}
+
+.reachEdge {
+  fill: none;
+  stroke: oklch(96% 0.004 265 / 0.75);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.spoke {
+  stroke: oklch(100% 0 0 / 0.55);
+  stroke-width: 1.5;
+}
+
+.spokeSeed {
+  stroke: oklch(100% 0 0 / 0.9);
+  stroke-width: 2.5;
+}
+
+.spokeDot {
+  stroke: oklch(12% 0.01 280 / 0.9);
+  stroke-width: 2;
+}
+
+.caption {
+  max-width: 34ch;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.55;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.caption strong {
+  color: var(--text-primary);
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+}

@@ -274,3 +274,27 @@
   line-height: 1.55;
   color: oklch(80% 0.12 60);
 }
+
+/* ---------- the room's stage ---------- */
+
+/* The wheel beside the palette rather than above it: they are read together,
+   and the wheel explains the shape the strip came out in. */
+.stage {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .stage {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stageMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}

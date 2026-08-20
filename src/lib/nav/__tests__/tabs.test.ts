@@ -2,15 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { SECONDARY_ROUTES, TABS, tabById, type TabId } from '../tabs';
 
 describe('tab manifest', () => {
-  it('has exactly the five tabs the product is built around', () => {
-    expect(TABS).toHaveLength(5);
+  it('is ordered as the work is actually done', () => {
+    // The count was never the invariant -- the sequence is. A person reading
+    // the nav should be able to infer the workflow without being told it:
+    // find a colour, make a palette from it, deepen each colour into a scale,
+    // prove it on real UI and real type, then assemble. Reordering these is a
+    // product decision and should have to come through this test.
     expect(TABS.map((t) => t.id)).toEqual([
       'library',
-      'builder',
-      'studio',
+      'compose',
+      'scales',
       'visualizer',
       'typography',
+      'studio',
     ]);
+  });
+
+  it('puts making a palette before refining one', () => {
+    // The split that created Compose: generating a palette and deepening a
+    // colour are different altitudes, and the generator used to be a strip in
+    // the margin of the room named after the refining.
+    const ids = TABS.map((t) => t.id);
+    expect(ids.indexOf('compose')).toBeLessThan(ids.indexOf('scales'));
   });
 
   it('gives every tab a unique id and a unique href', () => {
@@ -31,21 +44,20 @@ describe('tab manifest', () => {
     }
   });
 
-  it('resolves a tab by id', () => {
-    expect(tabById('studio').label).toBe('studio');
+  it('resolves every tab by id', () => {
+    for (const tab of TABS) expect(tabById(tab.id)).toBe(tab);
   });
 
   it('throws on an unknown id rather than returning undefined', () => {
     expect(() => tabById('nope' as TabId)).toThrow();
   });
 
-  // This is the regression guard for the bug that made TabNav necessary: the
-  // nav must always render all five, so a tab can never again be built with
-  // nowhere to appear. Unbuilt tabs are marked, not omitted.
+  // The regression guard for the bug that made TabNav necessary: the nav must
+  // render every tab, so one can never again be built with nowhere to appear.
+  // Unbuilt tabs are marked, not omitted.
   it('keeps the built flag on every tab so an unbuilt one can never be dropped', () => {
-    // All five now ship. The flag stays because the failure it guards against
-    // — building a tab with nowhere to appear — returns the moment a sixth is
-    // added and someone omits it from the nav rather than marking it.
+    // The sixth tab has now been added, which is exactly the moment this was
+    // written for.
     expect(TABS.every((t) => typeof t.built === 'boolean')).toBe(true);
     expect(TABS.filter((t) => !t.built)).toEqual([]);
   });

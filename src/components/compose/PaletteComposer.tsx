@@ -13,6 +13,7 @@ import {
   type UnmetTarget,
 } from '@/lib/harmony/solver';
 import { useSystem } from '@/lib/system/system-context';
+import { HarmonyWheel } from './HarmonyWheel';
 import styles from './palette-composer.module.css';
 
 /**
@@ -31,6 +32,11 @@ import styles from './palette-composer.module.css';
  * The draft is deliberately *not* the System. Rolling is exploration and
  * should not rewrite the URL, push history, or repaint the other four tabs on
  * every press of the spacebar. It becomes the System only when applied.
+ *
+ * This lived as a strip above the Builder's scales until it was measured at
+ * 6 of that page's 112 controls and 7% of its height -- the thing that makes
+ * the palette, crowded into the margin of the room named after refining it.
+ * It has its own room now, which is also what lets the wheel exist.
  */
 
 const CHROMA_STRATEGIES: readonly { readonly id: ChromaStrategy; readonly label: string; readonly hint: string }[] = [
@@ -81,6 +87,15 @@ export function PaletteComposer() {
       setDraft(dedupe(merged));
     },
     [rule, strategy, count, enforce]
+  );
+
+  /** Picking a hue keeps everything else about the current seed. */
+  const pickHue = useCallback(
+    (hue: number) => {
+      const base = seed ?? randomSeed(Math.random);
+      build({ ...base, h: hue }, locked, draft);
+    },
+    [seed, locked, draft, build]
   );
 
   const roll = useCallback(() => {
@@ -217,11 +232,19 @@ export function PaletteComposer() {
 
       {draft.length === 0 ? (
         <p className={styles.empty}>
-          Start from one colour and get a whole system — a ground, a surface, text that
-          reads on both, and a brand colour with an accent. {RULE_HINTS[rule]}.
+          {RULE_HINTS[rule]}. Roll for a starting point, or pick a hue on the wheel.
         </p>
       ) : (
         <>
+          <div className={styles.stage}>
+            <HarmonyWheel
+              seed={seed}
+              rule={rule}
+              lightness={seed?.l ?? 0.62}
+              gamut="srgb"
+              onPickHue={pickHue}
+            />
+            <div className={styles.stageMain}>
           <ul className={styles.strip}>
             {draft.map((color) => {
               const isLocked = locked.has(color.hex);
@@ -289,6 +312,8 @@ export function PaletteComposer() {
               {shortfall !== null && <p className={styles.shortfall}>{shortfall}</p>}
             </div>
           )}
+            </div>
+          </div>
         </>
       )}
     </section>

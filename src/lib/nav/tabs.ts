@@ -8,7 +8,7 @@
  * adding a tab is a one-line change and cannot drift per-page again.
  */
 
-export type TabId = 'library' | 'builder' | 'studio' | 'visualizer' | 'typography';
+export type TabId = 'library' | 'compose' | 'scales' | 'visualizer' | 'typography' | 'studio';
 
 export interface TabRoute {
   readonly id: TabId;
@@ -19,12 +19,19 @@ export interface TabRoute {
   readonly built: boolean;
 }
 
+/**
+ * Ordered as the work is done, not alphabetically or by age: find a colour,
+ * make a palette from it, deepen each colour into a scale, prove the result on
+ * real UI and real type, then assemble it. A person reading the nav should be
+ * able to infer the workflow without being told it.
+ */
 export const TABS: readonly TabRoute[] = [
   { id: 'library', href: '/library', label: 'library', built: true },
-  { id: 'builder', href: '/builder', label: 'builder', built: true },
-  { id: 'studio', href: '/studio', label: 'studio', built: true },
+  { id: 'compose', href: '/compose', label: 'compose', built: true },
+  { id: 'scales', href: '/scales', label: 'scales', built: true },
   { id: 'visualizer', href: '/visualizer', label: 'visualizer', built: true },
   { id: 'typography', href: '/typography', label: 'typography', built: true },
+  { id: 'studio', href: '/studio', label: 'studio', built: true },
 ];
 
 /**
