@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { CARDS_REVEAL_DELAY_SECONDS } from '@/lib/landing/explosion-timing';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
@@ -18,17 +18,30 @@ import styles from './landing.module.css';
  * scroll-linked story (storm, globe morph, rotation) entirely on its own
  * pacing.
  *
- * The feature cards are *not* ordinary scroll-reachable content — they
- * don't exist in the document at all until a click has actually exploded
- * the globe. Rendering them unconditionally right after `.stage` (the
- * original approach) meant they'd appear the moment someone scrolled past
- * 300vh regardless of whether they'd ever clicked, so a curious scroll
- * would show the cards laid directly over a fully intact, still-rotating,
- * unexploded globe — exactly the "sitting on top of the globe" mess this
- * was rewritten to fix. Gating the cards behind explosion state means
- * there's simply nowhere to scroll to until the story has actually reached
- * that point.
+ * The feature cards used to not exist in the document until a click had
+ * exploded the globe, which solved a real problem — scrolling past 300vh
+ * without clicking used to lay the cards directly over a fully intact,
+ * still-rotating globe — by creating a worse one. Measured on the live page:
+ * three screens, one heading, no footer. A visitor who did not happen to
+ * click a control nothing signposted was never told the product had five
+ * rooms, was open source, or was worth returning to. The page simply ended.
+ *
+ * The cards are unconditional again, and the overlap is solved where it
+ * actually lives: the `.stage` section owns its 300vh and everything after it
+ * is ordinary document flow beneath. The explosion now *scrolls* to the cards
+ * rather than conjuring them, which keeps the reveal feeling like a reward
+ * without making it the only door.
  */
+
+interface LandingExperienceProps {
+  /**
+   * The credibility strip and footer, passed in from the page because they are
+   * server components — this shell has to be a client component for the WebGL
+   * and the scroll, and a client component cannot import a server one. Handing
+   * them through as a slot keeps the star fetch on the server where it belongs.
+   */
+  readonly belowTheFold?: ReactNode;
+}
 
 /** Three full screen-heights of scroll, per the brief. */
 const SECTION_HEIGHT_VH = 300;
@@ -39,7 +52,7 @@ const ParticleCanvas = dynamic(() => import('./ParticleCanvas'), {
   loading: () => <div className={styles.canvasFallback} />,
 });
 
-export function LandingExperience() {
+export function LandingExperience({ belowTheFold }: LandingExperienceProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const [motionEnabled, setMotionEnabled] = useState(true);
@@ -89,6 +102,9 @@ export function LandingExperience() {
     if (!cardsRevealed) return;
     cardsRef.current?.scrollIntoView({ behavior: motionEnabled ? 'smooth' : 'auto', block: 'start' });
   }, [cardsRevealed, motionEnabled]);
+
+  // The cards exist from the first paint now, so this only carries someone
+  // there; it no longer decides whether there is anywhere to go.
 
   // Hover, like the fade above, is written straight to the DOM rather than
   // held in React state — it can fire every couple of frames while the
@@ -151,11 +167,10 @@ export function LandingExperience() {
           />
         </div>
       </section>
-      {cardsRevealed && (
-        <div ref={cardsRef}>
-          <FeatureCards pickedColorHex={pickedColorHex ?? undefined} />
-        </div>
-      )}
+      <div ref={cardsRef}>
+        <FeatureCards pickedColorHex={pickedColorHex ?? undefined} />
+      </div>
+      {belowTheFold}
     </>
   );
 }

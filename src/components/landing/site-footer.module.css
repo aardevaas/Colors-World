@@ -1,0 +1,97 @@
+/*
+ * The landmark this page never had. Quiet, complete, and listing every room,
+ * because the in-app nav is not reachable from here.
+ */
+
+.footer {
+  position: relative;
+  z-index: 2;
+  background: var(--surface-void, #0b0b0c);
+  border-top: 1px solid var(--hairline);
+  padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.inner {
+  max-width: 68rem;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 2rem;
+}
+
+@media (max-width: 640px) {
+  .inner {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+}
+
+.brandColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--font-display), var(--font-ui), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.tagline {
+  margin: 0;
+  max-width: 38ch;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.columnHeading {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.link {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.colophon {
+  max-width: 68rem;
+  margin: clamp(2rem, 4vw, 3rem) auto 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--hairline);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}

@@ -1,0 +1,110 @@
+/*
+ * Deliberately plain after the globe: the page has just spent three screens
+ * being spectacular, and the section whose job is to be believed should not
+ * compete with it. Facts set in a row, one link, nothing moving.
+ */
+
+.strip {
+  position: relative;
+  z-index: 2;
+  background: var(--surface-void, #0b0b0c);
+  border-top: 1px solid var(--hairline);
+  padding: clamp(3rem, 8vw, 6rem) clamp(1.25rem, 5vw, 4rem);
+}
+
+.inner {
+  max-width: 68rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 4vw, 2.75rem);
+}
+
+.heading {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-display), var(--font-ui), sans-serif;
+  font-size: clamp(1.75rem, 1rem + 3vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  color: var(--text-primary);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem 2rem;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.factLabel {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.factValue {
+  margin: 0;
+  font-family: var(--font-display), var(--font-ui), sans-serif;
+  font-size: clamp(1.6rem, 1rem + 2vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.factNote {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-tertiary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.primary {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  background: var(--text-primary);
+  color: var(--surface-void, #0b0b0c);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform var(--duration-fast, 150ms) var(--ease-out-expo, ease);
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+}
+
+.actionsNote {
+  font-size: 0.82rem;
+  color: var(--text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary {
+    transition: none;
+  }
+  .primary:hover {
+    transform: none;
+  }
+}

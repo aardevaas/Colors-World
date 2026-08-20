@@ -250,10 +250,14 @@ export function HeroHud({
           </div>
         </main>
 
-        <footer className={styles.scrollCue} aria-hidden="true">
+        {/* A div, not a footer. This is a scroll hint; using the landmark for
+            it meant the page had no real footer and a screen reader
+            announcing "content information" arrived at the word "scroll".
+            The actual footer is now at the end of the document. */}
+        <div className={styles.scrollCue} aria-hidden="true">
           <span className={styles.scrollCueLabel}>scroll</span>
           <span className={styles.scrollCueLine} />
-        </footer>
+        </div>
 
         {/* Position, visibility, and the hex text are all written imperatively
           from LandingExperience's hover handler — see there for why. */}

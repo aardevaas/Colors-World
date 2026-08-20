@@ -41,52 +41,62 @@ const FEATURE_CARDS: readonly FeatureCard[] = [
   {
     tab: 'Library',
     route: '/library',
-    subtitle: 'Infinite Color Discovery & Exploration',
+    subtitle: 'All 16.7 million, computed rather than stored',
     highlights: [
-      'Replaces raw spectrum lists with a dynamic, endless discovery grid (Coolors-inspired).',
-      'Search and filter all 16.7M colors by hues, shades, tones, meanings, and variations.',
-      'Instant color info, variations, and accessibility breakdowns.',
+      'The whole sRGB space, generated on demand rather than pulled from a list of curated palettes.',
+      'Drop in a photograph and the colours in it become a working system, not a swatch card.',
+      'Search by vibe, or press space and keep drawing until something stops you.',
     ],
     featured: true,
   },
   {
-    tab: 'Palette Builder & Scale Lab',
-    route: '/builder',
-    subtitle: 'Algorithmic Color Scales & Export Engine',
+    tab: 'Compose',
+    route: '/compose',
+    subtitle: 'One colour in, a whole system out',
     highlights: [
-      '100% customizable palette generator and anchor-based color scale engine (Chroma, Step, and Hue Torsion controls).',
-      'Real-time gamut testing (sRGB, Display P3, Rec2020) & color vision deficiency simulations (protanopia, deuteranopia, tritanopia, achromatopsia).',
-      'Saved palette manager with 1-click Tailwind CSS, CSS Variables, and Figma code exports.',
+      'Harmonies reconciled against the gamut, so a triad comes back even in weight instead of clipped — reachable chroma varies almost threefold across the wheel, and the wheel here is drawn to show it.',
+      'State the contrast you need — text on a panel, a visible panel edge — and the palette is solved to meet it rather than rolled until it happens to.',
+      'Lock what you like, roll the rest.',
+    ],
+  },
+  {
+    tab: 'Scales',
+    route: '/scales',
+    subtitle: 'Every colour, deepened into a ramp',
+    highlights: [
+      'Lightness, chroma and hue-torsion curves you drag, with sRGB, Display P3 and Rec2020 marked on every single step.',
+      'The same ramp shown as three displays actually render it, so you can see what a cheaper monitor does to work made on a good one.',
+      'Exports to CSS variables, Tailwind and shadcn themes.',
+    ],
+  },
+  {
+    tab: 'Visualizer',
+    route: '/visualizer',
+    subtitle: 'Proof, on interfaces rather than swatches',
+    highlights: [
+      'Real dashboards, product cards and mobile screens wearing your system, audited live.',
+      'Every role pair checked against the standard that actually applies to it — including text on a button, which is where palettes usually fail quietly.',
+      'Four kinds of colour blindness, reported as which two of your colours just became one rather than as a filter to squint through.',
+    ],
+  },
+  {
+    tab: 'Typography',
+    route: '/typography',
+    subtitle: 'Because contrast is a property of type, not just colour',
+    highlights: [
+      'The Legibility Solver: your colour pair plotted against every size and weight, with the boundary drawn.',
+      'A failing pair stops being a red number and becomes a position, with the ways out shown — larger, heavier, or a different colour.',
+      'Local fonts read straight off your machine, with nothing leaving it.',
     ],
   },
   {
     tab: 'Studio',
     route: '/studio',
-    subtitle: 'The Infinite Spatial Design Canvas',
+    subtitle: 'Where it becomes something you hand over',
     highlights: [
-      'Miro-like infinite spatial workspace for unlimited visual moodboarding.',
-      'Drag-and-drop colors, pin custom palettes, and arrange layout elements freely.',
-      'Integrated brand asset vault: upload logos, marks, and reference images directly onto your board.',
-    ],
-  },
-  {
-    tab: 'Visualizer & UI Lab',
-    route: '/visualizer',
-    subtitle: 'Real-Time UI Testing & Image Extraction',
-    highlights: [
-      'Palette visualizer: preview color palettes on real app UI components in real-time.',
-      'Image color picker: extract precise hex codes and dominant palettes from uploaded images.',
-      'Tailwind CSS live theme previewer & WCAG contrast accessibility checker.',
-    ],
-  },
-  {
-    tab: 'Typography Studio',
-    route: '/typography',
-    subtitle: 'Type Pairing & Contrast Accessibility Engine',
-    highlights: [
-      'Dynamic font pairing tool and typographic hierarchy visualizer.',
-      'Real-time text-over-color WCAG contrast scoring and legibility testing.',
-      'Dark and light mode font scaling for web and mobile UI.',
+      'An infinite canvas for arranging the system into something a client or an engineer can read.',
+      'Images, gradients, type, links and notes, snapped and arranged.',
+      'Exports as a watermarked image you can send.',
     ],
   },
 ];
@@ -181,8 +191,12 @@ export function FeatureCards({ pickedColorHex }: FeatureCardsProps) {
   return (
     <section className={styles.section}>
       <header className={styles.sectionHeader}>
-        <p className={styles.eyebrow}>The toolkit</p>
-        <h2 className={styles.heading}>Five tools. One color system.</h2>
+        <p className={styles.eyebrow}>The rooms</p>
+        {/* Counted from the manifest rather than written down: this said
+            "Five tools" for a while after a sixth room shipped. */}
+        <h2 className={styles.heading}>
+          {FEATURE_CARDS.length} rooms. One system running through all of them.
+        </h2>
         <p className={styles.lead}>
           Everything that used to be a dozen scattered utilities, consolidated into five
           flagship tabs — all reading from the same 16.7M-colour engine.
