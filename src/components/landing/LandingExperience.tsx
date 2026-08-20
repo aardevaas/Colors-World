@@ -1,19 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import dynamic from 'next/dynamic';
 import { roomPalette, seedHueFromRandom } from '@/lib/landing/room-palette';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
-// Dynamic + ssr:false: this is the boundary that keeps three.js (~170kB on
-// its own) out of the initial bundle. Imported statically it put the landing
-// page's First Load JS at 298kB against a 150kB budget. The HUD around it
-// still server-renders, so the headline and CTAs are in the HTML regardless.
-const PaintHero = dynamic(() => import('./PaintHero'), {
-  ssr: false,
-  loading: () => <div className={styles.canvasFallback} />,
-});
 import { FeatureCards } from './FeatureCards';
 import styles from './landing.module.css';
 
@@ -106,7 +97,6 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
         style={{ height: `${SECTION_HEIGHT_VH}vh` }}
       >
         <div className={styles.pinned}>
-          <PaintHero seedHue={seedHue} rooms={rooms} reducedMotion={!motionEnabled} />
           <HeroHud
             ref={hudRef}
             motionEnabled={motionEnabled}
