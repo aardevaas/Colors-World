@@ -26,6 +26,7 @@ import {
 import { StepControls } from './StepControls';
 import { ScalePanel } from './ScalePanel';
 import { ContrastMatrixPanel } from './ContrastMatrixPanel';
+import { GamutTriptych } from './GamutTriptych';
 import { ExportVault } from './ExportVault';
 import styles from './builder.module.css';
 
@@ -142,6 +143,11 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
     // them would re-run this on every provider render for no benefit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.scales, state.stepCount, state.gamut, system.scales]);
+
+  const primaryEntry = useMemo(
+    () => state.scales.find((entry) => entry.hex === state.primaryHex) ?? state.scales[0],
+    [state.scales, state.primaryHex]
+  );
 
   const generatedScales = useMemo<readonly GeneratedScale[]>(
     () => state.scales.map((entry) => generateScale(specFor(entry, state.stepCount, state.gamut))),
@@ -269,6 +275,19 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
             />
           ))}
         </div>
+      )}
+
+      {primaryEntry !== undefined && (
+        <section className={styles.gamutSection}>
+          <h2 className={styles.gamutTitle}>
+            <span className={styles.primaryName}>{primaryEntry.name}</span> across displays
+          </h2>
+          {/* The primary scale only. Three ramps per scale would be six or more
+              stacked ramps on a page that is already long, and the question
+              "does my ramp survive a narrow display" is answered by the scale
+              carrying the most weight. */}
+          <GamutTriptych spec={specFor(primaryEntry, state.stepCount, state.gamut)} />
+        </section>
       )}
 
       {state.scales.length > 0 && (

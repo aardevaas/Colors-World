@@ -685,3 +685,26 @@
   --tab-nav-idle: oklch(75% 0.006 265 / 0.75);
   --tab-nav-active: oklch(96% 0.004 265);
 }
+
+/* The gamut comparison sits after the scales and before the export: it is a
+   check on what you just built, not a control that shapes it. */
+.gamutSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: var(--space-wide, 1.5rem);
+  border-top: var(--rule-width, 1px) solid var(--hairline);
+}
+
+.gamutTitle {
+  margin: 0;
+  font-family: var(--font-builder-display), var(--font-ui), sans-serif;
+  font-size: var(--text-small, 0.9rem);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+}
+
+.primaryName {
+  color: var(--text-primary);
+}

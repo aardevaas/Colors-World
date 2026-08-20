@@ -1,0 +1,126 @@
+/*
+ * Three ramps stacked rather than side by side: the comparison is between
+ * corresponding steps, and stacking puts them in a vertical line where the
+ * eye can follow one step down through all three displays.
+ */
+
+.triptych {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
+.rowLabel {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.gamutName {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-micro, 0.7rem);
+  color: var(--text-secondary);
+}
+
+.gamutNote {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+}
+
+.ramp {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.swatch {
+  height: 2rem;
+  border-radius: 3px;
+  position: relative;
+}
+
+/* A merged pair is the only thing here anyone has to act on, so it is marked
+   on the swatches themselves rather than only described underneath. */
+.swatch[data-collapsed='true'] {
+  outline: 2px solid oklch(76% 0.18 25);
+  outline-offset: -2px;
+}
+
+.verdict {
+  margin: 0;
+  max-width: 70ch;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.55;
+  color: var(--text-tertiary);
+}
+
+.damage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  border: var(--rule-width, 1px) solid oklch(76% 0.18 25 / 0.35);
+  background: oklch(76% 0.18 25 / 0.07);
+}
+
+.damageTitle {
+  margin: 0;
+  font-size: var(--text-small, 0.8125rem);
+  color: var(--text-primary);
+}
+
+.damageList {
+  margin: 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: var(--text-micro, 0.7rem);
+  color: var(--text-secondary);
+}
+
+.damageHint {
+  margin: 0;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.55;
+  color: var(--text-tertiary);
+}
+
+.mono {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  color: var(--text-primary);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
