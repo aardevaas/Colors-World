@@ -35,7 +35,14 @@ export default function LandingPage() {
       <a href="#main" className="skipLink">
         Skip to content
       </a>
-      <LandingExperience credibility={<CredibilityStrip />} footer={<SiteFooter />} />
+      <LandingExperience
+        belowTheFold={
+          <>
+            <CredibilityStrip />
+            <SiteFooter />
+          </>
+        }
+      />
     </div>
   );
 }
