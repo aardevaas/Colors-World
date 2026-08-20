@@ -27,7 +27,7 @@ import type { ScaleSettings } from '@/lib/system/types';
  */
 
 export type CvdMode = CvdType | 'none';
-export type ExportFormat = 'css' | 'tailwind' | 'shadcn' | 'figma';
+export type ExportFormat = 'css' | 'tailwind' | 'shadcn' | 'figma' | 'document';
 
 export const MIN_STEPS = 2;
 export const MAX_STEPS = 10;

@@ -708,3 +708,22 @@
 .primaryName {
   color: var(--text-primary);
 }
+
+.vaultActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* The document is a page, not a snippet, so it gets room to be skimmed
+   before anyone commits to downloading it. */
+.vaultCode[data-tall='true'] {
+  max-height: 26rem;
+}
+
+.vaultDocNote {
+  margin: 0;
+  max-width: 68ch;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.55;
+  color: var(--text-tertiary);
+}
