@@ -35,6 +35,13 @@ export const TABS: readonly TabRoute[] = [
 ];
 
 /**
+ * The tab ids alone, in the same order. Exists so anything that needs one
+ * value per room — the landing page's generated room palette, for instance —
+ * cannot drift out of step with the manifest by keeping its own list.
+ */
+export const ROOM_IDS: readonly TabId[] = TABS.map((tab) => tab.id);
+
+/**
  * Routes that predate the five-tab model and still work, but are not tabs.
  * Kept separate rather than mixed into TABS so the primary navigation stays
  * exactly five items — their long-term fate is an open question in ROADMAP.md.

@@ -16,9 +16,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
-    "@react-three/postprocessing": "^3.0.4",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/react-virtual": "^3.14.8",
@@ -30,15 +27,13 @@
     "postprocessing": "^6.39.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "server-only": "^0.0.1",
-    "three": "^0.185.1"
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
-    "@types/three": "^0.185.1",
     "@vitest/coverage-v8": "^3.0.4",
     "hyparquet": "^1.26.2",
     "typescript": "^5.7.3",

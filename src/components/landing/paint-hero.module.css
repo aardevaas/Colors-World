@@ -1,0 +1,74 @@
+/*
+ * The hero stage. The canvas paints the word; the DOM heading is the real
+ * heading and normally sits invisible behind it — visually hidden rather than
+ * absent, because the page's h1 should not depend on a GPU.
+ */
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #08080b;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* The pointer is the whole interaction, so the canvas has to receive it —
+     but nothing here is clickable, so no cursor change. */
+  touch-action: pan-y;
+}
+
+.heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * When WebGL2 is unavailable the canvas paints nothing, so the heading stops
+ * being decorative and becomes the hero. Not a lesser page — just a typeset
+ * one, which is what the fallback should be rather than an apology.
+ */
+.heading[data-fallback='true'] {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  clip-path: none;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 0 clamp(1.25rem, 5vw, 4rem);
+  font-family: var(--font-display), var(--font-ui), sans-serif;
+  font-size: clamp(3rem, 1rem + 9vw, 9rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  text-align: center;
+  text-wrap: balance;
+  background: linear-gradient(96deg, #ff5d8f, #ffb454 32%, #4ad6a8 64%, #7c5cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    /* The shader already freezes its own clock; this covers the case where the
+       preference changes after the context was created. */
+    animation: none;
+  }
+}

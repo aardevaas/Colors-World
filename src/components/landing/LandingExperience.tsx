@@ -1,63 +1,61 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import dynamic from 'next/dynamic';
-import { CARDS_REVEAL_DELAY_SECONDS } from '@/lib/landing/explosion-timing';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { roomPalette, seedHueFromRandom } from '@/lib/landing/room-palette';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
+import { PaintHero } from './PaintHero';
 import { FeatureCards } from './FeatureCards';
-import type { HoverInfo } from './ParticleStorm';
 import styles from './landing.module.css';
 
 /**
- * The full landing experience, phases 1 through 5.
+ * The landing page's client shell.
  *
- * The canvas is a fixed, viewport-covering backdrop for the whole page (see
- * landing.module.css's `.pinned`) — the 300vh `.stage` section drives the
- * scroll-linked story (storm, globe morph, rotation) entirely on its own
- * pacing.
+ * The globe that used to live here is gone, along with the entire three.js
+ * stack it needed. In its place is a fullscreen shader that pours the product's
+ * name as wet paint and lets the visitor push it around — the hue is read off
+ * the direction the surface faces, so moving the pointer is what produces the
+ * colour rather than merely revealing it.
  *
- * The feature cards used to not exist in the document until a click had
- * exploded the globe, which solved a real problem — scrolling past 300vh
- * without clicking used to lay the cards directly over a fully intact,
- * still-rotating globe — by creating a worse one. Measured on the live page:
- * three screens, one heading, no footer. A visitor who did not happen to
- * click a control nothing signposted was never told the product had five
- * rooms, was open source, or was worth returning to. The page simply ended.
- *
- * The cards are unconditional again, and the overlap is solved where it
- * actually lives: the `.stage` section owns its 300vh and everything after it
- * is ordinary document flow beneath. The explosion now *scrolls* to the cards
- * rather than conjuring them, which keeps the reveal feeling like a reward
- * without making it the only door.
+ * One seed hue is drawn per visit and travels from here into everything
+ * downstream, so the spectrum in the hero and the colours the six rooms are
+ * painted in are the same system rather than two unrelated palettes.
  */
 
 interface LandingExperienceProps {
   /**
-   * The credibility strip and footer, passed in from the page because they are
-   * server components — this shell has to be a client component for the WebGL
-   * and the scroll, and a client component cannot import a server one. Handing
-   * them through as a slot keeps the star fetch on the server where it belongs.
+   * The credibility strip and the footer, passed in from the page because they
+   * are server components — this shell has to be a client component for the
+   * WebGL and the scroll, and a client component cannot import a server one.
    */
-  readonly belowTheFold?: ReactNode;
+  readonly credibility?: ReactNode;
+  readonly footer?: ReactNode;
 }
 
-/** Three full screen-heights of scroll, per the brief. */
-const SECTION_HEIGHT_VH = 300;
-const CARDS_REVEAL_DELAY_MS = CARDS_REVEAL_DELAY_SECONDS * 1000;
+/**
+ * How long the hero holds before the page moves on. Far shorter than the 300vh
+ * the globe demanded: that pushed the six rooms — which are what this page is
+ * actually for — down past three full screens before they were even named.
+ */
+const SECTION_HEIGHT_VH = 150;
 
-const ParticleCanvas = dynamic(() => import('./ParticleCanvas'), {
-  ssr: false,
-  loading: () => <div className={styles.canvasFallback} />,
-});
+/** Stable on the server, replaced on mount. Randomising during render would
+ *  hand the server and the client different colours and break hydration. */
+const INITIAL_SEED_HUE = 262;
 
-export function LandingExperience({ belowTheFold }: LandingExperienceProps) {
+export function LandingExperience({ credibility, footer }: LandingExperienceProps) {
   const sectionRef = useRef<HTMLElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
+  const hudRef = useRef<HTMLDivElement>(null);
   const [motionEnabled, setMotionEnabled] = useState(true);
-  const [pickedColorHex, setPickedColorHex] = useState<string | null>(null);
-  const [cardsRevealed, setCardsRevealed] = useState(false);
+  const [seedHue, setSeedHue] = useState(INITIAL_SEED_HUE);
+
+  useEffect(() => {
+    setSeedHue(seedHueFromRandom(Math.random()));
+  }, []);
+
+  // One palette, generated from the seed and shared by the hero and the rooms.
+  const rooms = useMemo(() => roomPalette(seedHue), [seedHue]);
 
   // Respect the OS preference by default; the HUD toggle overrides it in
   // either direction, so someone who wants the spectacle can opt back in.
@@ -72,12 +70,10 @@ export function LandingExperience({ belowTheFold }: LandingExperienceProps) {
   }, []);
 
   const scrollRef = useScrollProgress(sectionRef, motionEnabled);
-  const hudRef = useRef<HTMLDivElement>(null);
 
   // Written straight to CSS variables from a frame loop rather than held in
   // React state: this changes every frame while scrolling, and re-rendering
-  // the tree that often to fade some text would cost more than the particle
-  // field does. Opacity-only, so it stays on the compositor.
+  // the tree that often to fade some text would cost more than the shader does.
   useEffect(() => {
     if (!motionEnabled) return;
     let frame = 0;
@@ -94,57 +90,6 @@ export function LandingExperience({ belowTheFold }: LandingExperienceProps) {
     return () => cancelAnimationFrame(frame);
   }, [motionEnabled, scrollRef]);
 
-  // Once the cards actually mount (the DOM they live in didn't exist a
-  // moment ago), scroll to present them — otherwise "after the explosion we
-  // show the cards" would require the visitor to already be scrolling
-  // further on their own initiative to ever discover that anything changed.
-  useEffect(() => {
-    if (!cardsRevealed) return;
-    cardsRef.current?.scrollIntoView({ behavior: motionEnabled ? 'smooth' : 'auto', block: 'start' });
-  }, [cardsRevealed, motionEnabled]);
-
-  // The cards exist from the first paint now, so this only carries someone
-  // there; it no longer decides whether there is anywhere to go.
-
-  // Hover, like the fade above, is written straight to the DOM rather than
-  // held in React state — it can fire every couple of frames while the
-  // pointer sits over the globe, and re-rendering the component tree for a
-  // tooltip position is pure waste.
-  function handleHoverChange(hover: HoverInfo | null) {
-    const hud = hudRef.current;
-    if (hud === null) return;
-    const tooltip = hud.querySelector<HTMLElement>('[data-tooltip]');
-    if (tooltip === null) return;
-
-    if (hover === null) {
-      tooltip.style.opacity = '0';
-      return;
-    }
-
-    const pixelX = (hover.ndcX * 0.5 + 0.5) * window.innerWidth;
-    const pixelY = (1 - (hover.ndcY * 0.5 + 0.5)) * window.innerHeight;
-    tooltip.style.opacity = '1';
-    tooltip.style.transform = `translate(${pixelX}px, ${pixelY}px)`;
-
-    const hexLabel = tooltip.querySelector('[data-tooltip-hex]');
-    if (hexLabel !== null) hexLabel.textContent = hover.hex.toUpperCase();
-  }
-
-  // The explosion's own timing lives with the shader (EXPLOSION_DURATION_SECONDS,
-  // shared via explosion-timing.ts) so this can never fall out of step with
-  // what's actually happening on screen. Picking a colour no longer navigates
-  // anywhere by itself — it reveals the toolkit instead, and the picked
-  // colour rides along into the Library card specifically, so choosing to
-  // enter Library still carries it forward.
-  function handleExplode(hex: string) {
-    const hud = hudRef.current;
-    const tooltip = hud?.querySelector<HTMLElement>('[data-tooltip]');
-    if (tooltip !== null && tooltip !== undefined) tooltip.style.opacity = '0';
-
-    setPickedColorHex(hex);
-    window.setTimeout(() => setCardsRevealed(true), CARDS_REVEAL_DELAY_MS);
-  }
-
   return (
     <>
       <section
@@ -153,24 +98,17 @@ export function LandingExperience({ belowTheFold }: LandingExperienceProps) {
         style={{ height: `${SECTION_HEIGHT_VH}vh` }}
       >
         <div className={styles.pinned}>
-          <ParticleCanvas
-            scrollRef={scrollRef}
-            reducedMotion={!motionEnabled}
-            onHoverChange={handleHoverChange}
-            onExplode={handleExplode}
-          />
+          <PaintHero seedHue={seedHue} rooms={rooms} reducedMotion={!motionEnabled} />
           <HeroHud
             ref={hudRef}
             motionEnabled={motionEnabled}
             onToggleMotion={() => setMotionEnabled((previous) => !previous)}
-            pickedColorHex={pickedColorHex ?? undefined}
           />
         </div>
       </section>
-      <div ref={cardsRef}>
-        <FeatureCards pickedColorHex={pickedColorHex ?? undefined} />
-      </div>
-      {belowTheFold}
+      <FeatureCards />
+      {credibility}
+      {footer}
     </>
   );
 }

@@ -131,7 +131,9 @@
   align-items: center;
   gap: var(--space-base);
   max-width: 78rem;
-  padding: 0 var(--space-vast);
+  /* Offset down rather than centred: the painted word owns the upper third of
+     the stage, and centred copy runs straight through it. */
+  padding: clamp(9rem, 26vh, 16rem) var(--space-vast) 0;
   text-align: center;
   /* Driven per-frame from scroll — the copy clears the stage while the globe
      gathers. The top bar deliberately does not fade; it stays as persistent

@@ -259,12 +259,6 @@ export function HeroHud({
           <span className={styles.scrollCueLine} />
         </div>
 
-        {/* Position, visibility, and the hex text are all written imperatively
-          from LandingExperience's hover handler — see there for why. */}
-        <div className={styles.tooltip} data-tooltip aria-hidden="true">
-          <span className={styles.tooltipHex} data-tooltip-hex />
-          <span className={styles.tooltipCta}>Click to explore</span>
-        </div>
       </div>
     </>
   );
