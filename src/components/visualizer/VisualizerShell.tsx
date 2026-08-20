@@ -10,6 +10,7 @@ import {
   type SemanticRole,
 } from '@/lib/roles/semantic-roles';
 import { buildRoleContrastMatrix } from '@/lib/roles/role-contrast';
+import { buildCvdReport } from '@/lib/roles/cvd-conflicts';
 import { WCAG_AA_NORMAL, autoFixContrast } from '@/lib/visualizer/auto-fix';
 import { appendWatermarkFooter } from '@/lib/visualizer/export-showcase';
 import { downloadDataUrl } from '@/lib/studio/export-png';
@@ -79,6 +80,11 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
   // the five that matter: text on a filled button was never among them, and on
   // a three-colour palette that is the worst failure in the whole system.
   const matrix = useMemo(() => buildRoleContrastMatrix(roles), [roles]);
+
+  // Simulating one vision type at a time answers "what does this look like to
+  // a deuteranope", which nobody with normal vision can act on. This answers
+  // the question they can: which two of these colours just became one.
+  const vision = useMemo(() => buildCvdReport(roles), [roles]);
 
   const template = templateById(templateId);
   const stageStyle = rolesToCssVars(shownRoles) as CSSProperties;
@@ -305,6 +311,41 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
               </li>
             ))}
           </ul>
+
+          <h2 className={styles.inspectorTitle}>
+            Colour vision
+            <span className={styles.titleCount}>
+              {vision.safe ? '4 types clear' : 'conflicts found'}
+            </span>
+          </h2>
+          {vision.safe ? (
+            <p className={styles.hint}>
+              No pair collapses under protanopia, deuteranopia, tritanopia or
+              achromatopsia. Separating by lightness is what buys that.
+            </p>
+          ) : (
+            <ul className={styles.auditList}>
+              {vision.byType.flatMap((report) =>
+                [...report.merged, ...report.weakened].map((finding) => (
+                  <li key={`${report.type}-${finding.a}-${finding.b}`} className={styles.auditRow}>
+                    <span className={styles.auditPair}>
+                      {finding.a} <span className={styles.muted}>+</span> {finding.b}
+                    </span>
+                    <span className={finding.verdict === 'merged' ? styles.ratioFail : styles.ratioWarn}>
+                      {Math.round(finding.retained * 100)}% kept
+                    </span>
+                    <span className={styles.visionTag}>{report.type.slice(0, 6)}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+          {vision.alreadyClose.length > 0 && (
+            <p className={styles.hint}>
+              {vision.alreadyClose.map((f) => `${f.a} and ${f.b}`).join('; ')} are already
+              near-identical in normal vision — a palette question rather than a vision one.
+            </p>
+          )}
 
           <button
             type="button"

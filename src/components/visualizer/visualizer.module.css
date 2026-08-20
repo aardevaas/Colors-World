@@ -468,3 +468,22 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* A pair that lost most of its separation but is still usable is not the same
+   as one that vanished, and the two must not read alike. */
+.ratioWarn {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  color: oklch(80% 0.15 75);
+}
+
+.visionTag {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border: var(--rule-width, 1px) solid var(--hairline);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+}
