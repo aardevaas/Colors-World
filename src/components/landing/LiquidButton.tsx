@@ -37,48 +37,19 @@ interface LiquidButtonProps {
   readonly className?: string;
 }
 
-/** Deterministic field — generated at random it would differ between server
- *  and client and trip hydration. Blur varies to fake depth of field.
+/**
+ * The pill ships EMPTY.
  *
- *  `hueShift` staggers each blob's position within the shared spectrum cycle,
- *  so at any instant the field shows a spread of the same hues the "16.7
- *  million" headline is running through rather than all turning together. */
-interface Blob {
-  readonly top: number;
-  readonly left: number;
-  readonly size: number;
-  readonly blur: number;
-  readonly hueShift: number;
-  readonly alpha: number;
-  readonly duration: number;
-  readonly delay: number;
-}
-
-const BLOBS: readonly Blob[] = [
-  { top: 18, left: 6, size: 30, blur: 2, hueShift: 56, alpha: 0.85, duration: 9.0, delay: -0.4 },
-  { top: 62, left: 3, size: 22, blur: 5, hueShift: 14, alpha: 0.6, duration: 11.5, delay: -3.1 },
-  { top: 38, left: 12, size: 38, blur: 0, hueShift: 84, alpha: 0.9, duration: 8.2, delay: -1.7 },
-  { top: 78, left: 16, size: 26, blur: 3, hueShift: 290, alpha: 0.7, duration: 12.4, delay: -5.2 },
-  { top: 8, left: 22, size: 20, blur: 6, hueShift: 42, alpha: 0.55, duration: 10.1, delay: -2.3 },
-  { top: 52, left: 26, size: 34, blur: 1, hueShift: 98, alpha: 0.88, duration: 9.6, delay: -6.0 },
-  { top: 86, left: 31, size: 24, blur: 4, hueShift: 332, alpha: 0.65, duration: 13.0, delay: -0.9 },
-  { top: 24, left: 36, size: 28, blur: 2, hueShift: 70, alpha: 0.8, duration: 8.8, delay: -4.4 },
-  { top: 66, left: 42, size: 19, blur: 7, hueShift: 28, alpha: 0.5, duration: 11.9, delay: -2.8 },
-  { top: 14, left: 47, size: 33, blur: 0, hueShift: 112, alpha: 0.92, duration: 9.3, delay: -7.1 },
-  { top: 48, left: 52, size: 23, blur: 5, hueShift: 304, alpha: 0.62, duration: 12.7, delay: -1.2 },
-  { top: 82, left: 56, size: 30, blur: 2, hueShift: 63, alpha: 0.84, duration: 8.5, delay: -5.8 },
-  { top: 30, left: 61, size: 21, blur: 6, hueShift: 21, alpha: 0.56, duration: 10.8, delay: -3.6 },
-  { top: 70, left: 66, size: 36, blur: 1, hueShift: 91, alpha: 0.9, duration: 9.9, delay: -0.2 },
-  { top: 10, left: 71, size: 25, blur: 4, hueShift: 346, alpha: 0.68, duration: 12.1, delay: -6.5 },
-  { top: 56, left: 76, size: 29, blur: 2, hueShift: 77, alpha: 0.86, duration: 8.9, delay: -2.0 },
-  { top: 88, left: 80, size: 18, blur: 7, hueShift: 35, alpha: 0.48, duration: 13.4, delay: -4.9 },
-  { top: 34, left: 84, size: 32, blur: 0, hueShift: 105, alpha: 0.91, duration: 9.1, delay: -1.5 },
-  { top: 74, left: 89, size: 22, blur: 5, hueShift: 318, alpha: 0.6, duration: 11.2, delay: -7.6 },
-  { top: 20, left: 93, size: 27, blur: 3, hueShift: 49, alpha: 0.78, duration: 10.4, delay: -3.3 },
-  { top: 58, left: 96, size: 20, blur: 6, hueShift: 7, alpha: 0.52, duration: 12.9, delay: -5.5 },
-  { top: 44, left: 19, size: 17, blur: 8, hueShift: 84, alpha: 0.44, duration: 14.0, delay: -0.7 },
-];
-
+ * It used to carry 22 hand-placed blobs drifting inside it — a deterministic
+ * field, because generating them at random differed between server and client
+ * and tripped hydration. They are gone, and what fills the pill now is the
+ * rain: this button is marked `data-rain-surface="absorb"`, so every drop that
+ * lands on it is taken in and stays, drifting around inside. See PaintRain.
+ *
+ * That is a better version of the same idea. The blobs were a decoration that
+ * argued the button was liquid; the drops are the page's own weather actually
+ * collecting in it, and no two visits fill it the same way.
+ */
 
 export function LiquidButton({ href, children, external = false, className }: LiquidButtonProps) {
   const rootRef = useRef<HTMLAnchorElement>(null);
@@ -86,37 +57,13 @@ export function LiquidButton({ href, children, external = false, className }: Li
   // use-pointer-tilt.ts for why that behaviour was lifted out of here.
   usePointerTilt(rootRef);
 
-  const field = (
-    <span className={styles.field} aria-hidden="true">
-      {BLOBS.map((blob) => (
-        <span
-          key={`${blob.top}-${blob.left}-${blob.size}`}
-          className={styles.blob}
-          style={
-            {
-              '--top': `${blob.top}%`,
-              '--left': `${blob.left}%`,
-              '--size': `${blob.size}px`,
-              '--blur': `${blob.blur}px`,
-              // Seconds into the shared 9s cycle, precomputed: a calc()
-              // dividing an angle to derive a delay is not valid, so every
-              // blob silently took delay 0 and the field turned as one.
-              '--spectrum-delay': `${-(blob.hueShift / 360) * 9}s`,
-              '--alpha': blob.alpha,
-              '--duration': `${blob.duration}s`,
-              '--delay': `${blob.delay}s`,
-            } as React.CSSProperties
-          }
-        />
-      ))}
-    </span>
-  );
-
   return (
     <a
       ref={rootRef}
       href={href}
       className={className === undefined ? styles.button : `${styles.button} ${className}`}
+      // The one surface that takes the rain in instead of shedding it.
+      data-rain-surface="absorb"
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >
       {/* The underside must live INSIDE the rotating group, not beside it. As a
@@ -127,7 +74,6 @@ export function LiquidButton({ href, children, external = false, className }: Li
       <span className={styles.tilt}>
         <span className={styles.underside} aria-hidden="true" />
         <span className={styles.face}>
-          {field}
           <span className={styles.gloss} aria-hidden="true" />
           <span className={styles.label}>{children}</span>
         </span>

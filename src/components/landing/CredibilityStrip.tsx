@@ -106,7 +106,7 @@ export async function CredibilityStrip() {
       <div className={styles.inner}>
         <div className={styles.lead}>
           <h2 id="credibility-heading" className={styles.heading}>
-            Open source, and the engine is the point.
+            Open-source, you're welcome.
           </h2>
 
           <a className={styles.action} href={REPO_URL} target="_blank" rel="noopener noreferrer">

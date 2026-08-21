@@ -94,82 +94,15 @@
 
 /* ------------------------------------------------------------- the liquid */
 
-.field {
-  position: absolute;
-  inset: -12%;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.blob {
-  position: absolute;
-  top: var(--top, 50%);
-  left: var(--left, 50%);
-  width: var(--size, 24px);
-  height: var(--size, 24px);
-  margin: calc(var(--size, 24px) / -2) 0 0 calc(var(--size, 24px) / -2);
-  border-radius: 50%;
-  /* Shaded as a ball rather than filled flat: highlight offset toward the top
-     left, deepening to the opposite edge. Flat circles read as printed dots. */
-  background: radial-gradient(
-    circle at 34% 30%,
-    oklch(82% 0.19 var(--blob-hue) / var(--alpha, 0.8)) 0%,
-    oklch(66% 0.22 var(--blob-hue) / var(--alpha, 0.8)) 48%,
-    oklch(54% 0.2 var(--blob-hue) / calc(var(--alpha, 0.8) * 0.85)) 100%
-  );
-  /* Depth of field: the blurred ones read as further down in the liquid. */
-  filter: blur(var(--blur, 0px));
-  animation:
-    drift var(--duration, 10s) linear var(--delay, 0s) infinite,
-    spectrum 9s linear var(--spectrum-delay, 0s) infinite;
-  will-change: transform;
-}
-
-/* Rises and sways, the way a bubble does — never a straight vertical, or the
-   whole field reads as a scrolling texture. */
-@keyframes drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  25% {
-    transform: translate3d(6px, -22%, 0) scale(1.06);
-  }
-  50% {
-    transform: translate3d(-4px, -46%, 0) scale(0.96);
-  }
-  75% {
-    transform: translate3d(-8px, -70%, 0) scale(1.04);
-  }
-  100% {
-    transform: translate3d(0, -100%, 0) scale(1);
-  }
-}
-
 /*
- * The same hues, on the same 9s cycle, as the "16.7 million" headline — the
- * bubbles are meant to be that spectrum, not an unrelated coral palette. Needs
- * @property: a bare custom property is a string to the animation engine and
- * would step between keyframes instead of interpolating.
+ * There is no blob field here any more.
  *
- * Named --blob-hue, not --hue. @property registrations are GLOBAL even when
- * declared inside a CSS module, and landing.module.css already registers
- * --hue as a <number>; the duplicate was ignored and the blobs quietly
- * inherited an ancestor's --hue: 250, which is why the whole field came out
- * one shade of blue.
+ * The pill carried 22 hand-placed blobs with a shared spectrum animation and a
+ * @property registration to interpolate their hue. All of it is deleted: the
+ * pill is filled by the rain now, which lands on it, is absorbed, and drifts
+ * around inside. Those drops are drawn on the rain canvas and clipped to this
+ * pill's shape, so nothing here has to know about them.
  */
-@property --blob-hue {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 25deg;
-}
-
-@keyframes spectrum {
-  0% { --blob-hue: 25deg; }
-  25% { --blob-hue: 95deg; }
-  50% { --blob-hue: 150deg; }
-  75% { --blob-hue: 260deg; }
-  100% { --blob-hue: 385deg; }
-}
 
 /* --------------------------------------------------------------- the gloss */
 
@@ -218,9 +151,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .blob {
-    animation: none;
-  }
   .tilt {
     transform: none;
   }

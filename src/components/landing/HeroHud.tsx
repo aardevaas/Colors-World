@@ -88,6 +88,7 @@ export function HeroHud({ ref, rooms }: HeroHudProps) {
             target="_blank"
             rel="noopener noreferrer"
             className={styles.builtBy}
+            data-rain-surface="shed"
             onPointerMove={handleTiltPointerMove}
             onPointerLeave={handleTiltPointerLeave}
             style={

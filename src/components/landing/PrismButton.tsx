@@ -45,6 +45,8 @@ export function PrismButton({ href, children, className }: PrismButtonProps) {
       ref={rootRef}
       href={href}
       className={className === undefined ? styles.button : `${styles.button} ${className}`}
+      // Rain lands on this one and runs off it.
+      data-rain-surface="shed"
     >
       {/* The underside lives INSIDE the rotating group, same as on the liquid
           pill: outside it, it stays flat while the face turns and the face's

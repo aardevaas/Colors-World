@@ -239,8 +239,11 @@
  * hero, and the pills sit behind it.
  */
 .builtBy {
-  --bolt-size: 0.72rem;
-  --lift: 26px;
+  --bolt-size: 0.78rem;
+  /* Enough Z that the plate is measurably larger than the pills behind it —
+     at perspective 700 this is a ~7% enlargement, which is what "nearer"
+     actually looks like rather than "raised". */
+  --lift: 48px;
 
   position: relative;
   isolation: isolate;
@@ -333,12 +336,22 @@
   border-radius: inherit;
   pointer-events: none;
   overflow: hidden;
+  /*
+   * ONE sweep of light, not two bands.
+   *
+   * This had three hard colour stops — 38/46/58 — and hard stops in a gradient
+   * are edges: what rendered was a bright stripe, a dim stripe, and two seams
+   * between them, which is exactly the "two weird lines" this looked like. A
+   * reflection on flat glass has one sharp leading edge where the light source
+   * begins and a long fall-off after it, so that is what this is now: a single
+   * stop, then a ramp to nothing.
+   */
   background: linear-gradient(
     104deg,
-    transparent 0 38%,
-    oklch(100% 0 0 / 0.16) 38% 46%,
-    oklch(100% 0 0 / 0.05) 46% 58%,
-    transparent 58%
+    transparent 0 40%,
+    oklch(100% 0 0 / 0.13) 41%,
+    oklch(100% 0 0 / 0.03) 62%,
+    transparent 74%
   );
 }
 
@@ -356,7 +369,7 @@
  */
 .builtBy:hover,
 .builtBy:focus-visible {
-  --lift: 46px;
+  --lift: 74px;
   border-color: oklch(100% 0 0 / 0.34);
   box-shadow:
     inset 0 1px 0 0 oklch(100% 0 0 / 0.45),
