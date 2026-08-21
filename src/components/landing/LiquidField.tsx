@@ -29,11 +29,24 @@ interface LiquidFieldProps {
   readonly rooms: readonly RoomColor[];
 }
 
-/** How many the pill holds at rest. The reference is packed — sixty-odd
- *  overlapping capsules across the face — and packed from the first frame. */
-const RESIDENT = 64;
-/** Beyond this, arrivals replace the oldest rather than crowding the pill. */
-const CAPACITY = 96;
+/** How many the pill holds. Ten, and it stays ten: an arrival displaces the
+ *  oldest rather than adding to the crowd. */
+const CAPACITY = 10;
+
+/**
+ * How hard the pill's own movement throws its contents about.
+ *
+ * A container that accelerates presses its contents the other way — the
+ * everyday version is a drink lurching when the glass is moved. Tuned so a
+ * pointer crossing the button visibly rocks what is inside it without the
+ * blobs slamming into the walls.
+ */
+const SLOSH = 0.5;
+
+/** Ceiling on the acceleration read from the DOM, px/s². Layout can jump — a
+ *  resize, a scroll, a font swapping in — and an unbounded reading of that
+ *  would fire every blob into a wall at once. */
+const MAX_SHAKE = 9000;
 
 export function LiquidField({ rooms }: LiquidFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,7 +83,7 @@ export function LiquidField({ rooms }: LiquidFieldProps) {
 
     /** Seeds the resting population, once the pill has a size to fill. */
     const fill = () => {
-      for (let i = 0; i < RESIDENT; i += 1) {
+      for (let i = 0; i < CAPACITY; i += 1) {
         // Two low-discrepancy sequences: an even scatter with no visible
         // lattice, which is what the reference's packing looks like.
         const u = (i * 0.7548776662466927) % 1;
@@ -90,14 +103,20 @@ export function LiquidField({ rooms }: LiquidFieldProps) {
       if (detail === undefined || width === 0) return;
       const local = Math.min(width, Math.max(0, detail.x));
       drops.push(makeBlob(local, 2, Math.random(), detail.color, drops.length));
-      // Oldest out first, so the pill stays as dense as it started and no
-      // denser however long the page is left open.
+      // Oldest out first, so the pill holds exactly ten however long the page
+      // is left open — the arrival replaces rather than joins.
       if (drops.length > CAPACITY) drops.splice(0, drops.length - CAPACITY);
     };
     host.addEventListener('rain:absorb', onAbsorb);
 
     let frame = 0;
     let last = performance.now();
+    // The pill's own motion, tracked so its contents can be thrown by it.
+    let lastX = 0;
+    let lastY = 0;
+    let lastVX = 0;
+    let lastVY = 0;
+    let primed = false;
 
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
@@ -105,8 +124,41 @@ export function LiquidField({ rooms }: LiquidFieldProps) {
       const dt = Math.min(1 / 30, (now - last) / 1000);
       last = now;
 
+      /*
+       * Slosh: the button's acceleration, pressed into its contents.
+       *
+       * Read from the element's own box rather than from the tilt variables, so
+       * it responds to whatever actually moved it — the pointer tilt, the page
+       * scrolling under it, a reflow — instead of only to the one input this
+       * file happens to know about.
+       *
+       * The impulse is divided by each blob's mass, taken as its area. That is
+       * the part that reads as weight: pushed by the same force, a small blob
+       * is flicked across the pill while a large one barely shifts.
+       */
+      const box = host.getBoundingClientRect();
+      if (primed && dt > 0) {
+        const vx = (box.left - lastX) / dt;
+        const vy = (box.top - lastY) / dt;
+        const ax = clamp((vx - lastVX) / dt, -MAX_SHAKE, MAX_SHAKE);
+        const ay = clamp((vy - lastVY) / dt, -MAX_SHAKE, MAX_SHAKE);
+        lastVX = vx;
+        lastVY = vy;
+
+        if (Math.abs(ax) + Math.abs(ay) > 40) {
+          for (const drop of drops) {
+            const mass = (drop.size / 22) ** 2;
+            drop.vx -= (ax * SLOSH * dt) / mass;
+            drop.vy -= (ay * SLOSH * dt) / mass;
+          }
+        }
+      }
+      lastX = box.left;
+      lastY = box.top;
+      primed = true;
+
       const bounds: Surface[] = [
-        { left: 0, top: 0, right: width, bottom: height, absorbs: true },
+        { left: 0, top: 0, right: width, bottom: height, absorbs: true, radius: height / 2 },
       ];
       stepSuspended(drops, dt, bounds, now / 1000);
 
@@ -129,13 +181,17 @@ export function LiquidField({ rooms }: LiquidFieldProps) {
   return <canvas ref={canvasRef} className={styles.liquid} aria-hidden="true" />;
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : 0;
+}
+
 function makeBlob(x: number, y: number, depth: number, color: number, index: number): SimDrop {
   return {
     x,
     y,
     vx: (depth - 0.5) * 20,
     vy: (((index * 0.61) % 1) - 0.5) * 20,
-    size: 14 + depth * 16,
+    size: 16 + depth * 14,
     color,
     depth,
     phase: 'absorbed',
@@ -172,7 +228,7 @@ function drawBlob(
 
   context.save();
   context.translate(drop.x, drop.y);
-  context.globalAlpha = 0.46 + (1 - drop.depth) * 0.3;
+  context.globalAlpha = 0.58 + (1 - drop.depth) * 0.28;
   // Taller than wide: the reference's blobs are stretched capsules, and that is
   // most of why the field reads as suspended in liquid rather than as bubbles.
   context.scale(0.78, 1.32);

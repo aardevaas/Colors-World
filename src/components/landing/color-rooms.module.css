@@ -87,6 +87,28 @@
   --ink: var(--room-fg-hover);
 }
 
+/*
+ * The typography room opens its tracking under the pointer.
+ *
+ * The one gesture that is genuinely about type rather than decorated with it:
+ * tracking is the letterspacing a typographer sets, and watching a word breathe
+ * from -0.045em out to normal is watching the thing this room is for. It also
+ * cannot be mistaken for a wobble or a glow, which is what the two previous
+ * attempts here amounted to.
+ *
+ * It costs nothing extra to fit: the name is sized in `cqw` against its own
+ * column, so a word that grows wider is a word the container has already
+ * accounted for.
+ */
+.patRules .name {
+  --name-tracking: -0.045em;
+}
+
+.patRules:hover .name,
+.patRules:focus-within .name {
+  --name-tracking: 0.02em;
+}
+
 .link {
   /* Above the texture layer, which is absolutely positioned at z-index 0. */
   position: relative;
@@ -437,9 +459,10 @@
   /* Below 1. At this size the leading is what makes it architecture rather
      than a headline. */
   line-height: 0.86;
-  letter-spacing: -0.045em;
+  letter-spacing: var(--name-tracking, -0.045em);
   text-transform: lowercase;
   color: var(--ink);
+  transition: letter-spacing 620ms cubic-bezier(0.22, 1, 0.36, 1);
   /*
    * A descender channel, because a line box shorter than the type cannot
    * contain one.
@@ -459,79 +482,16 @@
 }
 
 /*
- * The typography room's nameplate, which changes face under the pointer.
+ * Every room name is set in the house face, typography included.
  *
- * Two copies of the word stacked: the house one in flow, owning the box, and a
- * painted one absolutely over it. Cross-faded rather than swapped, because
- * `font-family` cannot be transitioned and a swap would resize the word on the
- * frame it happened.
+ * It briefly swapped to Rubik Wet Paint under the pointer, and before that set
+ * each letter in a different family. Both were the same mistake in different
+ * clothes: a room whose subject is type does not demonstrate anything by
+ * wearing a novelty face, it just stops matching the five rooms beside it. The
+ * three families that version needed are gone with it.
  *
- * `--paint-fit` compensates for the two faces not sharing an advance width, and
- * it is measured rather than guessed — the guess was 0.82 and wrong in the
- * opposite direction. "typography" is 7.19em in Unbounded once its -0.045em
- * tracking is counted, and 6.23em in Wet Paint, so the painted copy needs to be
- * SET LARGER to occupy the same width, not smaller. 7.1938 / 6.229 = 1.1549.
- *
- * Matching the house width rather than filling the column is deliberate: the
- * hover should read as the same word changing dress, not as a different word
- * arriving. The copy is absolute, so a mismatch would have hung silently past
- * the column instead of pushing something and being noticed.
- *
- * Centred vertically rather than pinned to the top, because at 1.155em the
- * painted copy's line box is taller than the house one at the shared
- * line-height of 0.86, and pinning would drop its baseline below.
+ * What the room does instead is below — it opens its tracking.
  */
-.paintable {
-  position: relative;
-  display: inline-block;
-}
-
-/*
- * Both copies also toggle `visibility`, delayed to the end of the fade.
- *
- * Opacity alone left the outgoing copy painted at ~0.0004 forever — visually
- * nothing, but still a live compositing layer, and it showed: a faint
- * rectangular seam sat behind the word wherever that layer's bounds fell.
- * Switching visibility after the transition takes it out of paint entirely.
- * Layout is untouched, since `visibility: hidden` keeps its box and the house
- * copy is what gives `.paintable` its size.
- */
-.faceHouse,
-.facePaint {
-  transition:
-    opacity 340ms cubic-bezier(0.33, 1, 0.68, 1),
-    visibility 0s linear 340ms;
-}
-
-.facePaint {
-  visibility: hidden;
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 0;
-  transform: translateY(-50%);
-  font-family: var(--font-paint), var(--font-display), system-ui, sans-serif;
-  font-weight: 400;
-  font-size: calc(1em * var(--paint-fit, 1.1549));
-  letter-spacing: normal;
-  white-space: nowrap;
-  opacity: 0;
-}
-
-.room:hover .faceHouse,
-.room:focus-within .faceHouse {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.room:hover .facePaint,
-.room:focus-within .facePaint {
-  opacity: 1;
-  visibility: visible;
-  /* Appears at once and fades in; only the outgoing copy waits. */
-  transition:
-    opacity 340ms cubic-bezier(0.33, 1, 0.68, 1),
-    visibility 0s linear 0s;
-}
 
 /* --------------------------------------------------------------- the one line */
 

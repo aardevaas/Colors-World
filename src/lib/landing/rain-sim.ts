@@ -71,6 +71,61 @@ export interface Surface {
   readonly bottom: number;
   /** True for the one button that takes drops in rather than shedding them. */
   readonly absorbs: boolean;
+  /** Corner radius, read from the element. The drops run around this rather
+   *  than off a bounding box, which is most of what makes the shedding read as
+   *  real — see `surfaceAt`. */
+  readonly radius: number;
+}
+
+/** The shape of a surface directly beneath a given x. */
+interface Contact {
+  /** Height of the surface there. */
+  readonly y: number;
+  /** Its slope, radians. 0 on the flat top, rising around the shoulders. */
+  readonly angle: number;
+  /** Radius of curvature, or Infinity where the surface is flat. */
+  readonly curvature: number;
+  /** Which way downhill points: -1 left, 1 right, 0 on the flat. */
+  readonly downhill: number;
+}
+
+/**
+ * Where a surface actually is beneath `x`, and which way it faces.
+ *
+ * A button is a rounded rectangle, and treating it as its bounding box is what
+ * made the shedding look amateur: a drop slid along a flat line and then
+ * vanished off a corner it never touched. Between the corners the top IS flat;
+ * within a radius of either end it is an arc, and a drop there is on a slope
+ * that steepens the further round it goes.
+ */
+export function surfaceAt(surface: Surface, x: number): Contact {
+  const radius = Math.max(
+    0,
+    Math.min(surface.radius, (surface.right - surface.left) / 2, (surface.bottom - surface.top) / 2)
+  );
+  const leftCentre = surface.left + radius;
+  const rightCentre = surface.right - radius;
+
+  if (radius === 0 || (x >= leftCentre && x <= rightCentre)) {
+    return { y: surface.top, angle: 0, curvature: Number.POSITIVE_INFINITY, downhill: 0 };
+  }
+
+  const centreX = x < leftCentre ? leftCentre : rightCentre;
+  const centreY = surface.top + radius;
+  const dx = x - centreX;
+  // Past the shoulder entirely: the surface has curved away underneath.
+  if (Math.abs(dx) >= radius) {
+    return { y: centreY, angle: Math.PI / 2, curvature: radius, downhill: Math.sign(dx) || 1 };
+  }
+
+  const dy = Math.sqrt(radius * radius - dx * dx);
+  return {
+    y: centreY - dy,
+    // Slope of the circle at this point.
+    angle: Math.atan2(Math.abs(dx), dy),
+    curvature: radius,
+    downhill: Math.sign(dx) || 1,
+  };
 }
 
 export interface PoolColumn {
@@ -146,8 +201,33 @@ export const SPLASH_LIFE = 0.9;
 /** Most splashes alive at once. Beyond this the oldest is dropped rather than
  *  letting a downpour turn the floor into a solid ring of foam. */
 export const MAX_SPLASHES = 26;
-/** px/s², sideways, once it starts running. */
-export const RUNOFF_ACCEL = 420;
+/**
+ * The creep along the flat top, px/s².
+ *
+ * A drop on a truly level surface never moves, and the flat between a button's
+ * two shoulders is exactly level — so left to gravity alone the rain would
+ * simply accumulate on the buttons forever. It is not level in fact: these
+ * buttons tilt under the pointer and the page scrolls beneath them. This stands
+ * in for that, and it is deliberately small — it is what carries a drop to the
+ * shoulder, and the shoulder does the real work.
+ */
+export const CREEP_ACCEL = 95;
+
+/**
+ * How strongly a drop is held where it lands, px/s² of tangential pull it can
+ * resist before it starts to move.
+ *
+ * Surface tension pins a droplet's contact line: on glass, small drops sit
+ * still on a slope that larger ones run down, because adhesion scales with the
+ * contact width while weight scales with volume. Dividing by mass below is what
+ * reproduces that — the same number holds a small drop and lets a big one go.
+ */
+export const ADHESION = 150;
+
+/** Gravity felt along a surface. The drops' own fall is gentler than reality
+ *  for legibility; a drop running off an edge should still look like it means
+ *  it, so this one is nearer the truth. */
+export const SURFACE_GRAVITY = 900;
 /** Sideways drift while falling, px/s. */
 export const SWAY_SPEED = 26;
 
@@ -293,13 +373,15 @@ function stepFalling(
 
     drop.phase = 'resting';
     drop.host = i;
-    drop.y = surface.top - drop.size / 2;
+    drop.y = surfaceAt(surface, drop.x).y - drop.size / 2;
     // How hard it arrived, normalised — a fast drop flattens more.
     drop.squash = Math.min(1, drop.vy / drop.terminal);
     drop.vy = 0;
-    drop.vx = 0;
+    // Keeps a little of the sideways drift it arrived with, so drops do not all
+    // start from a dead stop in the middle of a flat surface.
+    drop.vx *= 0.25;
     drop.restLeft = REST_MS;
-    // Runs off whichever edge it landed nearer to, as water on a sill does.
+    // Heads for whichever edge it landed nearer to, as water on a sill does.
     drop.runoff = drop.x < (surface.left + surface.right) / 2 ? -1 : 1;
     return;
   }
@@ -317,6 +399,30 @@ function stepFalling(
   }
 }
 
+/**
+ * A drop on a button: pinned, then running around the shoulder, then thrown.
+ *
+ * Three stages, all of them physics rather than timing.
+ *
+ * PINNED. Surface tension holds the contact line. The drop resists a tangential
+ * pull of `ADHESION / mass`, so a small drop clings where a large one has
+ * already gone — which is what actually happens on glass, and it means the
+ * buttons keep a scatter of small drops rather than shedding everything
+ * identically.
+ *
+ * RUNNING. Once free it slides along the real surface, accelerated by the
+ * tangential component of gravity — `g·sinθ`. On the flat top θ is 0 and only
+ * `CREEP_ACCEL` moves it; around the shoulder θ grows toward vertical and it
+ * accelerates hard. It follows the arc, so it is visibly running around the end
+ * of the button rather than along a line drawn across it.
+ *
+ * THROWN. It separates where the surface can no longer hold it: on a convex
+ * arc that is when `v² / R > g·cosθ`, the same condition that governs a bead
+ * leaving a sphere. It leaves along the tangent carrying the speed it had, so
+ * a drop that has picked up speed sails off the shoulder and a slow one dribbles
+ * over the edge — which was the whole thing that read as amateur before, when
+ * every drop left the same way at the same speed.
+ */
 function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): void {
   const surface = surfaces[drop.host];
   if (surface === undefined) {
@@ -324,38 +430,73 @@ function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): v
     return;
   }
 
-  // The impact recovers over the first part of the rest, so the drop visibly
-  // settles rather than snapping from flattened back to round.
+  // The impact flattens it; it rounds out again as it settles.
   drop.squash = Math.max(0, drop.squash - dt * 3.4);
 
-  // Sits, then runs. The pause is what makes it read as landing rather than
-  // deflecting: paint hitting a surface stops before it moves.
-  if (drop.restLeft > 0) {
+  const contact = surfaceAt(surface, drop.x);
+  const mass = Math.max(0.05, (drop.size / 12) ** 2);
+  const speed = Math.abs(drop.vx);
+
+  // PINNED: held until the pull along the surface beats adhesion.
+  const pull = SURFACE_GRAVITY * Math.sin(contact.angle) + CREEP_ACCEL;
+  if (speed < 1 && pull < ADHESION / mass) {
     drop.restLeft -= dt * 1000;
+    /*
+     * Still tips off eventually — but in its own time, scaled by mass.
+     *
+     * A flat surface is level, so strictly a pinned drop never moves and the
+     * buttons would silt up forever. This stands in for the surface not being
+     * perfectly level in practice. Dividing by mass is what keeps the
+     * size-dependence honest: a heavy drop that adhesion barely holds goes
+     * almost at once, a small one clings for many seconds. A single fixed dwell
+     * released them all together and quietly undid the adhesion model.
+     */
+    if (drop.restLeft > -1200 / mass) {
+      drop.y = contact.y - drop.size / 2;
+      return;
+    }
+  }
+
+  const downhill = contact.downhill !== 0 ? contact.downhill : drop.runoff;
+  const along = SURFACE_GRAVITY * Math.sin(contact.angle) + CREEP_ACCEL * 0.35;
+  drop.vx += along * downhill * dt;
+
+  // Travels along the surface, so a steep slope advances less in x per unit of
+  // path than a flat one does.
+  drop.x += drop.vx * Math.cos(contact.angle) * dt;
+
+  const next = surfaceAt(surface, drop.x);
+  drop.y = next.y - drop.size / 2;
+
+  // THROWN: the arc can no longer supply the centripetal force to hold it.
+  const v = Math.abs(drop.vx);
+  const holds = SURFACE_GRAVITY * Math.cos(next.angle);
+  const needed = Number.isFinite(next.curvature) ? (v * v) / Math.max(1, next.curvature) : 0;
+
+  const separates = Number.isFinite(next.curvature) && needed > holds;
+  const pastEnd = drop.x < surface.left - drop.size || drop.x > surface.right + drop.size;
+
+  if (separates) {
+    drop.phase = 'falling';
+    /*
+     * Leaves along the tangent, carrying the speed it built up.
+     *
+     * A floor under the horizontal component matters: at the very side of a
+     * pill the tangent is vertical, so `cos(angle)` is ~0 and the drop would
+     * drop dead straight down having just run visibly sideways. Keeping a
+     * fraction of its speed outward is both what a real bead does — it is
+     * thrown clear — and what stops the departure looking like the drop hit an
+     * invisible wall.
+     */
+    drop.vy = Math.max(20, v * Math.sin(next.angle));
+    drop.vx = downhill * Math.max(v * 0.35, v * Math.cos(next.angle));
     return;
   }
 
-  /*
-   * Eased away rather than accelerated from a standstill.
-   *
-   * A constant acceleration from zero means the first half-second of the run is
-   * imperceptible and then it suddenly leaves, which is the part that read as
-   * wrong: real paint on a sill creeps, gathers and goes. The ramp below starts
-   * the drop already moving a little and grows the acceleration as it commits.
-   */
-  const committed = Math.min(1, Math.max(0, -drop.restLeft) / 260);
-  drop.vx += RUNOFF_ACCEL * drop.runoff * (0.35 + committed) * dt;
-  drop.restLeft -= dt * 1000;
-  drop.x += drop.vx * dt;
-  // Stays glued to the surface until it is genuinely past the edge.
-  drop.y = surface.top - drop.size / 2;
-
-  if (drop.x < surface.left - drop.size / 2 || drop.x > surface.right + drop.size / 2) {
+  if (pastEnd) {
+    // Safety only: it should have separated on the arc long before here.
     drop.phase = 'falling';
-    // Tips over the edge carrying its sideways speed, rather than stopping dead
-    // and dropping vertically the instant it clears the button.
-    drop.vy = 30;
-    drop.vx *= 0.5;
+    drop.vy = Math.max(20, drop.vy);
   }
 }
 

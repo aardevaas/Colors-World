@@ -182,36 +182,7 @@ export function ColorRooms({ rooms }: ColorRoomsProps) {
                     column it actually occupies rather than the viewport — see
                     the note on `.name`. */}
                 <div className={styles.nameCell}>
-                  {/*
-                    The typography room carries a second copy of its own name in
-                    Rubik Wet Paint, stacked over the first and cross-faded on
-                    hover.
-
-                    Two copies rather than swapping `font-family`, because a
-                    swap cannot be transitioned and would resize the word on the
-                    frame it happened. The house copy stays in flow and owns the
-                    box; the painted one is absolute, so it can be a different
-                    width without moving anything. It is `aria-hidden`, since
-                    the word is already in the heading once.
-
-                    This replaces a version that set every letter in a different
-                    face. Every other room uses the house type, and the room
-                    only departs from it under the pointer — which is the more
-                    typographic idea anyway: the demonstration is the change,
-                    not the ransom note.
-                  */}
-                  <h3 className={styles.name}>
-                    {tab.id === 'typography' ? (
-                      <span className={styles.paintable}>
-                        <span className={styles.faceHouse}>{tab.label}</span>
-                        <span className={styles.facePaint} aria-hidden="true">
-                          {tab.label}
-                        </span>
-                      </span>
-                    ) : (
-                      tab.label
-                    )}
-                  </h3>
+                  <h3 className={styles.name}>{tab.label}</h3>
                 </div>
 
                 <p className={styles.line}>{ROOM_LINE[tab.id]}</p>

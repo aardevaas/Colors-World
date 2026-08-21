@@ -1,9 +1,4 @@
-import {
-  JetBrains_Mono,
-  Plus_Jakarta_Sans,
-  Rubik_Wet_Paint,
-  Unbounded,
-} from 'next/font/google';
+import { JetBrains_Mono, Plus_Jakarta_Sans, Unbounded } from 'next/font/google';
 import { LandingExperience } from '@/components/landing/LandingExperience';
 import { CredibilityStrip } from '@/components/landing/CredibilityStrip';
 import { SiteFooter } from '@/components/landing/SiteFooter';
@@ -34,29 +29,6 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
-/*
- * Exists for exactly one word, in one state.
- *
- * The typography room sets its name in the house face like every other room,
- * and swaps to this on hover. The house rule is at most two families without a
- * clear reason; a room whose claim is that contrast is a property of type,
- * demonstrating it on its own nameplate, is the reason.
- *
- * This replaced a three-family "hand-set" nameplate that put a different face
- * on every letter. That cost ~70kb and looked like a ransom note. One face,
- * one weight, ~28kb, and it only has to be right in a single state.
- *
- * Wet Paint rather than a serif or a didone because the page already rains
- * paint into these rooms — the nameplate running on hover is the site's own
- * motif arriving somewhere it means something.
- */
-const rubikWetPaint = Rubik_Wet_Paint({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-paint',
-  display: 'swap',
-});
-
 export default function LandingPage() {
   return (
     <div
@@ -64,7 +36,6 @@ export default function LandingPage() {
         unbounded.variable,
         jakarta.variable,
         jetbrainsMono.variable,
-        rubikWetPaint.variable,
       ].join(' ')}
     >
       <a href="#main" className="skipLink">

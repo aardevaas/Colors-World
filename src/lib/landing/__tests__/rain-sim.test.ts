@@ -39,8 +39,13 @@ function drop(overrides: Partial<SimDrop> = {}): SimDrop {
   };
 }
 
-const BUTTON: Surface = { left: 400, top: 300, right: 600, bottom: 340, absorbs: false };
-const SPONGE: Surface = { left: 700, top: 300, right: 900, bottom: 340, absorbs: true };
+// A pill, as the real buttons are: radius resolves to half its height.
+const BUTTON: Surface = {
+  left: 400, top: 300, right: 600, bottom: 340, absorbs: false, radius: 20,
+};
+const SPONGE: Surface = {
+  left: 700, top: 300, right: 900, bottom: 340, absorbs: true, radius: 20,
+};
 
 /** Runs the world for `seconds` in realistic frame-sized steps. */
 function run(world: ReturnType<typeof createWorld>, surfaces: Surface[], seconds: number) {
@@ -133,9 +138,15 @@ describe('landing on a surface', () => {
     expect(runUntil(world, [BUTTON], () => d.phase === 'resting')).toBe(true);
     expect(d.runoff).toBe(1);
 
-    run(world, [BUTTON], 2);
-    expect(d.phase).toBe('falling');
-    expect(d.x).toBeGreaterThan(BUTTON.right);
+    // Longer than before: a drop is now pinned by surface tension until the
+    // pull along the surface beats adhesion, so it clings before it runs.
+    expect(runUntil(world, [BUTTON], () => d.phase === 'falling', 25)).toBe(true);
+
+    // It separates ON the shoulder, not past the bounding box — which is the
+    // whole point of running around the real shape. It left the flat top,
+    // travelled into the right-hand arc, and was thrown from it.
+    expect(d.x).toBeGreaterThan(BUTTON.right - 24);
+    expect(d.vx).toBeGreaterThan(0);
   });
 
   it('sends a drop that landed left of centre off the left edge', () => {
@@ -144,8 +155,67 @@ describe('landing on a surface', () => {
     const d = drop({ x: 420 });
     world.drops.push(d);
 
-    run(world, [BUTTON], 3);
-    expect(d.x).toBeLessThan(BUTTON.left);
+    expect(runUntilShed(world, [BUTTON], d)).toBe(true);
+    expect(d.x).toBeLessThan(BUTTON.left + 24);
+    expect(d.vx).toBeLessThan(0);
+  });
+});
+
+/**
+ * Runs until `d` has landed on a surface and then left it again.
+ *
+ * Waiting on `phase === 'falling'` alone is a trap and cost three failing tests
+ * to spot: a drop STARTS falling, so the condition is already true on the first
+ * frame and the assertions then read a drop that has not been near a button.
+ */
+function runUntilShed(
+  world: ReturnType<typeof createWorld>,
+  surfaces: Surface[],
+  d: SimDrop,
+  budgetSeconds = 25
+): boolean {
+  if (!runUntil(world, surfaces, () => d.phase === 'resting', budgetSeconds)) return false;
+  return runUntil(world, surfaces, () => d.phase === 'falling', budgetSeconds);
+}
+
+describe('shedding, as a surface actually sheds', () => {
+  it('holds a small drop where a large one has already run', () => {
+    // Adhesion scales with the contact line and weight with volume, so the same
+    // pull that frees a big drop still pins a small one. This is why the
+    // buttons keep a scatter of beads rather than shedding everything at once.
+    const world = createWorld(1000, 800);
+    const small = drop({ x: 500, size: 5 });
+    const large = drop({ x: 500, size: 26 });
+    world.drops.push(small, large);
+
+    expect(runUntilShed(world, [BUTTON], large)).toBe(true);
+    expect(small.phase).toBe('resting');
+  });
+
+  it('follows the shoulder down rather than a flat line', () => {
+    // The drop should be visibly lower by the time it reaches the end of the
+    // button than it was on the flat top — it is running around an arc.
+    const world = createWorld(1000, 800);
+    const d = drop({ x: 500, size: 22 });
+    world.drops.push(d);
+    runUntil(world, [BUTTON], () => d.phase === 'resting');
+    const flatY = d.y;
+
+    expect(runUntil(world, [BUTTON], () => d.x > BUTTON.right - 8, 20)).toBe(true);
+    expect(d.y).toBeGreaterThan(flatY + 2);
+  });
+
+  it('leaves carrying the speed it built up, not from a standstill', () => {
+    const world = createWorld(1000, 800);
+    world.floor = 100_000;
+    const d = drop({ x: 560, size: 22 });
+    world.drops.push(d);
+
+    expect(runUntilShed(world, [BUTTON], d)).toBe(true);
+    // Both components non-trivial: it left along a tangent, not straight down
+    // and not horizontally off a box edge.
+    expect(Math.abs(d.vx)).toBeGreaterThan(10);
+    expect(d.vy).toBeGreaterThan(0);
   });
 });
 

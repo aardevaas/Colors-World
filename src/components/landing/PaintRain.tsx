@@ -179,6 +179,10 @@ function readSurfaces(nodesOut: HTMLElement[]): Surface[] {
       right: rect.right,
       bottom: rect.bottom,
       absorbs: node.dataset.rainSurface === 'absorb',
+      // The element's real corner radius: drops run around the shoulders rather
+      // than off a bounding box. `999px` on a pill resolves to half its height
+      // inside `surfaceAt`, which is the same thing the browser draws.
+      radius: Number.parseFloat(getComputedStyle(node).borderTopLeftRadius) || 0,
     });
   }
   return surfaces;
