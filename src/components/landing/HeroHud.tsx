@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { GitHubIcon } from '@/components/icons/GitHubIcon';
+import type { RoomColor } from '@/lib/landing/room-palette';
 import { GlowTitle } from './GlowTitle';
 import { LiquidButton } from './LiquidButton';
 import { PrismButton } from './PrismButton';
@@ -11,9 +11,16 @@ interface HeroHudProps {
   /** Carries the scroll-driven fade — see LandingExperience for why it's a
    *  CSS variable on this node rather than React state. */
   readonly ref?: React.Ref<HTMLDivElement>;
+  /** The same generated six the rain falls in. The maker's plate reflects
+   *  them, so the glass is picking up the colors actually in the air around
+   *  it rather than a decorative rainbow that happens to sit nearby. */
+  readonly rooms: readonly RoomColor[];
 }
 
 const REPO_URL = 'https://github.com/aardevaas/Colors-World';
+
+const SUB_COPY =
+  'The free, open-source studio for color, palettes, branding, and typography — built in the open, for everyone.';
 
 /** Radians-free, plain degrees — small enough that the tilt reads as glass
  *  catching light, not a card physically flipping over. */
@@ -34,7 +41,7 @@ function handleTiltPointerLeave(event: React.PointerEvent<HTMLElement>) {
   event.currentTarget.style.setProperty('--tilt-y', '0deg');
 }
 
-export function HeroHud({ ref }: HeroHudProps) {
+export function HeroHud({ ref, rooms }: HeroHudProps) {
   return (
     <>
       <div className={styles.hud} ref={ref}>
@@ -57,9 +64,24 @@ export function HeroHud({ ref }: HeroHudProps) {
             <span className={styles.headlineAccent}>16.7 million</span>
             <GlowTitle> of them.</GlowTitle>
           </h1>
+          {/*
+            Split into words so each can arrive on its own beat.
+
+            Words, not letters: a per-letter reveal on body copy fights reading
+            rather than leading it, and a screen reader handed a paragraph of
+            inline-block letters is liable to spell it. Word spans concatenate
+            normally, and the spaces between them are real text nodes.
+          */}
           <p className={styles.sub}>
-            The free, open-source studio for color, palettes, branding, and
-            typography — built in the open, for everyone.
+            {SUB_COPY.split(' ').map((word, index) => (
+              <span
+                key={`${word}-${index}`}
+                className={styles.subWord}
+                style={{ '--word-index': index } as React.CSSProperties}
+              >
+                {word}
+              </span>
+            ))}
           </p>
           <a
             href="https://github.com/aardevaas"
@@ -68,7 +90,19 @@ export function HeroHud({ ref }: HeroHudProps) {
             className={styles.builtBy}
             onPointerMove={handleTiltPointerMove}
             onPointerLeave={handleTiltPointerLeave}
+            style={
+              {
+                // The six the rain is carrying, handed to the glass as the
+                // colors it has to reflect.
+                '--reflect': rooms.map((room) => room.hex).join(', '),
+              } as React.CSSProperties
+            }
           >
+            {/* The pane's own surface: what it reflects, and the hard streak
+                of light across it. Both decorative. */}
+            <span className={styles.glassReflection} aria-hidden="true" />
+            <span className={styles.glassStreak} aria-hidden="true" />
+
             {/* Decorative mounting hardware — carries no text, so it stays out
               of the link's accessible name ("Built by: aardevaas"). */}
             <span

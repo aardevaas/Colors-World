@@ -138,13 +138,66 @@
   }
 }
 
+/*
+ * The one line of body copy in the hero, and it was the hardest thing here to
+ * read.
+ *
+ * Two causes, both fixed here. `.copy` sets a single `gap` for every child, so
+ * this sat exactly as far from the headline as from the plate below it and
+ * read as wedged between them — uniform spacing is the absence of rhythm, not
+ * the presence of order. It now carries its own margins, which is the only
+ * place on this page that overrides that gap and the reason it can breathe.
+ *
+ * And it was set at 82% lightness knocked back to 0.82 alpha, which lands
+ * around 8:1 on this ground — fine for a caption and thin for the sentence
+ * that explains what the product is. Full opacity, slightly lighter, and a
+ * measure that keeps it near 60 characters a line.
+ */
 .sub {
-  margin: 0;
-  max-width: 36rem;
+  /* Breaks out of the uniform gap: a clear beat after the headline, and more
+     again before the plate, so it is read as its own thought. */
+  margin: clamp(0.75rem, 2vh, 1.75rem) 0 clamp(1.5rem, 4vh, 3.25rem);
+  max-width: 34rem;
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: clamp(1.05rem, 0.95rem + 0.55vw, 1.45rem);
-  line-height: 1.55;
-  color: oklch(82% 0.008 265 / 0.82);
+  line-height: 1.6;
+  text-wrap: pretty;
+  color: oklch(90% 0.006 265);
+}
+
+/*
+ * Each word arrives on its own beat, resolving out of blur.
+ *
+ * Blur rather than a slide alone because the effect is meant to read as the
+ * sentence coming INTO FOCUS, which is a reading metaphor and leads the eye
+ * left to right at roughly reading pace. It runs once, on load, and never
+ * loops: ambient motion under body copy is the thing that makes body copy hard
+ * to read, and this paragraph was already hard enough.
+ *
+ * The hidden state lives in the keyframe rather than in this rule. With
+ * `both`, the from-state applies through the delay — but if animations never
+ * run at all, the element falls back to this rule, and a paragraph that
+ * defaults to invisible is a far worse failure than one that simply appears.
+ */
+.subWord {
+  display: inline-block;
+  /* Restores the space the inline-block would otherwise swallow. */
+  margin-inline-end: 0.26em;
+  animation: word-in 620ms cubic-bezier(0.33, 1, 0.68, 1)
+    calc(var(--word-index, 0) * 42ms + 260ms) both;
+}
+
+@keyframes word-in {
+  from {
+    opacity: 0;
+    filter: blur(9px);
+    transform: translateY(0.45em);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
 }
 
 /* ---------- built-by maker's plate ---------- */
@@ -162,35 +215,133 @@
  * highlight, which is all it takes to read as a pane catching light from
  * above rather than a flat rectangle.
  */
+/*
+ * A pane of glass on four standoffs, after "Button 03.png".
+ *
+ * The reference is not a translucent rectangle — it is a sheet of glass held
+ * OFF a wall: four machined bosses at the corners, a shadow cast on the
+ * surface behind it, a hard diagonal streak of light across the face, and the
+ * wall itself visible and blurred through the glass. Each of those is a
+ * separate thing here, because each is what makes it read as mounted rather
+ * than drawn.
+ *
+ * WHAT IT REFLECTS. `--reflect` arrives from HeroHud as the six generated room
+ * colors — the same six the rain is falling in. So the sheen moving across the
+ * face is not a decorative rainbow; it is the color that is actually in the
+ * air around the plate on this particular visit, and it changes when the
+ * palette does.
+ *
+ * WHY IT SITS FORWARD. It used to lie flat on the stage and lift only on
+ * hover, which put it in the same plane as the two pills below it. It now
+ * holds a permanent `translateZ` under a perspective — which enlarges it
+ * slightly, the way a nearer object is enlarged — over a cast shadow big
+ * enough to be read as distance from the wall. It is the closest object in the
+ * hero, and the pills sit behind it.
+ */
 .builtBy {
-  --bolt-size: 5px;
-  --tilt-x: 0deg;
-  --tilt-y: 0deg;
+  --bolt-size: 0.72rem;
+  --lift: 26px;
 
   position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1.05rem;
+  gap: 0.5rem;
+  padding: 0.62rem 1.15rem;
+  border-radius: 0.32rem;
+  border: 1px solid oklch(100% 0 0 / 0.22);
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  color: oklch(78% 0.01 265 / 0.8);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
   text-decoration: none;
-  pointer-events: var(--copy-pointer, auto);
-  border: 1px solid oklch(100% 0 0 / 0.1);
-  background: oklch(100% 0 0 / 0.035);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.08);
+  white-space: nowrap;
+
+  /* The glass itself: a barely-there fill, and the stage behind it genuinely
+     blurred rather than faked with a lighter panel. */
+  background: linear-gradient(
+    150deg,
+    oklch(100% 0 0 / 0.1) 0%,
+    oklch(100% 0 0 / 0.045) 42%,
+    oklch(100% 0 0 / 0.08) 100%
+  );
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+
+  transform: perspective(700px) translateZ(var(--lift))
+    rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   transform-style: preserve-3d;
+
+  box-shadow:
+    /* The bright top edge, where a sheet of glass catches the light. */
+    inset 0 1px 0 0 oklch(100% 0 0 / 0.34),
+    /* And the dark bottom edge, which is its thickness. */
+    inset 0 -1px 0 0 oklch(0% 0 0 / 0.28),
+    /* Cast on the wall behind, offset down — the plate is above the light. */
+    0 18px 34px -14px oklch(0% 0 0 / 0.72),
+    0 4px 10px -4px oklch(0% 0 0 / 0.5);
+
   transition:
-    color 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    background 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 420ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/*
+ * What the glass picks up from the air around it.
+ *
+ * `screen` rather than an opaque fill, because a reflection adds light to a
+ * surface instead of replacing it — the fill and the blurred stage stay
+ * visible underneath. Held at a low alpha and drifting slowly, so it reads as
+ * something moving past the glass rather than as a gradient painted on it.
+ */
+.glassReflection {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, var(--reflect, #7c5cff, #2aaabd));
+  background-size: 260% 100%;
+  /* Held back deliberately. The label sitting over this is 0.78rem monospace,
+     and a reflection bright enough to be admired is bright enough to take that
+     text under AA on a pale palette. */
+  opacity: 0.24;
+  filter: blur(10px) saturate(1.5);
+  mix-blend-mode: screen;
+  animation: reflectionDrift 14s linear infinite;
+}
+
+@keyframes reflectionDrift {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 260% 50%;
+  }
+}
+
+/*
+ * The hard diagonal streak across the face — the single most recognisable
+ * thing in the reference, and the one that most cheaply says "glass". A sharp
+ * edge on one side and a soft fall-off on the other, because that is what a
+ * reflected light source looks like on a flat pane.
+ */
+.glassStreak {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(
+    104deg,
+    transparent 0 38%,
+    oklch(100% 0 0 / 0.16) 38% 46%,
+    oklch(100% 0 0 / 0.05) 46% 58%,
+    transparent 58%
+  );
+}
+
 
 /*
  * The tilt (driven by --tilt-x/--tilt-y from a pointermove handler in
@@ -198,18 +349,27 @@
  * turns this from a flat panel with a highlight painted on into something
  * that actually reads as a bolted plate lifting slightly off the stage.
  */
+/*
+ * Hover DEEPENS the lift rather than introducing it — the plate is already off
+ * the wall at rest, which is the whole difference from the previous version.
+ * The tilt (from the pointermove handler in HeroHud.tsx) rides on top.
+ */
 .builtBy:hover,
 .builtBy:focus-visible {
-  border-color: oklch(100% 0 0 / 0.2);
-  background: oklch(100% 0 0 / 0.06);
-  transform: perspective(500px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  --lift: 46px;
+  border-color: oklch(100% 0 0 / 0.34);
   box-shadow:
-    inset 0 1px 0 0 oklch(100% 0 0 / 0.1),
-    0 10px 22px -8px oklch(0% 0 0 / 0.5);
+    inset 0 1px 0 0 oklch(100% 0 0 / 0.45),
+    inset 0 -1px 0 0 oklch(0% 0 0 / 0.3),
+    0 30px 52px -16px oklch(0% 0 0 / 0.78),
+    0 8px 16px -6px oklch(0% 0 0 / 0.55);
 }
 
+/* Near-white and fully opaque, so it stays legible over whichever six colors
+   the reflection happens to be carrying this visit. At 78% knocked back to 0.8
+   alpha it could land near 3:1 over a bright reflection. */
 .builtByLabel {
-  color: oklch(78% 0.01 265 / 0.8);
+  color: oklch(93% 0.008 265);
 }
 
 /*
@@ -222,8 +382,14 @@
   position: absolute;
   width: var(--bolt-size);
   height: var(--bolt-size);
-  border-radius: 25%;
-  border: 1px solid oklch(100% 0 0 / 0.16);
+  z-index: 1;
+  border-radius: 22%;
+  border: 1px solid oklch(100% 0 0 / 0.3);
+  /* Their own small shadow, so they read as sitting proud of the glass rather
+     than printed level with it. */
+  box-shadow:
+    0 2px 4px oklch(0% 0 0 / 0.55),
+    inset 0 1px 0 oklch(100% 0 0 / 0.5);
   /* Lit from above, so the shading runs dark-at-bottom — the same trick the
      reference uses to turn a flat square into a machined head. */
   background-image: radial-gradient(
@@ -419,6 +585,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The lift and the shadow stay — they are depth, not motion. Only the things
+     that actually move stop moving. */
+  .glassReflection {
+    animation: none;
+  }
+
+  .subWord {
+    animation: none;
+  }
+
   .headlineAccent,
   .builtByIcon,
   .scrollCueLine,
