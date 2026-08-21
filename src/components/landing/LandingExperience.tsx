@@ -1,19 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import dynamic from 'next/dynamic';
 import { roomPalette, seedHueFromRandom } from '@/lib/landing/room-palette';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
-
-// Dynamic + ssr:false is the boundary that keeps three.js out of the initial
-// bundle -- imported statically it put this route's First Load at 298kB
-// against a 150kB budget.
-const PaintHero = dynamic(() => import('./PaintHero'), {
-  ssr: false,
-  loading: () => <div className={styles.canvasFallback} />,
-});
 import { FeatureCards } from './FeatureCards';
 import styles from './landing.module.css';
 
@@ -46,7 +37,10 @@ interface LandingExperienceProps {
  * the globe demanded: that pushed the six rooms — which are what this page is
  * actually for — down past three full screens before they were even named.
  */
-const SECTION_HEIGHT_VH = 150;
+// One viewport. The extra height existed to give the globe, and then the
+// painted word, room to animate across a scroll. With neither of them here
+// it was half a screen of empty space between the title and the rooms.
+const SECTION_HEIGHT_VH = 100;
 
 /** Stable on the server, replaced on mount. Randomising during render would
  *  hand the server and the client different colours and break hydration. */
@@ -106,7 +100,6 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
         style={{ height: `${SECTION_HEIGHT_VH}vh` }}
       >
         <div className={styles.pinned}>
-          <PaintHero reducedMotion={!motionEnabled} />
           <HeroHud
             ref={hudRef}
             motionEnabled={motionEnabled}
