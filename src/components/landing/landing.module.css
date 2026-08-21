@@ -370,8 +370,10 @@
   pointer-events: var(--copy-pointer, auto);
 }
 
-.ctaPrimary,
-.ctaSecondary {
+/* Base pill styling. This used to be shared with `.ctaSecondary`; that button
+   is now LiquidButton, which brings its own geometry, so only the primary is
+   left on it. */
+.ctaPrimary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -451,102 +453,6 @@
 .ctaPrimary:hover .ctaPrimaryShine,
 .ctaPrimary:focus-visible .ctaPrimaryShine {
   opacity: 1;
-}
-
-/*
- * Liquid metaball fill, after the "Button.mp4" reference — kept to this
- * secondary CTA only (see HeroHud.tsx for why). `isolation: isolate` scopes
- * the goo filter's rendering to this button.
- *
- * Both `overflow: hidden` *and* `clip-path` are doing the clipping here, not
- * just one for safety: an SVG filter's effects region can render outside an
- * ancestor's `overflow: hidden` in some engines once a descendant also gets
- * its own compositing layer (which the blobs' `transform` animation does) —
- * confirmed live, the blobs actually poked a few pixels past the pill
- * without `clip-path` here. `clip-path` clips post-filter, so it holds
- * regardless.
- */
-.ctaSecondary {
-  position: relative;
-  overflow: hidden;
-  clip-path: inset(0 round 999px);
-  isolation: isolate;
-  padding: 0;
-  color: oklch(96% 0.004 265);
-  border: 1px solid oklch(100% 0 0 / 0.16);
-  background: oklch(14% 0.02 280 / 0.6);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-.ctaSecondary:hover {
-  transform: translateY(-2px);
-  border-color: oklch(100% 0 0 / 0.34);
-}
-
-/* Padding moved here from `.ctaSecondary` itself — the blob field needs to
-   fill the button's full bounds via `inset: 0`, which padding on the parent
-   would otherwise eat into. */
-.ctaSecondaryContent {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1.6rem;
-  /* Legible over any blob colour the goo field happens to be showing at
-     the moment, not just the ones it looked fine over in a screenshot. */
-  text-shadow: 0 1px 3px oklch(0% 0 0 / 0.55);
-}
-
-.blobField {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  filter: url(#cta-goo);
-}
-
-/*
- * Many small balls, each individually shaded as a sphere — after seeing the
- * reference again ("Button 01.mp4") more closely, it's a dense field of
- * roughly 15-20 small dots, not the 3 large flat-tinted circles this
- * started as. `--blob-size`/`--blob-delay`/`--blob-duration` are per-blob
- * (see HeroHud.tsx), so the whole field never breathes in unison. The
- * radial-gradient — bright highlight offset toward one corner, darkening
- * toward the opposite edge — is what makes each one read as an actual 3D
- * ball catching light rather than a flat tinted disc.
- */
-.blob {
-  /* Spread position is a percentage of the *parent* (top/left), independent
-     of this blob's own size — the old drift keyframes moved each blob by a
-     percentage of ITS OWN box, which worked fine at ~42px but collapses to
-     a few px of jitter around dead-centre now that blobs are 5-13px, so the
-     whole field clumped in the middle instead of covering the button like
-     the reference. Position and organic wobble are now fully decoupled: this
-     sets *where* a blob lives, the keyframes below add a small fixed-px
-     wiggle on top of it. */
-  position: absolute;
-  top: var(--blob-top, 50%);
-  left: var(--blob-left, 50%);
-  width: var(--blob-size, 0.7rem);
-  height: var(--blob-size, 0.7rem);
-  border-radius: 50%;
-  /* Static fallback for when the animation is off (prefers-reduced-motion):
-     the keyframes below always start from this same centring, but a
-     disabled animation applies no transform at all, which would otherwise
-     anchor each blob by its corner instead of its centre. */
-  transform: translate(-50%, -50%);
-  background-image: radial-gradient(
-    circle at 32% 28%,
-    oklch(94% 0.04 var(--hue, 250)),
-    oklch(72% 0.19 var(--hue, 250)) 55%,
-    oklch(42% 0.14 var(--hue, 250)) 100%
-  );
-  opacity: 0.92;
-  animation:
-    ctaBlobDrift var(--blob-duration, 7s) ease-in-out infinite,
-    ctaBlobHue 9s linear infinite;
-  animation-delay: var(--blob-delay, 0s);
 }
 
 /* Once a colour has actually been picked on the globe, the fill settles on

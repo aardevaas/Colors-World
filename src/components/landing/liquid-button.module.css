@@ -1,0 +1,223 @@
+/*
+ * The liquid pill, after "Button 01.mp4".
+ *
+ * The reference is a cream, translucent capsule with coral blobs suspended in
+ * it, dark text on top, tilting in 3D toward the cursor with a lens following
+ * the pointer. Everything below is CSS and one rAF loop — no WebGL, which for
+ * a button is the right trade.
+ */
+
+.button {
+  /* The tilt needs a perspective ancestor; putting it on the child instead
+     gives a flat shear that reads as a skew rather than a rotation. */
+  perspective: 620px;
+  display: inline-block;
+  border: 0;
+  padding: 0;
+  background: none;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tilt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12.5rem;
+  padding: 0.95rem 1.9rem;
+  border-radius: 999px;
+  overflow: hidden;
+  isolation: isolate;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rot-x, 0deg)) rotateY(var(--rot-y, 0deg));
+  /* Cream base — the blobs sit *in* this, so it shows between them. */
+  background:
+    radial-gradient(120% 140% at 50% 0%, oklch(99% 0.012 60) 0%, oklch(95% 0.03 40) 55%, oklch(91% 0.05 30) 100%);
+  box-shadow:
+    /* Rim: a bright top edge and a soft dark underside, so the capsule reads
+       as a solid with thickness rather than a flat disc. */
+    inset 0 1.5px 1px oklch(100% 0 0 / 0.9),
+    inset 0 -2px 3px oklch(60% 0.09 25 / 0.35),
+    inset 0 0 0 1px oklch(100% 0 0 / 0.5),
+    0 10px 26px oklch(40% 0.06 25 / 0.28),
+    0 2px 6px oklch(40% 0.06 25 / 0.2);
+  transition: box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.button:hover .tilt {
+  box-shadow:
+    inset 0 1.5px 1px oklch(100% 0 0 / 0.95),
+    inset 0 -2px 3px oklch(60% 0.09 25 / 0.4),
+    inset 0 0 0 1px oklch(100% 0 0 / 0.65),
+    0 14px 34px oklch(40% 0.06 25 / 0.34),
+    0 3px 8px oklch(40% 0.06 25 / 0.24);
+}
+
+.button:focus-visible .tilt {
+  outline: 2px solid oklch(72% 0.19 25);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------- the liquid */
+
+.field {
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  top: var(--top, 50%);
+  left: var(--left, 50%);
+  width: var(--size, 24px);
+  height: var(--size, 24px);
+  margin: calc(var(--size, 24px) / -2) 0 0 calc(var(--size, 24px) / -2);
+  border-radius: 50%;
+  /* Shaded as a ball rather than filled flat: highlight offset toward the top
+     left, deepening to the opposite edge. Flat circles read as printed dots. */
+  background: radial-gradient(
+    circle at 34% 30%,
+    oklch(82% 0.19 calc(var(--hue, 10) * 1deg) / var(--alpha, 0.8)) 0%,
+    oklch(66% 0.22 calc(var(--hue, 10) * 1deg) / var(--alpha, 0.8)) 48%,
+    oklch(54% 0.2 calc(var(--hue, 10) * 1deg) / calc(var(--alpha, 0.8) * 0.85)) 100%
+  );
+  /* Depth of field: the blurred ones read as further down in the liquid. */
+  filter: blur(var(--blur, 0px));
+  animation: drift var(--duration, 10s) linear var(--delay, 0s) infinite;
+  will-change: transform;
+}
+
+/* Rises and sways, the way a bubble does — never a straight vertical, or the
+   whole field reads as a scrolling texture. */
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(6px, -22%, 0) scale(1.06);
+  }
+  50% {
+    transform: translate3d(-4px, -46%, 0) scale(0.96);
+  }
+  75% {
+    transform: translate3d(-8px, -70%, 0) scale(1.04);
+  }
+  100% {
+    transform: translate3d(0, -100%, 0) scale(1);
+  }
+}
+
+/* --------------------------------------------------------------- the gloss */
+
+.gloss {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    /* Broad specular sliding with the tilt. */
+    radial-gradient(
+      70% 120% at var(--shine-x, 50%) -10%,
+      oklch(100% 0 0 / 0.85) 0%,
+      oklch(100% 0 0 / 0.25) 35%,
+      transparent 70%
+    ),
+    /* A thin bright line just under the top edge, which is what makes it look
+       wet rather than matte. */
+    linear-gradient(to bottom, oklch(100% 0 0 / 0.55) 0 2px, transparent 2px);
+  mix-blend-mode: screen;
+}
+
+/* --------------------------------------------------------------- the label */
+
+.label {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  /* Deep ink navy, as the reference — not pure black, which goes flat on a
+     warm ground. */
+  color: oklch(24% 0.05 285);
+}
+
+.label svg {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- the lens */
+
+.lens {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: var(--lens-on, 0);
+  /* Circular window at the cursor. Everything outside it is clipped away, so
+     what shows through is the magnified copy underneath. */
+  -webkit-mask-image: radial-gradient(
+    circle 58px at var(--lens-x, 50%) var(--lens-y, 50%),
+    #000 0 34%,
+    oklch(0% 0 0 / 0.55) 68%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle 58px at var(--lens-x, 50%) var(--lens-y, 50%),
+    #000 0 34%,
+    oklch(0% 0 0 / 0.55) 68%,
+    transparent 100%
+  );
+}
+
+.lensInner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Scaled about the cursor, which is what bends the text and blobs beneath
+     it — a uniform scale would just shift everything sideways. */
+  transform-origin: var(--lens-x, 50%) var(--lens-y, 50%);
+  transform: scale(1.16);
+  /* The same cream ground, so the magnified copy is opaque over the original
+     rather than ghosting on top of it. */
+  background:
+    radial-gradient(120% 140% at 50% 0%, oklch(99% 0.012 60) 0%, oklch(95% 0.03 40) 55%, oklch(91% 0.05 30) 100%);
+}
+
+/* A rim so the lens reads as a droplet sitting on the surface. */
+.lens::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle 58px at var(--lens-x, 50%) var(--lens-y, 50%),
+    transparent 0 52%,
+    oklch(100% 0 0 / 0.55) 60%,
+    oklch(70% 0.1 25 / 0.25) 68%,
+    transparent 76%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob {
+    animation: none;
+  }
+  .lens {
+    display: none;
+  }
+  .tilt {
+    transform: none;
+  }
+}
