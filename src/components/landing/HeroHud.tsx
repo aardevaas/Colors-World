@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { GitHubIcon } from '@/components/icons/GitHubIcon';
 import { LiquidButton } from './LiquidButton';
+import { PrismButton } from './PrismButton';
 import styles from './landing.module.css';
 
 interface HeroHudProps {
@@ -32,16 +33,6 @@ function handleTiltPointerMove(event: React.PointerEvent<HTMLElement>) {
 function handleTiltPointerLeave(event: React.PointerEvent<HTMLElement>) {
   event.currentTarget.style.setProperty('--tilt-x', '0deg');
   event.currentTarget.style.setProperty('--tilt-y', '0deg');
-}
-
-/** The primary CTA needs both the tilt above *and* the shine's horizontal
- *  tracking from the same pointer position, so this runs both rather than
- *  wiring two separate handlers to one event. */
-function handleCtaPrimaryPointerMove(event: React.PointerEvent<HTMLElement>) {
-  handleTiltPointerMove(event);
-  const rect = event.currentTarget.getBoundingClientRect();
-  const mx = ((event.clientX - rect.left) / rect.width) * 100;
-  event.currentTarget.style.setProperty('--mx', `${mx}%`);
 }
 
 export function HeroHud({
@@ -132,26 +123,12 @@ export function HeroHud({
                 nothing of a first-time visitor. /studio is a blank canvas
                 with a dot grid: the right room once you have something to
                 arrange, and the wrong one to land in. */}
-            <Link
-              href="/library"
-              className={styles.ctaPrimary}
-              onPointerMove={handleCtaPrimaryPointerMove}
-              onPointerLeave={handleTiltPointerLeave}
-            >
-              {/* Prismatic shine, after the "Button 02.mp4" reference — see
-                  the CSS for why it's adapted (overlay blend, not a literal
-                  overlay of the reference's bright streak) for a light-on-
-                  dark-text button instead of the reference's dark pill. */}
-              <span className={styles.ctaPrimaryShine} aria-hidden="true" />
-              <span className={styles.ctaPrimaryContent}>
-                Explore every colour, free
-              </span>
-            </Link>
-            {/* The liquid pill, after "Button 01.mp4". Its blob field, 3D
-                tilt and cursor lens all live in LiquidButton — the previous
-                version here was a goo-filtered field on a dark pill, which
-                had the fill but none of the motion the reference is actually
-                about. */}
+            {/* The prismatic pill, after "Button 02.mp4" — a dark pill at rest
+                with the spectral ribbon arriving only on hover. Replaces the
+                earlier light-on-dark adaptation of that same reference, which
+                had to invert it to survive a near-white fill. */}
+            <PrismButton href="/library">Explore Every Color</PrismButton>
+            {/* The liquid pill, after "Button 01.mp4". */}
             <LiquidButton href={REPO_URL} external>
               <GitHubIcon />
               Star on GitHub

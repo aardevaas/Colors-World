@@ -370,144 +370,6 @@
   pointer-events: var(--copy-pointer, auto);
 }
 
-/* Base pill styling. This used to be shared with `.ctaSecondary`; that button
-   is now LiquidButton, which brings its own geometry, so only the primary is
-   left on it. */
-.ctaPrimary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1.6rem;
-  border-radius: 999px;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition:
-    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
-    background 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/*
- * Prismatic light streak, after the "Button 02.mp4" reference — that
- * reference sweeps a bright rainbow streak across a *dark* pill, so it
- * reads as light hitting glass. Ours is the reverse (dark text on a near-
- * white fill), so the same streak would either vanish into the white or,
- * worse, wash out the text under it. Adapted as a `mix-blend-mode: overlay`
- * pass instead: overlay leaves near-white pixels close to unchanged and
- * only tints the saturated red/blue fringe into the fill, so the streak
- * reads as a reflection *on* a glossy 3D surface rather than a wash *over*
- * the text.
- *
- * `--mx` is tracked from pointermove and written straight to this element's
- * inline style (see HeroHud.tsx) — same reasoning as the card foil, this
- * fires far more often than a re-render should. `--tilt-x`/`--tilt-y` drive
- * a genuine perspective rotation from the same handler, which is the actual
- * "has to be 3D" ask: a light streak alone is still a flat trick, the
- * surface itself needs to tilt.
- */
-.ctaPrimary {
-  --mx: 50%;
-  --tilt-x: 0deg;
-  --tilt-y: 0deg;
-
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  background: oklch(97% 0.003 265);
-  color: #050508;
-  transform-style: preserve-3d;
-}
-
-.ctaPrimary:hover,
-.ctaPrimary:focus-visible {
-  transform: perspective(600px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y))
-    translateY(-2px);
-  background: oklch(100% 0 0);
-}
-
-.ctaPrimaryContent {
-  position: relative;
-  z-index: 2;
-}
-
-.ctaPrimaryShine {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-image: linear-gradient(
-    100deg,
-    transparent 0%,
-    oklch(72% 0.2 25 / 0.55) calc(var(--mx) - 7%),
-    oklch(96% 0.02 95 / 0.95) var(--mx),
-    oklch(70% 0.19 250 / 0.55) calc(var(--mx) + 7%),
-    transparent 100%
-  );
-  mix-blend-mode: overlay;
-  opacity: 0;
-  transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ctaPrimary:hover .ctaPrimaryShine,
-.ctaPrimary:focus-visible .ctaPrimaryShine {
-  opacity: 1;
-}
-
-/* Once a colour has actually been picked on the globe, the fill settles on
-   it instead of continuing to cycle the full spectrum — the button then
-   reflects a real choice rather than an unrelated ambient animation. */
-.blobFieldPicked .blob {
-  background-image: radial-gradient(
-    circle at 32% 28%,
-    oklch(94% 0.04 var(--picked-hue)),
-    oklch(72% 0.19 var(--picked-hue)) 55%,
-    oklch(42% 0.14 var(--picked-hue)) 100%
-  );
-  animation: ctaBlobDrift var(--blob-duration, 7s) ease-in-out infinite;
-  animation-delay: var(--blob-delay, 0s);
-}
-
-@property --hue {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 250;
-}
-
-@keyframes ctaBlobHue {
-  from {
-    --hue: 0;
-  }
-  to {
-    --hue: 360;
-  }
-}
-
-/* Asynchronous per-blob drift — each blob's `--blob-delay` offsets it into
-   a different point of the same cycle, which is what keeps the merges
-   reading as organic rather than sixteen dots breathing in unison. Fixed px
-   (not %), so the wobble stays a gentle wiggle regardless of a given blob's
-   own size — a percentage-of-self value here is what previously collapsed
-   the whole field into the button's dead centre once blobs got small. The
-   leading `translate(-50%, -50%)` re-centres each blob on its own
-   `top`/`left` anchor point; everything after it is the wobble itself. */
-@keyframes ctaBlobDrift {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) translate(0, 0) scale(1);
-  }
-  25% {
-    transform: translate(-50%, -50%) translate(2.5px, -3px) scale(1.15);
-  }
-  50% {
-    transform: translate(-50%, -50%) translate(-3px, 2px) scale(0.9);
-  }
-  75% {
-    transform: translate(-50%, -50%) translate(2px, 2.5px) scale(1.05);
-  }
-}
-
 /* ---------- scroll cue ---------- */
 
 .scrollCue {
@@ -613,24 +475,12 @@
     animation: none;
   }
 
-  /* The blobs' drift and hue-cycling are autoplaying ambient motion, unlike
-     the foil sheen on the cards (which only moves in response to the
-     pointer) — this is exactly what the preference is for. Held at a fixed
-     mid-cycle frame rather than collapsed to a static single colour, so the
-     button still reads as "liquid," just not moving. */
-  .blob {
-    animation: none;
-    --hue: 250;
-  }
-
   /* Rotation specifically (unlike the flat colour/opacity cues elsewhere on
      this page) is a known vestibular trigger, so the 3D tilt on the plate
      and primary CTA is dropped entirely here rather than just slowed —
      the lift/border/background hover feedback still applies without it. */
   .builtBy:hover,
-  .builtBy:focus-visible,
-  .ctaPrimary:hover,
-  .ctaPrimary:focus-visible {
+  .builtBy:focus-visible {
     transform: none;
   }
 }

@@ -1,16 +1,19 @@
 /*
  * The liquid pill, after "Button 01.mp4".
  *
- * The reference is a cream, translucent capsule with coral blobs suspended in
- * it, dark text on top, tilting in 3D toward the cursor with a lens following
- * the pointer. Everything below is CSS and one rAF loop — no WebGL, which for
- * a button is the right trade.
+ * A cream, translucent capsule with bubbles suspended in it, dark text on top,
+ * tilting in 3D toward the cursor over a solid underside. Everything below is
+ * CSS and one rAF loop — no WebGL, which for a button is the right trade.
+ *
+ * The reference's cursor lens was built here and then removed on request.
  */
 
 .button {
   /* The tilt needs a perspective ancestor; putting it on the child instead
      gives a flat shear that reads as a skew rather than a rotation. */
   perspective: 620px;
+  transform-style: preserve-3d;
+  position: relative;
   display: inline-block;
   border: 0;
   padding: 0;
@@ -59,6 +62,23 @@
   outline-offset: 3px;
 }
 
+/*
+ * The underside. Same silhouette as the face but pushed back in Z and shaded
+ * dark, so a tilt exposes an edge between the two and the pill reads as a
+ * solid with thickness. A single flat layer cannot do this — rotate a sheet of
+ * paper and you still see a sheet of paper.
+ */
+.underside {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  transform: translateZ(-16px) scale(0.985);
+  transform-style: preserve-3d;
+  background: linear-gradient(to bottom, oklch(58% 0.11 28), oklch(38% 0.09 25));
+  box-shadow: 0 18px 38px oklch(30% 0.06 25 / 0.5);
+  pointer-events: none;
+}
+
 /* ------------------------------------------------------------- the liquid */
 
 .field {
@@ -80,13 +100,15 @@
      left, deepening to the opposite edge. Flat circles read as printed dots. */
   background: radial-gradient(
     circle at 34% 30%,
-    oklch(82% 0.19 calc(var(--hue, 10) * 1deg) / var(--alpha, 0.8)) 0%,
-    oklch(66% 0.22 calc(var(--hue, 10) * 1deg) / var(--alpha, 0.8)) 48%,
-    oklch(54% 0.2 calc(var(--hue, 10) * 1deg) / calc(var(--alpha, 0.8) * 0.85)) 100%
+    oklch(82% 0.19 var(--blob-hue) / var(--alpha, 0.8)) 0%,
+    oklch(66% 0.22 var(--blob-hue) / var(--alpha, 0.8)) 48%,
+    oklch(54% 0.2 var(--blob-hue) / calc(var(--alpha, 0.8) * 0.85)) 100%
   );
   /* Depth of field: the blurred ones read as further down in the liquid. */
   filter: blur(var(--blur, 0px));
-  animation: drift var(--duration, 10s) linear var(--delay, 0s) infinite;
+  animation:
+    drift var(--duration, 10s) linear var(--delay, 0s) infinite,
+    spectrum 9s linear var(--spectrum-delay, 0s) infinite;
   will-change: transform;
 }
 
@@ -108,6 +130,32 @@
   100% {
     transform: translate3d(0, -100%, 0) scale(1);
   }
+}
+
+/*
+ * The same hues, on the same 9s cycle, as the "16.7 million" headline — the
+ * bubbles are meant to be that spectrum, not an unrelated coral palette. Needs
+ * @property: a bare custom property is a string to the animation engine and
+ * would step between keyframes instead of interpolating.
+ *
+ * Named --blob-hue, not --hue. @property registrations are GLOBAL even when
+ * declared inside a CSS module, and landing.module.css already registers
+ * --hue as a <number>; the duplicate was ignored and the blobs quietly
+ * inherited an ancestor's --hue: 250, which is why the whole field came out
+ * one shade of blue.
+ */
+@property --blob-hue {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 25deg;
+}
+
+@keyframes spectrum {
+  0% { --blob-hue: 25deg; }
+  25% { --blob-hue: 95deg; }
+  50% { --blob-hue: 150deg; }
+  75% { --blob-hue: 260deg; }
+  100% { --blob-hue: 385deg; }
 }
 
 /* --------------------------------------------------------------- the gloss */
@@ -156,66 +204,9 @@
   flex: none;
 }
 
-/* ---------------------------------------------------------------- the lens */
-
-.lens {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: var(--lens-on, 0);
-  /* Circular window at the cursor. Everything outside it is clipped away, so
-     what shows through is the magnified copy underneath. */
-  -webkit-mask-image: radial-gradient(
-    circle 58px at var(--lens-x, 50%) var(--lens-y, 50%),
-    #000 0 34%,
-    oklch(0% 0 0 / 0.55) 68%,
-    transparent 100%
-  );
-  mask-image: radial-gradient(
-    circle 58px at var(--lens-x, 50%) var(--lens-y, 50%),
-    #000 0 34%,
-    oklch(0% 0 0 / 0.55) 68%,
-    transparent 100%
-  );
-}
-
-.lensInner {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  /* Scaled about the cursor, which is what bends the text and blobs beneath
-     it — a uniform scale would just shift everything sideways. */
-  transform-origin: var(--lens-x, 50%) var(--lens-y, 50%);
-  transform: scale(1.16);
-  /* The same cream ground, so the magnified copy is opaque over the original
-     rather than ghosting on top of it. */
-  background:
-    radial-gradient(120% 140% at 50% 0%, oklch(99% 0.012 60) 0%, oklch(95% 0.03 40) 55%, oklch(91% 0.05 30) 100%);
-}
-
-/* A rim so the lens reads as a droplet sitting on the surface. */
-.lens::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    circle 58px at var(--lens-x, 50%) var(--lens-y, 50%),
-    transparent 0 52%,
-    oklch(100% 0 0 / 0.55) 60%,
-    oklch(70% 0.1 25 / 0.25) 68%,
-    transparent 76%
-  );
-}
-
 @media (prefers-reduced-motion: reduce) {
   .blob {
     animation: none;
-  }
-  .lens {
-    display: none;
   }
   .tilt {
     transform: none;
