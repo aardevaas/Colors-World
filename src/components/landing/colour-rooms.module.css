@@ -1,0 +1,324 @@
+/*
+ * Six flooded bands. After GF Smith.
+ *
+ * The three layers of their system, in order:
+ *
+ *   1. A PAIR arrives on the band — `--room-bg` and `--room-fg` plus their
+ *      hover variants. Inline, because these colours are generated per visit
+ *      and cannot live in a stylesheet.
+ *   2. `.room` maps that pair onto SEMANTIC tokens: --ground, --ink,
+ *      --ink-quiet. This is the only place the two vocabularies meet.
+ *   3. Everything after reads the semantics and never the pair.
+ *
+ * The payoff is `.room:hover`: re-point the semantics at the hover pair and the
+ * ground, the display type, the rule, the numeral and the arrow all turn
+ * together, because none of them named a colour in the first place.
+ *
+ * Radius is 0 throughout. GF Smith has no rounded corner anywhere on the site
+ * and it is not an oversight — paper is guillotined, and a radius here would
+ * make the bands read as cards, which is the thing this replaced.
+ */
+
+.section {
+  position: relative;
+  z-index: 1;
+  /* Deliberately no max-width. The bands are the full measure of the window;
+     only the header is constrained. */
+  padding-block: clamp(4rem, 12vh, 9rem) 0;
+}
+
+/* --------------------------------------------------------------- the header */
+
+.header {
+  max-width: 46rem;
+  margin: 0 auto clamp(3rem, 8vh, 6rem);
+  padding-inline: var(--space-wide);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-tight);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: oklch(72% 0.02 265);
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(1.75rem, 3.6vw, 3rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  color: oklch(98% 0.002 265);
+}
+
+/* ---------------------------------------------------------------- the bands */
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room {
+  /* LAYER 2 — the only place the pair becomes the semantics. */
+  --ground: var(--room-bg);
+  --ink: var(--room-fg);
+  --ink-quiet: var(--room-fg-quiet);
+
+  position: relative;
+  background: var(--ground);
+  color: var(--ink);
+  /* Both are pair-driven, so the whole band turns as one on hover. Colour is
+     safe to transition here: every state was solved against its own ground. */
+  transition:
+    background-color 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The entire GF Smith move, in four lines. */
+.room:hover,
+.room:focus-within {
+  --ground: var(--room-bg-hover);
+  --ink: var(--room-fg-hover);
+}
+
+.link {
+  display: grid;
+  /* Numeral and arrow are fixed rails; the type takes what is left. */
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'index name  arrow'
+    'index line  arrow';
+  align-items: end;
+  column-gap: clamp(1rem, 3vw, 3rem);
+  /* Width-relative, not vh. The rhythm being spaced here is horizontal type,
+     so tying it to viewport height made the gap change when nothing about the
+     type did. */
+  row-gap: clamp(0.9rem, 1.3vw, 1.75rem);
+  padding: clamp(2.5rem, 7vh, 5.5rem) clamp(1.25rem, 5vw, 5rem);
+  color: inherit;
+  text-decoration: none;
+  /* Hairline between bands, in the band's own ink rather than a grey — a
+     neutral rule across six saturated grounds is the seam that gives a
+     flooded layout away. */
+  border-top: 1px solid color-mix(in oklab, var(--ink) 26%, transparent);
+}
+
+.room:first-child .link {
+  border-top: 0;
+}
+
+.link:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: -12px;
+}
+
+/* --------------------------------------------------------------- the numeral */
+
+.index {
+  grid-area: index;
+  align-self: start;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(0.75rem, 1vw, 0.875rem);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--ink-quiet);
+  /* Sits on the display type's first line rather than the grid's top edge. */
+  padding-top: 0.4em;
+}
+
+/* ------------------------------------------------------------ the room name */
+
+.nameCell {
+  grid-area: name;
+  /* Establishes the container the type is measured against. Sized by the grid
+     track (`minmax(0, 1fr)`), so its inline size is independent of the text
+     inside it and there is no cycle. */
+  container-type: inline-size;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  /*
+   * Sized against the COLUMN, not the viewport.
+   *
+   * `11.5vw` was the first attempt and it overflowed: the viewport does not
+   * know about the section's padding or the numeral and arrow rails, so the
+   * longest name ran past its own cell. Measured at 1440, "typography" is
+   * 7.19em wide — 1059px of text in a 1006px column, 53px over — and it was
+   * clipped rather than visibly broken only because the page hides horizontal
+   * overflow, which is the worst way for this to fail.
+   *
+   * 13.2cqw is that 7.19em ratio (100/7.19 = 13.9) with headroom, so the
+   * widest label fits its column at every width by construction rather than by
+   * a coefficient tuned against today's six names.
+   *
+   * Ceiling at 264px — GF Smith's own display clamp, which is far past
+   * comfortable and is the reason their pages read as posters.
+   */
+  font-size: clamp(1.75rem, 13.2cqw, 16.5rem);
+  font-weight: 800;
+  /* Below 1. At this size the leading is what makes it architecture rather
+     than a headline. */
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+  text-transform: lowercase;
+  color: var(--ink);
+  /*
+   * A descender channel, because a line box shorter than the type cannot
+   * contain one.
+   *
+   * At line-height 0.86 the box is 126.6px on 147.2px type, which puts the
+   * baseline 8.3px above the box floor while Unbounded's descenders reach
+   * 26.8px below it — measured, not estimated. The 18.5px difference is
+   * exactly what was landing on top of the body line, and it showed: the three
+   * rooms whose names have no descender (scales, visualizer, studio) looked
+   * clean while library, compose and typography did not.
+   *
+   * Reserved in em so it tracks the clamp, and reserved on every name rather
+   * than only the ones that need it — a channel that appears and disappears
+   * per label would move the body line band to band.
+   */
+  padding-bottom: 0.126em;
+}
+
+/* --------------------------------------------------------------- the one line */
+
+.line {
+  grid-area: line;
+  margin: 0;
+  max-width: 34rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: clamp(0.9375rem, 1.15vw, 1.125rem);
+  font-weight: 400;
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------- the receipt */
+
+/* Hidden until there is room for it — see the width query below, which is
+   also where it gets a row of its own. */
+.receipt {
+  display: none;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-quiet);
+  white-space: nowrap;
+}
+
+.ratio {
+  font-weight: 500;
+}
+
+.receiptNote {
+  opacity: 0.8;
+}
+
+/* ----------------------------------------------------------------- the arrow */
+
+.arrow {
+  grid-area: arrow;
+  align-self: end;
+  display: grid;
+  place-items: center;
+  width: clamp(2.5rem, 4vw, 3.5rem);
+  aspect-ratio: 1;
+  color: var(--ink);
+  border: 1px solid color-mix(in oklab, var(--ink) 40%, transparent);
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.arrow svg {
+  width: 45%;
+  height: 45%;
+}
+
+.room:hover .arrow,
+.room:focus-within .arrow {
+  transform: translateX(28%);
+}
+
+/* ---------------------------------------------------------------- the reveal */
+
+.willReveal {
+  opacity: 0;
+  /* clip-path rather than transform: the bands are full-bleed, and a
+     translated band briefly exposes the page behind its trailing edge. */
+  clip-path: inset(38% 0 0 0);
+}
+
+.isRevealing {
+  animation: band-in 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes band-in {
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ------------------------------------------------------------------ at width */
+
+@media (min-width: 60rem) {
+  .link {
+    grid-template-areas:
+      'index name    arrow'
+      'index line    arrow'
+      'index receipt arrow';
+  }
+
+  .receipt {
+    grid-area: receipt;
+    display: inline-flex;
+  }
+}
+
+/*
+ * Below this the band cannot be a poster, and the arrow is the thing to give
+ * up rather than the type: it is decorative — the whole band is already the
+ * link — while the display size is the entire idea. Dropping the rail returns
+ * roughly 56px to the column, which is what keeps the longest name inside it
+ * at 320px instead of 39px over.
+ */
+@media (max-width: 26rem) {
+  .arrow {
+    display: none;
+  }
+
+  .link {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'index name'
+      'index line';
+    column-gap: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room,
+  .arrow {
+    transition: none;
+  }
+
+  .willReveal {
+    opacity: 1;
+    clip-path: none;
+  }
+
+  .isRevealing {
+    animation: none;
+  }
+}

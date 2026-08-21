@@ -7,7 +7,7 @@ import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { RESTING_INTENSITY, rainIntensityAt, visibleDrops } from '@/lib/landing/rain';
 import { HeroHud } from './HeroHud';
 import { PaintRain } from './PaintRain';
-import { FeatureCards } from './FeatureCards';
+import { ColourRooms } from './ColourRooms';
 import styles from './landing.module.css';
 
 /**
@@ -137,7 +137,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
           <HeroHud ref={hudRef} />
         </div>
       </section>
-      <FeatureCards rooms={rooms} />
+      <ColourRooms rooms={rooms} />
       {credibility}
       {footer}
     </>
