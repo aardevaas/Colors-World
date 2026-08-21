@@ -18,10 +18,10 @@ import { ROOM_IDS } from '@/lib/nav/tabs';
 /** The full field. `intensity` selects how many of these are actually shown,
  *  so scrolling reveals more drops without ever remounting the layer.
  *
- *  Raised twice on request, 54 to 76 to 100 — the page wanted more weather
+ *  Raised on request, 54 → 76 → 100 → 150 — the page wanted more weather
  *  throughout, not a different curve. The shape of the ramp is unchanged; the
  *  quadratic still keeps the hero the sparse end. */
-export const MAX_DROPS = 100;
+export const MAX_DROPS = 150;
 
 /** Below this the layer is effectively off — used to skip work entirely. */
 export const MIN_VISIBLE_INTENSITY = 0.01;
@@ -66,7 +66,15 @@ export function buildDrops(count: number = MAX_DROPS): readonly Drop[] {
     const depth = hash(i, 5);
     // Size and speed are linked: a drop that is nearer should be bigger *and*
     // faster, or the parallax reads backwards.
-    const size = 7 + (1 - depth) * 15;
+    //
+    // The range runs from 2.5px to the same 22px ceiling as before, rather than
+    // the old 7px floor — the field wanted a real spread of sizes, and 7 to 22
+    // is under a factor of three, which reads as one size of drop slightly
+    // varied. The exponent biases the distribution toward the small end, the
+    // way depth of field actually works: a few drops near the glass and a great
+    // many far behind it. Linear interpolation gave a flat spread that looked
+    // sorted rather than deep.
+    const size = 2.5 + (1 - depth) ** 1.5 * 19.5;
 
     drops.push({
       // Golden-ratio (low-discrepancy) placement, not a hash.

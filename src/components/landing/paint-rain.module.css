@@ -7,10 +7,23 @@
  * needs to look like it was drawn.
  */
 
+/*
+ * Above every section, not just the hero.
+ *
+ * This sat at z-index 1 and was correct only until the page had anything below
+ * the fold: the rooms section is also 1 and comes later in the document, and
+ * the credibility strip and footer are 2, so all three painted straight over
+ * it. The rain was falling the whole time — it was simply behind the page from
+ * the first band onward.
+ *
+ * 3 clears all of them. Nothing is lost at the top, since the hero's own
+ * visuals and HUD live inside `.pinned`, which is a stacking context at 0, so
+ * the rain was already in front of them.
+ */
 .field {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
   overflow: hidden;
   /* Opacity is set inline from the intensity curve. */

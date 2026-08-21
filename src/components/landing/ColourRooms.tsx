@@ -74,17 +74,22 @@ const ROOM_LINE: Record<TabId, string> = {
 };
 
 /**
- * Which texture each room wears. A `Record` keyed by `TabId` rather than an
- * array or an `nth-child` rule, so adding a room is a type error here instead
- * of a band that silently comes out plain.
+ * Which pattern each room owns. A `Record` keyed by `TabId` rather than an array
+ * or an `nth-child` rule, so adding a room is a type error here instead of a
+ * band that silently comes out plain.
+ *
+ * Applied to the BAND, not to the texture layer. The ripple is a sibling of the
+ * texture rather than a child, so a pattern declared on the texture never
+ * reached it — which is why all six rooms used to ripple identically. On the
+ * band, both read the same source.
  */
-const ROOM_TEXTURE: Record<TabId, string | undefined> = {
-  library: styles.texDots,
-  compose: styles.texHatch,
-  scales: styles.texSteps,
-  visualizer: styles.texGrid,
-  typography: styles.texRules,
-  studio: styles.texGrain,
+const ROOM_PATTERN: Record<TabId, string | undefined> = {
+  library: styles.patDots,
+  compose: styles.patHatch,
+  scales: styles.patSteps,
+  visualizer: styles.patGrid,
+  typography: styles.patRules,
+  studio: styles.patGrain,
 };
 
 export function ColourRooms({ rooms }: ColourRoomsProps) {
@@ -122,7 +127,7 @@ export function ColourRooms({ rooms }: ColourRoomsProps) {
           return (
             <li
               key={room.room}
-              className={styles.room}
+              className={`${styles.room} ${ROOM_PATTERN[tab.id] ?? ''}`}
               style={
                 {
                   // The pair, and nothing else. Every rule below this point
@@ -135,13 +140,11 @@ export function ColourRooms({ rooms }: ColourRoomsProps) {
                 } as React.CSSProperties
               }
             >
-              <span
-                className={`${styles.texture} ${ROOM_TEXTURE[tab.id] ?? ''}`}
-                aria-hidden="true"
-              />
+              <span className={styles.texture} aria-hidden="true" />
 
-              {/* Rings spread from the pointer, spaced to this room's own
-                  texture — the period travels down as `--tex-period`. */}
+              {/* A ring of this room's own pattern, spreading from the
+                  pointer — both layers read `--pattern-image` /
+                  `--ripple-image` off the band. */}
               <span className={styles.ripple} aria-hidden="true">
                 <span className={styles.wave} />
                 <span className={styles.wave} />

@@ -62,6 +62,31 @@ describe('buildDrops — the field itself', () => {
     }
   });
 
+  it('never lets a deeper drop be the larger one', () => {
+    // The relational form of the rule above, and the one that actually holds
+    // whatever the size range is. The thresholds in the previous test encode
+    // the current 2.5-22px range and would need revisiting if it moved again;
+    // this does not.
+    const byDepth = [...buildDrops()].sort((a, b) => a.depth - b.depth);
+    for (let i = 1; i < byDepth.length; i += 1) {
+      const nearer = byDepth[i - 1];
+      const further = byDepth[i];
+      if (nearer === undefined || further === undefined) continue;
+      expect(further.size).toBeLessThanOrEqual(nearer.size);
+    }
+  });
+
+  it('spans a real range of sizes rather than one size varied', () => {
+    const sizes = buildDrops().map((d) => d.size);
+    const smallest = Math.min(...sizes);
+    const largest = Math.max(...sizes);
+
+    expect(smallest).toBeLessThan(3.5);
+    expect(largest).toBeGreaterThan(20);
+    // Comfortably past the factor of three the old 7-22px range gave.
+    expect(largest / smallest).toBeGreaterThan(5);
+  });
+
   it('assigns every drop a real room', () => {
     for (const drop of buildDrops()) {
       expect(drop.roomIndex).toBeGreaterThanOrEqual(0);

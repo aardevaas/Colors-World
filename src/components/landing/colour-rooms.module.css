@@ -105,8 +105,11 @@
   /* Width-relative, not vh. The rhythm being spaced here is horizontal type,
      so tying it to viewport height made the gap change when nothing about the
      type did. */
-  row-gap: clamp(0.9rem, 1.3vw, 1.75rem);
-  padding: clamp(2.5rem, 7vh, 5.5rem) clamp(1.25rem, 5vw, 5rem);
+  row-gap: clamp(0.7rem, 0.95vw, 1.25rem);
+  /* Vertical padding cut roughly in half — the bands were reading as too tall.
+     The horizontal measure is untouched: that one sets the column the display
+     type is sized against, and narrowing it would shrink the type with it. */
+  padding: clamp(1.35rem, 3.2vh, 2.75rem) clamp(1.25rem, 5vw, 5rem);
   color: inherit;
   text-decoration: none;
   /* Hairline between bands, in the band's own ink rather than a grey — a
@@ -124,27 +127,31 @@
   outline-offset: -12px;
 }
 
-/* --------------------------------------------------------------- the texture */
+/* --------------------------------------------- the pattern, and its ripple */
 
 /*
- * One texture per room, drawn in that room's own ink, drifting continuously,
- * and rippling under the pointer.
+ * Each room owns a pattern, declared once on the band and read twice: by the
+ * texture layer that drifts across it, and by the ripple that spreads from the
+ * pointer.
  *
- * THE INK. Built from `--ink` through `color-mix` rather than from a grey or an
- * image, so each texture turns with its band on hover without a second rule.
- * Alphas are held low: the contrast guarantee in `room-theme.ts` is between the
- * ink and the GROUND, and a texture dense enough to shift the effective local
- * background would quietly invalidate the ratio the band prints on itself.
+ * Declaring it on the BAND rather than on the texture element is what makes the
+ * second reader possible — the ripple is a sibling of the texture, not a child,
+ * so custom properties set on the texture never reached it. That is why every
+ * room used to ripple in the same concentric rings with only the spacing
+ * changed. Now the disturbance is made of the room's own pattern: the dots
+ * room ripples in dots, the hatched room in hatching, the ruled room in rules.
+ *
+ * THE INK. Patterns are built from `--ink` through `color-mix`, so each turns
+ * with its band on hover without a second rule. Alphas are held low: the
+ * contrast guarantee in `room-theme.ts` is between the ink and the GROUND, and
+ * a texture dense enough to shift the effective local background would quietly
+ * invalidate the ratio the band prints on itself. The ripple may run stronger,
+ * because it is transient and never sits under the type for long.
  *
  * THE DRIFT. Every texture translates by exactly one of its own pattern periods
- * and then repeats, which is what makes the loop invisible — land on any other
- * distance and the pattern jumps at the seam. That is why each class declares
- * `--drift-x`/`--drift-y` in terms of its own geometry rather than sharing one
- * number. Transform only, so this is compositor work and never repaints.
- *
- * THE PERIOD. `--tex-period` is each texture's own repeat distance. The ripple
- * reads it, so the rings that spread from the pointer are spaced to match the
- * texture they are disturbing rather than being the same ripple six times.
+ * and then repeats, which is what makes the loop invisible — any other distance
+ * and the pattern jumps at the seam. Transform only, so this is compositor work
+ * and never repaints.
  */
 .texture {
   position: absolute;
@@ -153,109 +160,18 @@
   inset: -64px;
   z-index: 0;
   pointer-events: none;
-  animation: drift var(--drift-time, 18s) linear infinite;
+  background-image: var(--pattern-image);
+  background-size: var(--pattern-size, auto);
+  mix-blend-mode: var(--pattern-blend, normal);
+  opacity: var(--pattern-opacity, 1);
+  animation: var(--drift-name, drift) var(--drift-time, 18s)
+    var(--drift-timing, linear) infinite;
 }
 
 @keyframes drift {
   to {
     transform: translate3d(var(--drift-x, 0), var(--drift-y, 0), 0);
   }
-}
-
-/* library — halftone. Tiny marks, so a higher alpha still covers little area. */
-.texDots {
-  --tex-period: 17px;
-  --drift-x: -17px;
-  --drift-y: -17px;
-  --drift-time: 19s;
-  background-image: radial-gradient(
-    color-mix(in oklab, var(--ink) 22%, transparent) 1.4px,
-    transparent 1.5px
-  );
-  background-size: 17px 17px;
-}
-
-/* compose — hatching, as in a drawing being worked up.
-   The drift runs perpendicular to the stripes: moving ALONG a 45deg pattern
-   shifts it by nothing, so (P/√2, -P/√2) is the smallest visible step that
-   still lands exactly one period on. */
-.texHatch {
-  --tex-period: 9px;
-  --drift-x: 6.364px;
-  --drift-y: -6.364px;
-  --drift-time: 7s;
-  background-image: repeating-linear-gradient(
-    45deg,
-    color-mix(in oklab, var(--ink) 13%, transparent) 0 1px,
-    transparent 1px 9px
-  );
-}
-
-/* scales — even bands, the ramp the room builds. Drifts down, like a ramp
-   being read from the top. */
-.texSteps {
-  --tex-period: 24px;
-  --drift-x: 0px;
-  --drift-y: 24px;
-  --drift-time: 14s;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--ink) 9%, transparent) 0 12px,
-    transparent 12px 24px
-  );
-}
-
-/* visualizer — graph paper, since the room plots things. Slowest of the six: a
-   grid drifting at any speed reads as the page itself sliding. */
-.texGrid {
-  --tex-period: 34px;
-  --drift-x: -34px;
-  --drift-y: -34px;
-  --drift-time: 26s;
-  background-image:
-    repeating-linear-gradient(
-      to right,
-      color-mix(in oklab, var(--ink) 10%, transparent) 0 1px,
-      transparent 1px 34px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--ink) 10%, transparent) 0 1px,
-      transparent 1px 34px
-    );
-}
-
-/* typography — ruled paper: a baseline every 13px, a heavier rule every fourth.
-   Drifts by 52px, the larger of the two periods and a multiple of the smaller,
-   so both gradients land back in phase together. */
-.texRules {
-  --tex-period: 13px;
-  --drift-x: 0px;
-  --drift-y: -52px;
-  --drift-time: 18s;
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--ink) 16%, transparent) 0 1px,
-      transparent 1px 52px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--ink) 7%, transparent) 0 1px,
-      transparent 1px 13px
-    );
-}
-
-/* studio — grain. The one texture that cannot read the ink: an SVG filter takes
-   no custom properties, so it is neutral noise over a blend mode instead, which
-   works on any colour. Jitters in discrete steps rather than drifting, because
-   film grain that slides looks like a moving photograph of grain. */
-.texGrain {
-  --tex-period: 22px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
-  opacity: 0.5;
-  animation: grain-jitter 700ms steps(1, end) infinite;
 }
 
 @keyframes grain-jitter {
@@ -266,15 +182,148 @@
   80% { transform: translate3d(5px, 9px, 0); }
 }
 
+/* ------------------------------------------------------------- the six rooms */
+
+/* library — halftone. Tiny marks, so a higher alpha still covers little area. */
+.patDots {
+  --pattern-image: radial-gradient(
+    color-mix(in oklab, var(--ink) 22%, transparent) 1.4px,
+    transparent 1.5px
+  );
+  --pattern-size: 17px 17px;
+  --ripple-image: radial-gradient(
+    color-mix(in oklab, var(--ink) 46%, transparent) 2.2px,
+    transparent 2.3px
+  );
+  --ripple-size: 17px 17px;
+  --drift-x: -17px;
+  --drift-y: -17px;
+  --drift-time: 19s;
+}
+
+/* compose — hatching, as in a drawing being worked up.
+   The drift runs perpendicular to the stripes: moving ALONG a 45deg pattern
+   shifts it by nothing, so (P/√2, -P/√2) is the smallest visible step that
+   still lands exactly one period on. */
+.patHatch {
+  --pattern-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--ink) 13%, transparent) 0 1px,
+    transparent 1px 9px
+  );
+  --ripple-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--ink) 34%, transparent) 0 2.2px,
+    transparent 2.2px 9px
+  );
+  --drift-x: 6.364px;
+  --drift-y: -6.364px;
+  --drift-time: 7s;
+}
+
+/* scales — even bands, the ramp the room builds. Drifts down, like a ramp read
+   from the top; ripples as a thicker band cutting across it. */
+.patSteps {
+  --pattern-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--ink) 9%, transparent) 0 12px,
+    transparent 12px 24px
+  );
+  --ripple-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--ink) 30%, transparent) 0 5px,
+    transparent 5px 24px
+  );
+  --drift-x: 0px;
+  --drift-y: 24px;
+  --drift-time: 14s;
+}
+
+/* visualizer — graph paper, since the room plots things. Slowest of the six: a
+   grid drifting at any speed reads as the page itself sliding. */
+.patGrid {
+  --pattern-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklab, var(--ink) 10%, transparent) 0 1px,
+      transparent 1px 34px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink) 10%, transparent) 0 1px,
+      transparent 1px 34px
+    );
+  --ripple-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklab, var(--ink) 32%, transparent) 0 1.8px,
+      transparent 1.8px 34px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink) 32%, transparent) 0 1.8px,
+      transparent 1.8px 34px
+    );
+  --drift-x: -34px;
+  --drift-y: -34px;
+  --drift-time: 26s;
+}
+
+/* typography — ruled paper: a baseline every 13px, a heavier rule every fourth.
+   Drifts by 52px, the larger period and a multiple of the smaller, so both
+   gradients land back in phase together. */
+.patRules {
+  --pattern-image:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink) 16%, transparent) 0 1px,
+      transparent 1px 52px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink) 7%, transparent) 0 1px,
+      transparent 1px 13px
+    );
+  --ripple-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--ink) 34%, transparent) 0 2px,
+    transparent 2px 13px
+  );
+  --drift-x: 0px;
+  --drift-y: -52px;
+  --drift-time: 18s;
+}
+
+/* studio — grain. The one pattern that cannot read the ink: an SVG filter takes
+   no custom properties, so it is neutral noise over a blend mode instead, which
+   works on any colour. Jitters in discrete steps rather than drifting, because
+   film grain that slides looks like a moving photograph of grain. */
+.patGrain {
+  --pattern-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  --pattern-blend: overlay;
+  --pattern-opacity: 0.5;
+  --ripple-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='4'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E");
+  --ripple-blend: overlay;
+  --drift-name: grain-jitter;
+  --drift-time: 700ms;
+  --drift-timing: steps(1, end);
+}
+
 /* ---------------------------------------------------------------- the ripple */
 
 /*
- * Rings spreading from the pointer, spaced to the texture underneath.
+ * A ring of the room's own pattern, spreading from the pointer.
+ *
+ * The mask is an annulus rather than a disc, so what travels outward is a band
+ * of disturbance — the pattern either side of it stays as it was, which is what
+ * a ripple actually looks like. Scaling the whole element carries the pattern
+ * with it, so the ring magnifies as it goes and the disturbance reads as a
+ * bulge passing through the surface.
  *
  * Follows the cursor on `--rx`/`--ry`, written by `use-texture-ripple.ts` on
  * whichever band the pointer is over. Transform and opacity only — the puck is
  * a fixed-size element that moves, rather than a full-bleed gradient repainting
- * its centre point, which is the version of this that costs a frame.
+ * its own centre point, which is the version of this that costs a frame.
  *
  * `--ripple` is pointer speed, so the disturbance answers how hard the surface
  * was stirred rather than merely where.
@@ -296,23 +345,27 @@
 }
 
 .room:hover .ripple {
-  opacity: calc(0.35 + var(--ripple, 0) * 0.65);
+  opacity: calc(0.4 + var(--ripple, 0) * 0.6);
 }
 
 .wave {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  background: repeating-radial-gradient(
+  background-image: var(--ripple-image);
+  background-size: var(--ripple-size, auto);
+  mix-blend-mode: var(--ripple-blend, normal);
+  -webkit-mask-image: radial-gradient(
     circle at 50% 50%,
-    transparent 0 calc(var(--tex-period, 18px) * 0.5),
-    color-mix(in oklab, var(--ink) 30%, transparent) calc(var(--tex-period, 18px) * 0.5)
-      calc(var(--tex-period, 18px) * 0.72),
-    transparent calc(var(--tex-period, 18px) * 0.72) var(--tex-period, 18px)
+    transparent 0 26%,
+    #000 38% 52%,
+    transparent 66%
   );
-  /* Falls off well before the edge, so the puck has no rim to give it away. */
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 62%);
-  mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 62%);
+  mask-image: radial-gradient(
+    circle at 50% 50%,
+    transparent 0 26%,
+    #000 38% 52%,
+    transparent 66%
+  );
   animation: ripple-out 2600ms linear infinite;
 }
 
@@ -324,14 +377,14 @@
 
 @keyframes ripple-out {
   0% {
-    transform: scale(0.35);
+    transform: scale(0.3);
     opacity: 0;
   }
   22% {
     opacity: 1;
   }
   100% {
-    transform: scale(1.5);
+    transform: scale(1.55);
     opacity: 0;
   }
 }
