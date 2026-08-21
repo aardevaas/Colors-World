@@ -1,16 +1,23 @@
 /*
  * The prismatic pill, after "Button 02.mp4".
  *
- * Rest is deliberately almost nothing — a dark pill and a hairline. All the
- * colour arrives on hover, and the jump between the two is the effect. Pure
- * CSS and SVG; the only JS is none at all.
+ * Re-read from a 10fps close crop after the first attempt was wrong. The
+ * reference is NOT a light streak travelling across the button — nothing in it
+ * slides. It is three fixed things that breathe and undulate in place:
+ *
+ *   1. A large warm-white mass anchored at the left end, filling roughly a
+ *      third of the pill.
+ *   2. A large cyan mass anchored at the right end, doing the same.
+ *   3. A thin chromatic filament snaking between the two, dispersed into
+ *      rainbow edges. This is the only element that really moves, and it
+ *      wriggles rather than travels.
+ *
+ * Building it as a translating stroke is what produced the "passive left to
+ * right pass" with visible cut-offs at each end: a line that moves across has
+ * to enter and leave, and the reference's light never does either.
  */
 
 .button {
-  /* No padding here. The face owns the pill's geometry; the wrapper exists
-     only to carry the pill's outer geometry. Giving both padding, and having the face
-     inherit it back with a negative margin, made the label wider than the pill
-     it sits in. */
   position: relative;
   display: inline-block;
   border-radius: 999px;
@@ -18,8 +25,6 @@
   isolation: isolate;
   -webkit-tap-highlight-color: transparent;
 }
-
-/* --------------------------------------------------------------- the face */
 
 .face {
   position: relative;
@@ -31,17 +36,13 @@
   padding: 0.95rem 1.9rem;
   border-radius: inherit;
   overflow: hidden;
-  background: oklch(16% 0.012 275);
+  background: oklch(13% 0.01 275);
   border: 1px solid oklch(100% 0 0 / 0.14);
-  transition:
-    border-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    background 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 260ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.button:hover .face,
-.button:focus-visible .face {
-  border-color: oklch(100% 0 0 / 0.28);
-  background: oklch(18% 0.014 275);
+.button:hover .face {
+  border-color: oklch(100% 0 0 / 0.3);
 }
 
 .button:focus-visible {
@@ -49,20 +50,66 @@
   outline-offset: 3px;
 }
 
-/* ------------------------------------------------------------- the ribbon */
+/* ------------------------------------------------------- the anchored light */
 
-.ribbon {
+.glowLeft,
+.glowRight {
   position: absolute;
-  border-radius: inherit;
+  top: -60%;
+  bottom: -60%;
+  width: 72%;
   pointer-events: none;
-  opacity: 1;
+  z-index: 0;
+  mix-blend-mode: screen;
+  /* Breathes in place. Never translates horizontally — that was the bug. */
+  animation: breathe 6.5s ease-in-out infinite alternate;
 }
 
-/* Inside the pill: the sharp core, clipped to the face. */
-.ribbon {
+.glowLeft {
+  left: -14%;
+  background: radial-gradient(
+    58% 50% at 38% 50%,
+    oklch(100% 0.02 95 / 1) 0%,
+    oklch(96% 0.13 80 / 0.92) 24%,
+    oklch(82% 0.2 50 / 0.6) 44%,
+    oklch(68% 0.21 32 / 0.28) 60%,
+    transparent 78%
+  );
+}
+
+.glowRight {
+  right: -14%;
+  animation-delay: -3.2s;
+  background: radial-gradient(
+    58% 50% at 62% 50%,
+    oklch(100% 0.03 205 / 1) 0%,
+    oklch(92% 0.15 215 / 0.94) 26%,
+    oklch(76% 0.2 235 / 0.64) 46%,
+    oklch(62% 0.22 260 / 0.3) 62%,
+    transparent 80%
+  );
+}
+
+@keyframes breathe {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 0.94;
+  }
+  100% {
+    transform: scale(1.09) translateY(-3%);
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------- the filament */
+
+.filament {
+  position: absolute;
   inset: 0;
+  z-index: 1;
+  pointer-events: none;
   overflow: hidden;
-  z-index: 0;
+  border-radius: inherit;
 }
 
 .svg {
@@ -70,8 +117,6 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  /* Screen, not normal: the ribbon is light passing through, so it should only
-     ever add to what is under it and never darken the label. */
   mix-blend-mode: screen;
 }
 
@@ -80,48 +125,75 @@
 .strokeCore {
   fill: none;
   stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
+  /* The path morphs between four shapes that share a command structure, so the
+     filament wriggles where it is instead of sliding past. */
+  animation: snake 7.4s ease-in-out infinite alternate;
 }
 
 .strokeWide {
-  stroke-width: 26;
-  opacity: 0.5;
-  filter: blur(7px);
+  stroke-width: 17;
+  opacity: 0.72;
+  filter: blur(6px);
 }
 
 .strokeMid {
-  stroke-width: 11;
-  opacity: 0.85;
-  filter: blur(2.5px);
+  stroke-width: 6.5;
+  opacity: 1;
+  filter: blur(1.6px);
+  animation-delay: -0.15s;
 }
 
 .strokeCore {
-  stroke: oklch(99% 0.01 220);
-  stroke-width: 2.4;
-  opacity: 0.95;
-  filter: blur(0.6px);
+  stroke: oklch(99% 0.008 220);
+  stroke-width: 1.9;
+  opacity: 1;
+  animation-delay: -0.3s;
 }
 
-/* The sweep runs continuously rather than on hover, and alternates rather
-   than looping, so there is no jump when it restarts. */
-.svg {
-  animation: sweep 5.2s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
-}
-
-@keyframes sweep {
+@keyframes snake {
   0% {
-    transform: translate3d(-38%, 6%, 0);
+    d: path('M -6 40 C 34 46, 62 16, 104 24 S 168 48, 206 18');
+  }
+  33% {
+    d: path('M -6 34 C 34 22, 62 44, 104 34 S 168 22, 206 40');
+  }
+  66% {
+    d: path('M -6 44 C 34 34, 62 24, 104 44 S 168 34, 206 26');
   }
   100% {
-    transform: translate3d(38%, -6%, 0);
+    d: path('M -6 28 C 34 44, 62 30, 104 18 S 168 44, 206 32');
   }
+}
+
+/* A spectral fringe along the upper edge — the pill's own rim catching light,
+   which is a distinct feature of the reference rather than spill from the
+   masses inside it. */
+.fringe {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    103deg,
+    oklch(72% 0.2 30 / 0.7) 0%,
+    oklch(88% 0.16 90 / 0.6) 9%,
+    oklch(84% 0.17 150 / 0.5) 17%,
+    transparent 34%,
+    transparent 66%,
+    oklch(80% 0.16 220 / 0.5) 82%,
+    oklch(70% 0.2 265 / 0.6) 94%
+  );
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 2px, transparent 2px);
+  mask-image: linear-gradient(to bottom, #000 0 2px, transparent 2px);
+  mix-blend-mode: screen;
 }
 
 /* --------------------------------------------------------------- the label */
 
 .label {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
@@ -130,11 +202,17 @@
   font-weight: 600;
   letter-spacing: -0.005em;
   white-space: nowrap;
-  color: oklch(97% 0.003 265);
+  color: oklch(99% 0.002 265);
+  /* Sits over a bright field at both ends, so it carries its own dark halo. */
+  text-shadow: 0 1px 10px oklch(15% 0.02 265 / 0.75);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .svg {
+  .glowLeft,
+  .glowRight,
+  .strokeWide,
+  .strokeMid,
+  .strokeCore {
     animation: none;
   }
 }

@@ -7,24 +7,19 @@ import styles from './prism-button.module.css';
 /**
  * The prismatic pill, after "Button 02.mp4".
  *
- * The reference has two distinct states, and the contrast between them is the
- * whole effect:
+ * Rebuilt from a 10fps close crop of the reference, because the first version
+ * had the mechanism wrong. Nothing in that clip slides. It is a warm-white mass
+ * anchored at the left end, a cyan mass anchored at the right, and a thin
+ * dispersed filament wriggling between them — all fixed in place, breathing.
  *
- *  - At rest, almost nothing: a dark pill, a hairline border, white label. Read
- *    from the frames rather than assumed — several seconds of that clip are a
- *    plain button with no colour in it at all.
- *  - A ribbon of white-hot light sweeps through on an S-curve, split into
- *    spectral edges (warm on one side, cyan on the other) the way light
- *    disperses through a prism.
+ * A travelling stroke is what produced the "passive left to right pass" with a
+ * visible cut-off: a line that crosses the button must enter and exit, and the
+ * reference's light does neither.
  *
- * The ribbon is an SVG path stroked with a spectral gradient and blurred, not a
- * CSS gradient sweep: it has to *curve*, and a linear-gradient can only ever
- * travel in a straight line.
- *
- * Two deliberate departures from the reference, both by instruction: the light
- * runs constantly rather than only on hover, and it is clipped strictly to the
- * pill. The reference blooms past its own edge; a second blurred copy behind
- * the button used to do that here and has been removed.
+ * The dispersion is three strokes on the same path — a wide soft body, a mid
+ * band and a thin white core — with the two outer ones carrying a spectral
+ * gradient. That is what separates into rainbow edges rather than reading as a
+ * single coloured line.
  */
 
 interface PrismButtonProps {
@@ -33,9 +28,9 @@ interface PrismButtonProps {
   readonly className?: string;
 }
 
-/** The S the light travels. Drawn in a 200x56 viewBox and stretched, so the
- *  curve keeps its shape whatever the button's width turns out to be. */
-const RIBBON_PATH = 'M -14 44 C 26 46, 44 16, 84 20 S 150 44, 214 12';
+/** Matches the first `snake` keyframe. Kept as an attribute as well as in CSS
+ *  so the filament still draws if `d` animation is unsupported. */
+const RIBBON_PATH = 'M -6 40 C 34 46, 62 16, 104 24 S 168 48, 206 18';
 
 export function PrismButton({ href, children, className }: PrismButtonProps) {
   return (
@@ -44,44 +39,39 @@ export function PrismButton({ href, children, className }: PrismButtonProps) {
       className={className === undefined ? styles.button : `${styles.button} ${className}`}
     >
       <span className={styles.face}>
-        <span className={styles.ribbon} aria-hidden="true">
-          <Ribbon />
+        <span className={styles.glowLeft} aria-hidden="true" />
+        <span className={styles.glowRight} aria-hidden="true" />
+        <span className={styles.filament} aria-hidden="true">
+          <svg
+            className={styles.svg}
+            viewBox="0 0 200 56"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <defs>
+              <linearGradient id="prism-spectrum" x1="0" y1="0" x2="1" y2="0">
+                {/* Dispersion order, warm through white to cool — the sequence
+                    light actually separates into. A symmetrical rainbow reads
+                    as a generic gradient instead. */}
+                <stop offset="0%" stopColor="oklch(72% 0.21 30)" />
+                <stop offset="14%" stopColor="oklch(86% 0.18 85)" />
+                <stop offset="28%" stopColor="oklch(84% 0.17 150)" />
+                <stop offset="46%" stopColor="oklch(99% 0.02 220)" />
+                <stop offset="64%" stopColor="oklch(90% 0.12 210)" />
+                <stop offset="82%" stopColor="oklch(76% 0.18 240)" />
+                <stop offset="100%" stopColor="oklch(66% 0.21 285)" />
+              </linearGradient>
+            </defs>
+            <path d={RIBBON_PATH} className={styles.strokeWide} stroke="url(#prism-spectrum)" />
+            <path d={RIBBON_PATH} className={styles.strokeMid} stroke="url(#prism-spectrum)" />
+            <path d={RIBBON_PATH} className={styles.strokeCore} />
+          </svg>
         </span>
+        <span className={styles.fringe} aria-hidden="true" />
         <span className={styles.label}>{children}</span>
       </span>
     </Link>
-  );
-}
-
-function Ribbon() {
-  const id = 'prism-core';
-  return (
-    <svg
-      className={styles.svg}
-      viewBox="0 0 200 56"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <linearGradient id={`${id}-grad`} x1="0" y1="0" x2="1" y2="0">
-          {/* Warm at the leading edge through white at the core to cyan at the
-              trailing edge — the dispersion order light actually separates in,
-              which is what stops it reading as a generic rainbow wipe. */}
-          <stop offset="0%" stopColor="oklch(70% 0.21 30)" />
-          <stop offset="18%" stopColor="oklch(84% 0.18 85)" />
-          <stop offset="38%" stopColor="oklch(97% 0.03 200)" />
-          <stop offset="58%" stopColor="oklch(92% 0.09 210)" />
-          <stop offset="78%" stopColor="oklch(74% 0.19 245)" />
-          <stop offset="100%" stopColor="oklch(66% 0.2 285)" />
-        </linearGradient>
-      </defs>
-      {/* Three passes at decreasing width: a wide soft body, a mid band, and a
-          thin white core. One stroke alone reads as a flat painted line. */}
-      <path d={RIBBON_PATH} className={styles.strokeWide} stroke={`url(#${id}-grad)`} />
-      <path d={RIBBON_PATH} className={styles.strokeMid} stroke={`url(#${id}-grad)`} />
-      <path d={RIBBON_PATH} className={styles.strokeCore} />
-    </svg>
   );
 }
 
