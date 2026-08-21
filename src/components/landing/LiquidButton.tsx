@@ -186,13 +186,18 @@ export function LiquidButton({ href, children, external = false, className }: Li
       className={className === undefined ? styles.button : `${styles.button} ${className}`}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
     >
-      {/* The underside sits behind the face in Z. Tilting then reveals an edge,
-          which is what makes the pill read as a solid rather than a sheet. */}
-      <span className={styles.underside} aria-hidden="true" />
+      {/* The underside must live INSIDE the rotating group, not beside it. As a
+          static plane in the parent it stayed flat while the face turned, so
+          the face's far edge dipped behind it and the plane cut straight
+          through — which is what showed up as a slab covering half the label.
+          Rotated together, it stays directly behind the face at every angle. */}
       <span className={styles.tilt}>
-        {field}
-        <span className={styles.gloss} aria-hidden="true" />
-        <span className={styles.label}>{children}</span>
+        <span className={styles.underside} aria-hidden="true" />
+        <span className={styles.face}>
+          {field}
+          <span className={styles.gloss} aria-hidden="true" />
+          <span className={styles.label}>{children}</span>
+        </span>
       </span>
     </a>
   );

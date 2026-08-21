@@ -8,7 +8,7 @@
 
 .button {
   /* No padding here. The face owns the pill's geometry; the wrapper exists
-     only to host the bloom behind it. Giving both padding, and having the face
+     only to carry the pill's outer geometry. Giving both padding, and having the face
      inherit it back with a negative margin, made the label wider than the pill
      it sits in. */
   position: relative;
@@ -51,13 +51,11 @@
 
 /* ------------------------------------------------------------- the ribbon */
 
-.ribbon,
-.bloom {
+.ribbon {
   position: absolute;
   border-radius: inherit;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 1;
 }
 
 /* Inside the pill: the sharp core, clipped to the face. */
@@ -65,24 +63,6 @@
   inset: 0;
   overflow: hidden;
   z-index: 0;
-}
-
-/* Behind the pill: the same ribbon, blown out, so colour spills past the edge
-   the way it does in the reference rather than stopping dead at the border. */
-.bloom {
-  inset: -40% -14%;
-  z-index: 0;
-  filter: blur(22px) saturate(1.5);
-}
-
-.button:hover .ribbon,
-.button:focus-visible .ribbon {
-  opacity: 1;
-}
-
-.button:hover .bloom,
-.button:focus-visible .bloom {
-  opacity: 0.85;
 }
 
 .svg {
@@ -122,11 +102,10 @@
   filter: blur(0.6px);
 }
 
-/* The sweep. The ribbon travels across and the whole group drifts vertically,
-   so the S never repeats at the same height twice in a row. */
-.button:hover .svg,
-.button:focus-visible .svg {
-  animation: sweep 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+/* The sweep runs continuously rather than on hover, and alternates rather
+   than looping, so there is no jump when it restarts. */
+.svg {
+  animation: sweep 5.2s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
 }
 
 @keyframes sweep {
@@ -155,8 +134,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .button:hover .svg,
-  .button:focus-visible .svg {
+  .svg {
     animation: none;
   }
 }

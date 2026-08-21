@@ -13,14 +13,18 @@ import styles from './prism-button.module.css';
  *  - At rest, almost nothing: a dark pill, a hairline border, white label. Read
  *    from the frames rather than assumed — several seconds of that clip are a
  *    plain button with no colour in it at all.
- *  - On hover, a ribbon of white-hot light sweeps through on an S-curve, split
- *    into spectral edges (warm on one side, cyan on the other) the way light
- *    disperses through a prism, and blooms past the pill's own edge.
+ *  - A ribbon of white-hot light sweeps through on an S-curve, split into
+ *    spectral edges (warm on one side, cyan on the other) the way light
+ *    disperses through a prism.
  *
  * The ribbon is an SVG path stroked with a spectral gradient and blurred, not a
  * CSS gradient sweep: it has to *curve*, and a linear-gradient can only ever
- * travel in a straight line. Two copies — a sharp one inside the pill and a
- * heavily blurred one behind it — give the core and the bloom.
+ * travel in a straight line.
+ *
+ * Two deliberate departures from the reference, both by instruction: the light
+ * runs constantly rather than only on hover, and it is clipped strictly to the
+ * pill. The reference blooms past its own edge; a second blurred copy behind
+ * the button used to do that here and has been removed.
  */
 
 interface PrismButtonProps {
@@ -39,9 +43,6 @@ export function PrismButton({ href, children, className }: PrismButtonProps) {
       href={href}
       className={className === undefined ? styles.button : `${styles.button} ${className}`}
     >
-      <span className={styles.bloom} aria-hidden="true">
-        <Ribbon blurred />
-      </span>
       <span className={styles.face}>
         <span className={styles.ribbon} aria-hidden="true">
           <Ribbon />
@@ -52,8 +53,8 @@ export function PrismButton({ href, children, className }: PrismButtonProps) {
   );
 }
 
-function Ribbon({ blurred = false }: { readonly blurred?: boolean }) {
-  const id = blurred ? 'prism-bloom' : 'prism-core';
+function Ribbon() {
+  const id = 'prism-core';
   return (
     <svg
       className={styles.svg}
