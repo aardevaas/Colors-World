@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { roomPalette, seedHueFromRandom } from '@/lib/landing/room-palette';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
+import { RESTING_INTENSITY, rainIntensityAt, visibleDrops } from '@/lib/landing/rain';
 import { HeroHud } from './HeroHud';
 import { PaintRain } from './PaintRain';
 import { FeatureCards } from './FeatureCards';
@@ -43,9 +44,6 @@ interface LandingExperienceProps {
 // it was half a screen of empty space between the title and the rooms.
 const SECTION_HEIGHT_VH = 100;
 
-/** How hard it rains at the top of the page. Low on purpose — the brief is
- *  "very very lightly" until the visitor starts scrolling. */
-const RESTING_RAIN = 0.34;
 
 /** Stable on the server, replaced on mount. Randomising during render would
  *  hand the server and the client different colours and break hydration. */
@@ -55,6 +53,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
   const sectionRef = useRef<HTMLElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
   const [motionEnabled, setMotionEnabled] = useState(true);
+  const [rainCount, setRainCount] = useState(() => visibleDrops(RESTING_INTENSITY));
   const [seedHue, setSeedHue] = useState(INITIAL_SEED_HUE);
 
   useEffect(() => {
@@ -76,26 +75,49 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
     return () => query.removeEventListener('change', handleChange);
   }, []);
 
-  const scrollRef = useScrollProgress(sectionRef, motionEnabled);
-
-  // Written straight to CSS variables from a frame loop rather than held in
-  // React state: this changes every frame while scrolling, and re-rendering
-  // the tree that often to fade some text would cost more than the shader does.
+  /*
+   * One loop drives the whole sequence: the hero fades out, and the rain comes
+   * up to replace it.
+   *
+   * Progress is measured in viewports scrolled from the top, not as a fraction
+   * of the hero section. That matters — `useScrollProgress` divides by
+   * (sectionHeight - viewportHeight), and the hero is exactly one viewport tall
+   * since the globe was removed, so it was returning a flat 0 and the fade had
+   * silently stopped happening at all.
+   *
+   * The fade goes straight to CSS variables rather than React state, because it
+   * changes every frame. The rain cannot: how many drops exist is a render
+   * decision. So it is quantised to the drop count and only committed when that
+   * integer actually changes — around fifty renders across the whole page
+   * instead of one per frame.
+   */
   useEffect(() => {
     if (!motionEnabled) return;
     let frame = 0;
+    let lastCount = -1;
+
     function tick() {
       frame = requestAnimationFrame(tick);
+      const viewports = window.scrollY / Math.max(1, window.innerHeight);
+
       const hud = hudRef.current;
-      if (hud === null) return;
-      const fade = resolveHudFade(scrollRef.current?.progress ?? 0);
-      hud.style.setProperty('--copy-opacity', String(fade.copyOpacity));
-      hud.style.setProperty('--cue-opacity', String(fade.cueOpacity));
-      hud.style.setProperty('--copy-pointer', fade.copyPointerEvents);
+      if (hud !== null) {
+        const fade = resolveHudFade(viewports);
+        hud.style.setProperty('--copy-opacity', String(fade.copyOpacity));
+        hud.style.setProperty('--cue-opacity', String(fade.cueOpacity));
+        hud.style.setProperty('--copy-pointer', fade.copyPointerEvents);
+      }
+
+      const next = visibleDrops(rainIntensityAt(viewports));
+      if (next !== lastCount) {
+        lastCount = next;
+        setRainCount(next);
+      }
     }
+
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [motionEnabled, scrollRef]);
+  }, [motionEnabled]);
 
   return (
     <>
@@ -107,7 +129,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
         {/* Very sparse at rest. `intensity` is the dial the scroll work will
             take over — for now it sits at the resting value so the top of
             the page shows the odd drop rather than weather. */}
-        <PaintRain intensity={RESTING_RAIN} rooms={rooms} reducedMotion={!motionEnabled} />
+        <PaintRain count={rainCount} rooms={rooms} reducedMotion={!motionEnabled} />
         <div className={styles.pinned}>
           <HeroHud
             ref={hudRef}

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { ROOM_IDS } from '@/lib/nav/tabs';
 import {
   MAX_DROPS,
+  RESTING_INTENSITY,
   buildDrops,
   fieldOpacity,
+  rainIntensityAt,
   visibleDrops,
 } from '../rain';
 
@@ -117,5 +119,32 @@ describe('fieldOpacity', () => {
 
   it('rises faster than the drop count, so early drops still read', () => {
     expect(fieldOpacity(0.25)).toBeGreaterThan(0.25);
+  });
+});
+
+describe('rainIntensityAt — the scroll ramp', () => {
+  it('rests low at the top of the page', () => {
+    expect(rainIntensityAt(0)).toBeCloseTo(RESTING_INTENSITY, 5);
+    expect(visibleDrops(rainIntensityAt(0))).toBeLessThan(8);
+  });
+
+  it('never rains less as you scroll further', () => {
+    let previous = -1;
+    for (let p = 0; p <= 4; p += 0.1) {
+      const now = rainIntensityAt(p);
+      expect(now).toBeGreaterThanOrEqual(previous);
+      previous = now;
+    }
+  });
+
+  it('reaches full by the time the rooms are painting', () => {
+    expect(rainIntensityAt(2)).toBeCloseTo(1, 5);
+    expect(visibleDrops(rainIntensityAt(2))).toBe(MAX_DROPS);
+  });
+
+  it('clamps rather than overshooting', () => {
+    expect(rainIntensityAt(50)).toBe(1);
+    expect(rainIntensityAt(-3)).toBeCloseTo(RESTING_INTENSITY, 5);
+    expect(rainIntensityAt(Number.NaN)).toBeCloseTo(RESTING_INTENSITY, 5);
   });
 });

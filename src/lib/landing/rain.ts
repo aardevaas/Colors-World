@@ -102,3 +102,24 @@ export function fieldOpacity(intensity: number): number {
 function clamp01(value: number): number {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
 }
+
+/**
+ * How hard it rains at a given point in the scroll.
+ *
+ * `progress` is viewports scrolled from the top, not a section fraction. The
+ * hero is one viewport tall now, so a section-relative progress would divide by
+ * zero — `useScrollProgress` returns a flat 0 for any section that is not taller
+ * than the viewport, which is why the hero fade had silently stopped working.
+ *
+ * Rests low so the top of the page is barely raining, then climbs as the reader
+ * leaves the hero and the rooms come up to be painted.
+ */
+export const RESTING_INTENSITY = 0.34;
+
+export function rainIntensityAt(progress: number): number {
+  const p = Number.isFinite(progress) ? Math.max(0, progress) : 0;
+  // Full by the time two viewports have passed, which is roughly where the
+  // first cards are painting themselves.
+  const climb = Math.min(1, p / 2);
+  return Math.min(1, RESTING_INTENSITY + (1 - RESTING_INTENSITY) * climb * climb);
+}

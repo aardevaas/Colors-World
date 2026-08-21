@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { buildDrops, fieldOpacity, visibleDrops } from '@/lib/landing/rain';
+import { MAX_DROPS, buildDrops, fieldOpacity } from '@/lib/landing/rain';
 import type { RoomColor } from '@/lib/landing/room-palette';
 import styles from './paint-rain.module.css';
 
@@ -9,7 +9,7 @@ import styles from './paint-rain.module.css';
  * Cartoonish paint droplets falling across the page.
  *
  * Very sparse at rest — at the top of the page this should read as the odd
- * drop drifting past, not as weather. `intensity` is the single dial: it
+ * drop drifting past, not as weather. The count is the single dial: it
  * selects how many of a fixed field are shown rather than mounting and
  * unmounting elements, so ramping it while scrolling never restarts anyone's
  * fall.
@@ -23,23 +23,24 @@ import styles from './paint-rain.module.css';
  */
 
 interface PaintRainProps {
-  /** 0 = off, 1 = the full field. */
-  readonly intensity: number;
+  /** How many drops to show. The caller quantises intensity to this integer so
+   *  the field only re-renders when the count genuinely changes, rather than on
+   *  every frame of the scroll. */
+  readonly count: number;
   readonly rooms: readonly RoomColor[];
   readonly reducedMotion?: boolean;
 }
 
-export function PaintRain({ intensity, rooms, reducedMotion = false }: PaintRainProps) {
+export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProps) {
   const drops = useMemo(() => buildDrops(), []);
-  const count = visibleDrops(intensity);
 
-  if (reducedMotion || count === 0) return null;
+  if (reducedMotion || count <= 0) return null;
 
   return (
     <div
       className={styles.field}
       aria-hidden="true"
-      style={{ opacity: fieldOpacity(intensity) }}
+      style={{ opacity: fieldOpacity(count / MAX_DROPS) }}
     >
       {drops.slice(0, count).map((drop, index) => {
         const room = rooms[drop.roomIndex % Math.max(1, rooms.length)];
