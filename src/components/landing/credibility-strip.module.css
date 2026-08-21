@@ -143,13 +143,15 @@
   border-top: 1px solid var(--rule);
 }
 
+/* Bold and a step larger: these are the headings of the specification, and at
+   0.6875rem regular they read as a caption under the thing they label. */
 .factLabel {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  font-weight: 400;
-  letter-spacing: 0.16em;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-quiet);
+  color: var(--ink);
 }
 
 /*

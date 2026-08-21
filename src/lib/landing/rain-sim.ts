@@ -58,6 +58,9 @@ export interface SimDrop {
   seed: number;
   /** This drop's own top speed. Depth drives it: near drops fall faster. */
   terminal: number;
+  /** 1 at the instant of landing, decaying to 0. Drives the flatten-and-recover
+   *  the renderer draws, which is what makes an impact read as an impact. */
+  squash: number;
 }
 
 /** A thing in the world the rain can land on. Viewport coordinates. */
@@ -81,9 +84,25 @@ export interface PoolColumn {
   b: number;
 }
 
+/** A landing, for the moment it takes to spread and disappear. */
+export interface Splash {
+  readonly x: number;
+  /** Height above the floor the drop met the paint at. */
+  readonly y: number;
+  /** 0 at impact, 1 when finished. */
+  t: number;
+  /** How big the drop was, which is how big the ring gets. */
+  readonly size: number;
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+}
+
 export interface World {
   readonly drops: SimDrop[];
   readonly pool: PoolColumn[];
+  /** Impacts currently spreading. Short-lived; culled every step. */
+  readonly splashes: Splash[];
   /** Viewport width the pool columns are spread across. */
   width: number;
   height: number;
@@ -110,6 +129,11 @@ export const TERMINAL_NEAR = 215;
 export const TERMINAL_FAR = 52;
 /** How long a drop sits where it landed before it starts to run off, ms. */
 export const REST_MS = 380;
+/** Seconds a splash takes to spread and fade. */
+export const SPLASH_LIFE = 0.9;
+/** Most splashes alive at once. Beyond this the oldest is dropped rather than
+ *  letting a downpour turn the floor into a solid ring of foam. */
+export const MAX_SPLASHES = 26;
 /** px/s², sideways, once it starts running. */
 export const RUNOFF_ACCEL = 420;
 /** Sideways drift while falling, px/s. */
@@ -138,7 +162,7 @@ export function createPool(): PoolColumn[] {
 }
 
 export function createWorld(width: number, height: number): World {
-  return { drops: [], pool: createPool(), width, height, floor: height };
+  return { drops: [], pool: createPool(), splashes: [], width, height, floor: height };
 }
 
 /* -------------------------------------------------------------------- step */
@@ -173,7 +197,17 @@ export function step(
     }
   }
   separate(world.drops, surfaces);
+  stepSplashes(world, dt);
   stepPool(world, dt);
+}
+
+function stepSplashes(world: World, dt: number): void {
+  for (let i = world.splashes.length - 1; i >= 0; i -= 1) {
+    const splash = world.splashes[i];
+    if (splash === undefined) continue;
+    splash.t += dt / SPLASH_LIFE;
+    if (splash.t >= 1) world.splashes.splice(i, 1);
+  }
 }
 
 function stepFalling(
@@ -230,6 +264,8 @@ function stepFalling(
     drop.phase = 'resting';
     drop.host = i;
     drop.y = surface.top - drop.size / 2;
+    // How hard it arrived, normalised — a fast drop flattens more.
+    drop.squash = Math.min(1, drop.vy / drop.terminal);
     drop.vy = 0;
     drop.vx = 0;
     drop.restLeft = REST_MS;
@@ -258,6 +294,10 @@ function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): v
     return;
   }
 
+  // The impact recovers over the first part of the rest, so the drop visibly
+  // settles rather than snapping from flattened back to round.
+  drop.squash = Math.max(0, drop.squash - dt * 3.4);
+
   // Sits, then runs. The pause is what makes it read as landing rather than
   // deflecting: paint hitting a surface stops before it moves.
   if (drop.restLeft > 0) {
@@ -265,14 +305,27 @@ function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): v
     return;
   }
 
-  drop.vx += RUNOFF_ACCEL * drop.runoff * dt;
+  /*
+   * Eased away rather than accelerated from a standstill.
+   *
+   * A constant acceleration from zero means the first half-second of the run is
+   * imperceptible and then it suddenly leaves, which is the part that read as
+   * wrong: real paint on a sill creeps, gathers and goes. The ramp below starts
+   * the drop already moving a little and grows the acceleration as it commits.
+   */
+  const committed = Math.min(1, Math.max(0, -drop.restLeft) / 260);
+  drop.vx += RUNOFF_ACCEL * drop.runoff * (0.35 + committed) * dt;
+  drop.restLeft -= dt * 1000;
   drop.x += drop.vx * dt;
   // Stays glued to the surface until it is genuinely past the edge.
   drop.y = surface.top - drop.size / 2;
 
   if (drop.x < surface.left - drop.size / 2 || drop.x > surface.right + drop.size / 2) {
     drop.phase = 'falling';
-    drop.vy = 0;
+    // Tips over the edge carrying its sideways speed, rather than stopping dead
+    // and dropping vertically the instant it clears the button.
+    drop.vy = 30;
+    drop.vx *= 0.5;
   }
 }
 
@@ -360,7 +413,12 @@ function separate(drops: readonly SimDrop[], surfaces: readonly Surface[]): void
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const distance = Math.hypot(dx, dy);
-      const want = (a.size + b.size) / 2;
+      // Deliberately well under the sum of the radii: the reference's blobs
+      // overlap heavily, and a field held fully apart reads as a diagram of
+      // circles rather than as something suspended in liquid. This only pushes
+      // apart pairs sitting almost exactly on top of each other, which is what
+      // would otherwise render as a single darker blob.
+      const want = ((a.size + b.size) / 2) * 0.42;
       if (distance >= want || distance === 0) continue;
 
       const push = (want - distance) / 2;
@@ -421,6 +479,18 @@ function addToPool(
   column.v += SPLASH * drop.size;
 
   const rgb = colors[drop.color % Math.max(1, colors.length)] ?? [124, 92, 255];
+
+  // The landing itself: a ring spreading from where it met the paint.
+  world.splashes.push({
+    x: drop.x,
+    y: column.h,
+    t: 0,
+    size: drop.size,
+    r: rgb[0],
+    g: rgb[1],
+    b: rgb[2],
+  });
+  if (world.splashes.length > MAX_SPLASHES) world.splashes.shift();
 
   if (wasEmpty) {
     // The first drop in a column SETS the colour rather than blending toward it.

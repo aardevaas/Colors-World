@@ -264,14 +264,11 @@
   /* Barely any fill at all. Glass is mostly what is behind it, and the pane
      reads as glass because of its EDGES and what it does to that background —
      not because of a milky panel painted over it. */
-  background: linear-gradient(
-    152deg,
-    oklch(100% 0 0 / 0.07) 0%,
-    oklch(100% 0 0 / 0.02) 46%,
-    oklch(100% 0 0 / 0.055) 100%
-  );
-  backdrop-filter: blur(20px) saturate(1.35) brightness(1.08);
-  -webkit-backdrop-filter: blur(20px) saturate(1.35) brightness(1.08);
+  background: oklch(100% 0 0 / 0.035);
+  /* No saturation boost: a pane that intensifies the colour behind it is a
+     filter, not glass. Just thickness — a heavy blur and a little lift. */
+  backdrop-filter: blur(26px) brightness(1.14);
+  -webkit-backdrop-filter: blur(26px) brightness(1.14);
 
   transform: perspective(700px) translateZ(var(--lift))
     rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
@@ -297,12 +294,13 @@
 }
 
 /*
- * What the glass picks up from the air around it.
+ * The pane's own body — colourless.
  *
- * `screen` rather than an opaque fill, because a reflection adds light to a
- * surface instead of replacing it — the fill and the blurred stage stay
- * visible underneath. Held at a low alpha and drifting slowly, so it reads as
- * something moving past the glass rather than as a gradient painted on it.
+ * This carried a drifting sheen built from the six generated room colours, and
+ * it had to go: it read as a light-up panel rather than as glass. Real glass in
+ * front of a dark surface has almost no colour of its own. What it has is a
+ * cold, slightly brighter interior where its thickness scatters light, and that
+ * is all this is now — a neutral vertical wash at very low alpha.
  */
 .glassReflection {
   position: absolute;
@@ -310,24 +308,13 @@
   z-index: -1;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(115deg, var(--reflect, #7c5cff, #2aaabd));
-  background-size: 260% 100%;
-  /* Held back deliberately. The label sitting over this is 0.78rem monospace,
-     and a reflection bright enough to be admired is bright enough to take that
-     text under AA on a pale palette. */
-  opacity: 0.24;
-  filter: blur(10px) saturate(1.5);
-  mix-blend-mode: screen;
-  animation: reflectionDrift 14s linear infinite;
-}
-
-@keyframes reflectionDrift {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 260% 50%;
-  }
+  background: linear-gradient(
+    to bottom,
+    oklch(100% 0 0 / 0.09) 0%,
+    oklch(100% 0 0 / 0.02) 38%,
+    oklch(100% 0 0 / 0) 62%,
+    oklch(100% 0 0 / 0.045) 100%
+  );
 }
 
 /*

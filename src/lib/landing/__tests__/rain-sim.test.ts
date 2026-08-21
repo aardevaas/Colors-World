@@ -34,6 +34,7 @@ function drop(overrides: Partial<SimDrop> = {}): SimDrop {
     runoff: 1,
     seed: 1.234,
     terminal: TERMINAL_NEAR,
+    squash: 0,
     ...overrides,
   };
 }
@@ -209,9 +210,11 @@ describe('absorption', () => {
         const b = world.drops[j];
         if (a === undefined || b === undefined) continue;
         const gap = Math.hypot(b.x - a.x, b.y - a.y);
-        // Separation runs once a frame, so allow a little interpenetration
-        // rather than demanding it be resolved perfectly every step.
-        expect(gap).toBeGreaterThan(((a.size + b.size) / 2) * 0.6);
+        // Heavy overlap is wanted — the reference's blobs sit on top of one
+        // another. What is not wanted is two blobs at the same coordinates,
+        // which renders as one. Separation also runs once a frame, so allow
+        // some interpenetration beyond its own threshold.
+        expect(gap).toBeGreaterThan(((a.size + b.size) / 2) * 0.25);
       }
     }
   });

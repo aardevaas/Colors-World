@@ -1,7 +1,6 @@
 'use client';
 
 import { GitHubIcon } from '@/components/icons/GitHubIcon';
-import type { RoomColor } from '@/lib/landing/room-palette';
 import { GlowTitle } from './GlowTitle';
 import { LiquidButton } from './LiquidButton';
 import { PrismButton } from './PrismButton';
@@ -11,10 +10,6 @@ interface HeroHudProps {
   /** Carries the scroll-driven fade — see LandingExperience for why it's a
    *  CSS variable on this node rather than React state. */
   readonly ref?: React.Ref<HTMLDivElement>;
-  /** The same generated six the rain falls in. The maker's plate reflects
-   *  them, so the glass is picking up the colors actually in the air around
-   *  it rather than a decorative rainbow that happens to sit nearby. */
-  readonly rooms: readonly RoomColor[];
 }
 
 const REPO_URL = 'https://github.com/aardevaas/Colors-World';
@@ -41,7 +36,7 @@ function handleTiltPointerLeave(event: React.PointerEvent<HTMLElement>) {
   event.currentTarget.style.setProperty('--tilt-y', '0deg');
 }
 
-export function HeroHud({ ref, rooms }: HeroHudProps) {
+export function HeroHud({ ref }: HeroHudProps) {
   return (
     <>
       <div className={styles.hud} ref={ref}>
@@ -91,13 +86,6 @@ export function HeroHud({ ref, rooms }: HeroHudProps) {
             data-rain-surface="shed"
             onPointerMove={handleTiltPointerMove}
             onPointerLeave={handleTiltPointerLeave}
-            style={
-              {
-                // The six the rain is carrying, handed to the glass as the
-                // colors it has to reflect.
-                '--reflect': rooms.map((room) => room.hex).join(', '),
-              } as React.CSSProperties
-            }
           >
             {/* The pane's own surface: what it reflects, and the hard streak
                 of light across it. Both decorative. */}
