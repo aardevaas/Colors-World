@@ -1,9 +1,7 @@
 import {
-  Archivo_Black,
-  Caveat,
-  Instrument_Serif,
   JetBrains_Mono,
   Plus_Jakarta_Sans,
+  Rubik_Wet_Paint,
   Unbounded,
 } from 'next/font/google';
 import { LandingExperience } from '@/components/landing/LandingExperience';
@@ -37,39 +35,25 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 /*
- * The three below exist for exactly one word.
+ * Exists for exactly one word, in one state.
  *
- * The house rule is at most two families without a clear reason, and this is
- * the reason: the typography room sets its own name in mixed type, one face per
- * letter, because a room that claims contrast is a property of type should be
- * willing to demonstrate it on the way in rather than assert it.
+ * The typography room sets its name in the house face like every other room,
+ * and swaps to this on hover. The house rule is at most two families without a
+ * clear reason; a room whose claim is that contrast is a property of type,
+ * demonstrating it on its own nameplate, is the reason.
  *
- * Kept to three additions rather than the six the effect could use, at one
- * weight each — roughly 70kb of self-hosted woff2 between them, all
- * `display: swap`, none of it blocking. A serif, a heavy grotesque and a
- * handwriting face cover the widest span of character for the fewest files;
- * further variety comes from weight, slope and size against the three families
- * the page already loads.
+ * This replaced a three-family "hand-set" nameplate that put a different face
+ * on every letter. That cost ~70kb and looked like a ransom note. One face,
+ * one weight, ~28kb, and it only has to be right in a single state.
+ *
+ * Wet Paint rather than a serif or a didone because the page already rains
+ * paint into these rooms — the nameplate running on hover is the site's own
+ * motif arriving somewhere it means something.
  */
-const instrumentSerif = Instrument_Serif({
+const rubikWetPaint = Rubik_Wet_Paint({
   subsets: ['latin'],
   weight: ['400'],
-  style: ['normal', 'italic'],
-  variable: '--font-serif',
-  display: 'swap',
-});
-
-const archivoBlack = Archivo_Black({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-grotesque',
-  display: 'swap',
-});
-
-const caveat = Caveat({
-  subsets: ['latin'],
-  weight: ['700'],
-  variable: '--font-hand',
+  variable: '--font-paint',
   display: 'swap',
 });
 
@@ -80,9 +64,7 @@ export default function LandingPage() {
         unbounded.variable,
         jakarta.variable,
         jetbrainsMono.variable,
-        instrumentSerif.variable,
-        archivoBlack.variable,
-        caveat.variable,
+        rubikWetPaint.variable,
       ].join(' ')}
     >
       <a href="#main" className="skipLink">

@@ -72,6 +72,8 @@
   --ink-quiet: var(--room-fg-quiet);
 
   position: relative;
+  /* Clips the oversized texture layer and the ripple puck to the band. */
+  overflow: hidden;
   background: var(--ground);
   color: var(--ink);
   /* Both are pair-driven, so the whole band turns as one on hover. Colour is
@@ -125,29 +127,47 @@
 /* --------------------------------------------------------------- the texture */
 
 /*
- * One texture per room, drawn in that room's own ink.
+ * One texture per room, drawn in that room's own ink, drifting continuously,
+ * and rippling under the pointer.
  *
- * Built from `--ink` through `color-mix` rather than from a grey or an image,
- * for the same reason everything else here is: it stays inside the pair system,
- * so the texture turns with the band on hover without a second rule.
+ * THE INK. Built from `--ink` through `color-mix` rather than from a grey or an
+ * image, so each texture turns with its band on hover without a second rule.
+ * Alphas are held low: the contrast guarantee in `room-theme.ts` is between the
+ * ink and the GROUND, and a texture dense enough to shift the effective local
+ * background would quietly invalidate the ratio the band prints on itself.
  *
- * The alphas are deliberately low. Text sits above this layer, and the contrast
- * guarantee in `room-theme.ts` is between the ink and the GROUND — a texture
- * dense enough to shift the effective local background would quietly invalidate
- * the number the band prints on itself. Fine marks at ~8-22% do not.
+ * THE DRIFT. Every texture translates by exactly one of its own pattern periods
+ * and then repeats, which is what makes the loop invisible — land on any other
+ * distance and the pattern jumps at the seam. That is why each class declares
+ * `--drift-x`/`--drift-y` in terms of its own geometry rather than sharing one
+ * number. Transform only, so this is compositor work and never repaints.
  *
- * Each is also apt for its room rather than assigned at random: a ramp gets
- * bands, the visualizer gets graph paper, typography gets ruled baselines.
+ * THE PERIOD. `--tex-period` is each texture's own repeat distance. The ripple
+ * reads it, so the rings that spread from the pointer are spaced to match the
+ * texture they are disturbing rather than being the same ripple six times.
  */
 .texture {
   position: absolute;
-  inset: 0;
+  /* Oversized so a drift of one period never exposes an edge. Must exceed the
+     largest --drift value below; .room clips the overhang. */
+  inset: -64px;
   z-index: 0;
   pointer-events: none;
+  animation: drift var(--drift-time, 18s) linear infinite;
+}
+
+@keyframes drift {
+  to {
+    transform: translate3d(var(--drift-x, 0), var(--drift-y, 0), 0);
+  }
 }
 
 /* library — halftone. Tiny marks, so a higher alpha still covers little area. */
 .texDots {
+  --tex-period: 17px;
+  --drift-x: -17px;
+  --drift-y: -17px;
+  --drift-time: 19s;
   background-image: radial-gradient(
     color-mix(in oklab, var(--ink) 22%, transparent) 1.4px,
     transparent 1.5px
@@ -155,8 +175,15 @@
   background-size: 17px 17px;
 }
 
-/* compose — hatching, as in a drawing being worked up. */
+/* compose — hatching, as in a drawing being worked up.
+   The drift runs perpendicular to the stripes: moving ALONG a 45deg pattern
+   shifts it by nothing, so (P/√2, -P/√2) is the smallest visible step that
+   still lands exactly one period on. */
 .texHatch {
+  --tex-period: 9px;
+  --drift-x: 6.364px;
+  --drift-y: -6.364px;
+  --drift-time: 7s;
   background-image: repeating-linear-gradient(
     45deg,
     color-mix(in oklab, var(--ink) 13%, transparent) 0 1px,
@@ -164,8 +191,13 @@
   );
 }
 
-/* scales — even bands, the ramp the room builds. */
+/* scales — even bands, the ramp the room builds. Drifts down, like a ramp
+   being read from the top. */
 .texSteps {
+  --tex-period: 24px;
+  --drift-x: 0px;
+  --drift-y: 24px;
+  --drift-time: 14s;
   background-image: repeating-linear-gradient(
     to bottom,
     color-mix(in oklab, var(--ink) 9%, transparent) 0 12px,
@@ -173,8 +205,13 @@
   );
 }
 
-/* visualizer — graph paper, since the room plots things. */
+/* visualizer — graph paper, since the room plots things. Slowest of the six: a
+   grid drifting at any speed reads as the page itself sliding. */
 .texGrid {
+  --tex-period: 34px;
+  --drift-x: -34px;
+  --drift-y: -34px;
+  --drift-time: 26s;
   background-image:
     repeating-linear-gradient(
       to right,
@@ -188,9 +225,14 @@
     );
 }
 
-/* typography — ruled paper: a baseline every 13px, a heavier rule every fourth,
-   which is what a real baseline grid looks like. */
+/* typography — ruled paper: a baseline every 13px, a heavier rule every fourth.
+   Drifts by 52px, the larger of the two periods and a multiple of the smaller,
+   so both gradients land back in phase together. */
 .texRules {
+  --tex-period: 13px;
+  --drift-x: 0px;
+  --drift-y: -52px;
+  --drift-time: 18s;
   background-image:
     repeating-linear-gradient(
       to bottom,
@@ -205,12 +247,93 @@
 }
 
 /* studio — grain. The one texture that cannot read the ink: an SVG filter takes
-   no custom properties, so it is neutral noise laid over the ground with a
-   blend mode instead, which works on any colour. */
+   no custom properties, so it is neutral noise over a blend mode instead, which
+   works on any colour. Jitters in discrete steps rather than drifting, because
+   film grain that slides looks like a moving photograph of grain. */
 .texGrain {
+  --tex-period: 22px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
   mix-blend-mode: overlay;
   opacity: 0.5;
+  animation: grain-jitter 700ms steps(1, end) infinite;
+}
+
+@keyframes grain-jitter {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-9px, 5px, 0); }
+  40% { transform: translate3d(7px, -11px, 0); }
+  60% { transform: translate3d(-13px, -4px, 0); }
+  80% { transform: translate3d(5px, 9px, 0); }
+}
+
+/* ---------------------------------------------------------------- the ripple */
+
+/*
+ * Rings spreading from the pointer, spaced to the texture underneath.
+ *
+ * Follows the cursor on `--rx`/`--ry`, written by `use-texture-ripple.ts` on
+ * whichever band the pointer is over. Transform and opacity only — the puck is
+ * a fixed-size element that moves, rather than a full-bleed gradient repainting
+ * its centre point, which is the version of this that costs a frame.
+ *
+ * `--ripple` is pointer speed, so the disturbance answers how hard the surface
+ * was stirred rather than merely where.
+ */
+.ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34rem;
+  height: 34rem;
+  margin: -17rem 0 0 -17rem;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(var(--rx, 0px), var(--ry, 0px), 0);
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 420ms ease;
+}
+
+.room:hover .ripple {
+  opacity: calc(0.35 + var(--ripple, 0) * 0.65);
+}
+
+.wave {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at 50% 50%,
+    transparent 0 calc(var(--tex-period, 18px) * 0.5),
+    color-mix(in oklab, var(--ink) 30%, transparent) calc(var(--tex-period, 18px) * 0.5)
+      calc(var(--tex-period, 18px) * 0.72),
+    transparent calc(var(--tex-period, 18px) * 0.72) var(--tex-period, 18px)
+  );
+  /* Falls off well before the edge, so the puck has no rim to give it away. */
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 62%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 62%);
+  animation: ripple-out 2600ms linear infinite;
+}
+
+/* Two waves, half a cycle apart, so rings are always leaving the centre rather
+   than the whole set restarting together. */
+.wave:nth-child(2) {
+  animation-delay: -1300ms;
+}
+
+@keyframes ripple-out {
+  0% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 
 /* --------------------------------------------------------------- the numeral */
@@ -284,32 +407,78 @@
 }
 
 /*
- * The typography room's nameplate, set from loose sorts.
+ * The typography room's nameplate, which changes face under the pointer.
  *
- * The letters keep the band's own `font-size` as their base and scale from it,
- * so this stays on the same container-driven sizing as every other room — the
- * word cannot outgrow its column just because it is set in six faces.
+ * Two copies of the word stacked: the house one in flow, owning the box, and a
+ * painted one absolutely over it. Cross-faded rather than swapped, because
+ * `font-family` cannot be transitioned and a swap would resize the word on the
+ * frame it happened.
  *
- * `letter-spacing` is reset to normal here. The house tracking is -0.045em,
- * which is tuned for Unbounded at display size and closes mixed faces into each
- * other badly.
+ * `--paint-fit` compensates for the two faces not sharing an advance width, and
+ * it is measured rather than guessed — the guess was 0.82 and wrong in the
+ * opposite direction. "typography" is 7.19em in Unbounded once its -0.045em
+ * tracking is counted, and 6.23em in Wet Paint, so the painted copy needs to be
+ * SET LARGER to occupy the same width, not smaller. 7.1938 / 6.229 = 1.1549.
+ *
+ * Matching the house width rather than filling the column is deliberate: the
+ * hover should read as the same word changing dress, not as a different word
+ * arriving. The copy is absolute, so a mismatch would have hung silently past
+ * the column instead of pushing something and being noticed.
+ *
+ * Centred vertically rather than pinned to the top, because at 1.155em the
+ * painted copy's line box is taller than the house one at the shared
+ * line-height of 0.86, and pinning would drop its baseline below.
  */
-.handSet {
-  letter-spacing: normal;
-  /* Rotated sorts sweep slightly wider than their boxes. */
-  padding-inline: 0.04em;
+.paintable {
+  position: relative;
+  display: inline-block;
 }
 
-.sort {
-  display: inline-block;
-  font-family: var(--sort-family), var(--font-display), system-ui, sans-serif;
-  font-weight: var(--sort-weight, 800);
-  font-style: var(--sort-style, normal);
-  font-size: calc(1em * var(--sort-size, 1));
-  transform: rotate(var(--sort-rotate, 0deg)) translateY(var(--sort-shift, 0));
-  /* Each sort turns about its own foot, the way a letter locked in a forme
-     would, rather than about its centre. */
-  transform-origin: 50% 100%;
+/*
+ * Both copies also toggle `visibility`, delayed to the end of the fade.
+ *
+ * Opacity alone left the outgoing copy painted at ~0.0004 forever — visually
+ * nothing, but still a live compositing layer, and it showed: a faint
+ * rectangular seam sat behind the word wherever that layer's bounds fell.
+ * Switching visibility after the transition takes it out of paint entirely.
+ * Layout is untouched, since `visibility: hidden` keeps its box and the house
+ * copy is what gives `.paintable` its size.
+ */
+.faceHouse,
+.facePaint {
+  transition:
+    opacity 340ms cubic-bezier(0.33, 1, 0.68, 1),
+    visibility 0s linear 340ms;
+}
+
+.facePaint {
+  visibility: hidden;
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 0;
+  transform: translateY(-50%);
+  font-family: var(--font-paint), var(--font-display), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: calc(1em * var(--paint-fit, 1.1549));
+  letter-spacing: normal;
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.room:hover .faceHouse,
+.room:focus-within .faceHouse {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.room:hover .facePaint,
+.room:focus-within .facePaint {
+  opacity: 1;
+  visibility: visible;
+  /* Appears at once and fades in; only the outgoing copy waits. */
+  transition:
+    opacity 340ms cubic-bezier(0.33, 1, 0.68, 1),
+    visibility 0s linear 0s;
 }
 
 /* --------------------------------------------------------------- the one line */
@@ -376,28 +545,37 @@
 /* ---------------------------------------------------------------- the reveal */
 
 /*
- * Each band wipes in from the left, one after the next.
+ * Bands alternate: the first draws on from the left, the next from the right,
+ * and so on down the page, so the eye is handed across the column rather than
+ * dragged the same way six times.
  *
- * A clip-path rather than a transform, for the same reason the first version
- * used one: the bands are full-bleed, and a translated band briefly exposes the
- * page behind its trailing edge. Clipping the inline-end edge draws the colour
- * on as if it were being pulled across, which is the right gesture for a page
- * whose subject is paint.
+ * Slower and gentler than the first version, which read as clunky. That one ran
+ * 1000ms on an expo curve — `cubic-bezier(0.16, 1, 0.3, 1)` covers half its
+ * distance in the first eighth of its duration, so it arrived as a snap with a
+ * long tail rather than as a movement. This is 1500ms on an ease-out cubic,
+ * which actually travels.
  *
- * `--reveal-delay` is set per band by the observer rather than by nth-child.
- * Two or three bands are in view at once on a short viewport, so a fixed
- * per-index delay would either fire them together or leave the later ones
- * waiting on a stagger that started before they arrived.
+ * A clip-path rather than a transform, still: these are full-bleed, and a
+ * translated band briefly exposes the page behind its trailing edge.
  */
 .willReveal {
   clip-path: inset(0 100% 0 0);
 }
 
-.isRevealing {
-  animation: band-wipe 1000ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms) both;
+.room:nth-child(even).willReveal {
+  clip-path: inset(0 0 0 100%);
 }
 
-@keyframes band-wipe {
+.isRevealing {
+  animation: wipe-from-left 1500ms cubic-bezier(0.33, 1, 0.68, 1)
+    var(--reveal-delay, 0ms) both;
+}
+
+.room:nth-child(even).isRevealing {
+  animation-name: wipe-from-right;
+}
+
+@keyframes wipe-from-left {
   from {
     clip-path: inset(0 100% 0 0);
   }
@@ -406,25 +584,50 @@
   }
 }
 
+@keyframes wipe-from-right {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 /*
- * The contents follow the wipe in rather than arriving with it, so the band
- * reads as colour first and type second. Slightly longer and slightly later
- * than the wipe, which is what keeps the two from looking like one movement.
+ * The contents pop out behind the wipe, each element a beat after the last, so
+ * the band resolves progressively instead of the whole thing landing at once.
+ *
+ * They enter from the same edge the wipe came from and scale up very slightly
+ * as they settle — the scale is what makes it read as arriving rather than
+ * sliding. `transform-origin` follows the direction for the same reason.
  */
 .willReveal .link > * {
   opacity: 0;
-  transform: translateX(-1.5rem);
+  transform: translateX(-2.5rem) scale(0.94);
+  transform-origin: left center;
+}
+
+.room:nth-child(even).willReveal .link > * {
+  transform: translateX(2.5rem) scale(0.94);
+  transform-origin: right center;
 }
 
 .isRevealing .link > * {
-  animation: content-in 780ms cubic-bezier(0.16, 1, 0.3, 1)
-    calc(var(--reveal-delay, 0ms) + 220ms) both;
+  animation: content-pop 900ms cubic-bezier(0.33, 1, 0.68, 1)
+    calc(var(--reveal-delay, 0ms) + var(--content-delay, 0ms) + 260ms) both;
 }
 
-@keyframes content-in {
+/* The numeral, the name, the line, the receipt, the arrow — in reading order. */
+.isRevealing .link > *:nth-child(1) { --content-delay: 0ms; }
+.isRevealing .link > *:nth-child(2) { --content-delay: 90ms; }
+.isRevealing .link > *:nth-child(3) { --content-delay: 170ms; }
+.isRevealing .link > *:nth-child(4) { --content-delay: 240ms; }
+.isRevealing .link > *:nth-child(5) { --content-delay: 300ms; }
+
+@keyframes content-pop {
   to {
     opacity: 1;
-    transform: none;
+    transform: translateX(0) scale(1);
   }
 }
 
@@ -469,6 +672,17 @@
   .room,
   .arrow {
     transition: none;
+  }
+
+  /* The textures hold still and the ripple never appears. Both are ambient
+     motion with no informational content, so there is nothing to preserve. */
+  .texture,
+  .wave {
+    animation: none;
+  }
+
+  .ripple {
+    display: none;
   }
 
   .willReveal,

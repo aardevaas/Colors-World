@@ -18,9 +18,10 @@ import { ROOM_IDS } from '@/lib/nav/tabs';
 /** The full field. `intensity` selects how many of these are actually shown,
  *  so scrolling reveals more drops without ever remounting the layer.
  *
- *  Raised from 54 on request — the page wanted more weather throughout, not a
- *  different curve. The shape of the ramp below is unchanged. */
-export const MAX_DROPS = 76;
+ *  Raised twice on request, 54 to 76 to 100 — the page wanted more weather
+ *  throughout, not a different curve. The shape of the ramp is unchanged; the
+ *  quadratic still keeps the hero the sparse end. */
+export const MAX_DROPS = 100;
 
 /** Below this the layer is effectively off — used to skip work entirely. */
 export const MIN_VISIBLE_INTENSITY = 0.01;
@@ -85,7 +86,23 @@ export function buildDrops(count: number = MAX_DROPS): readonly Drop[] {
       duration: 6 + depth * 12 + hash(i, 6) * 8,
       // Spread across a window longer than the longest fall, so the field is
       // already scattered through its cycle on the first frame.
-      delay: -hash(i, 2) * 30,
+      //
+      // Low-discrepancy rather than hashed, for the same reason `left` is — and
+      // it was still hashed here by oversight. A hash is uniform only in the
+      // limit, so at 100 drops it started stacking starts on top of each other:
+      // 83 distinct positions instead of 100, with the clumping worst exactly
+      // where the field is densest. The plastic constant below is used rather
+      // than φ so the sequence does not correlate with the one placing `left`,
+      // which would tie a drop's start to its column.
+      //
+      // No hashed jitter on top, unlike `left`. A second of jitter is wider
+      // than the sequence's own 0.29s spacing at this density, so it scrambled
+      // the even spread straight back into a hash — 81 distinct starts, worse
+      // than the hash it replaced. Nothing is lost: `left` needs jitter because
+      // an even spread across the width IS visible as a grid, while an even
+      // spread through a cycle is not, and the 6-26s duration spread pulls the
+      // drops out of step within the first second anyway.
+      delay: -(((i * 0.7548776662466927) % 1) * 29),
       size,
       roomIndex: Math.floor(hash(i, 3) * ROOM_IDS.length) % ROOM_IDS.length,
       depth,
