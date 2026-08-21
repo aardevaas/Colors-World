@@ -4,74 +4,128 @@ import styles from './credibility-strip.module.css';
 /**
  * The section that converts a visitor into someone who trusts this.
  *
- * The audit named its absence as the single gap that most directly cost the
- * stated goal: a person scrolled past a beautiful globe and was never told the
- * engine is MIT, that the colours are computed rather than curated, or that
- * there is a repository to look at. Every claim here is one they can check —
- * the star count comes from GitHub, and the engine claims are things the code
- * demonstrably does rather than adjectives.
+ * Every claim here is one they can check — the licence, the colour space, the
+ * standards, and a link to the code that demonstrably does all three. Nothing
+ * on this page is an adjective.
  *
- * A server component so the count is rendered rather than popped in after
- * hydration, and so a slow or rate-limited GitHub never becomes a slow page:
- * see repo-stats for the timeout and the fallback.
+ * ## Why it is the one light section
+ *
+ * It used to be flat near-black, on the reasoning that the page had just spent
+ * three screens being spectacular and the section whose job is to be believed
+ * should not compete. The reasoning was right and its premise is gone: the
+ * spectacle it was deferring to was the globe, which was removed, and what now
+ * precedes it is six saturated flooded bands. Dropping from those into grey
+ * text on black read as the page giving up rather than resolving.
+ *
+ * So it flips the ground instead — the one paper-white surface on the page.
+ * That is the same device GF Smith uses to separate sections, and it does more
+ * work here than a colour would: after six colour arguments, a white sheet says
+ * the arguing is over and these are the facts. It is also the register the
+ * content wants, which is a spec sheet rather than a pitch.
+ *
+ * ## A server component
+ *
+ * So the star count is rendered rather than popped in after hydration, and so a
+ * slow or rate-limited GitHub never becomes a slow page: see repo-stats for the
+ * timeout and the fallback.
  */
+
+/**
+ * Below this, the star count is left out.
+ *
+ * Not a technical limit — an editorial one, and the founder's call to change.
+ * A star count reads as a credential when it says other people have found this
+ * and stayed; at single digits it says the opposite, on the one section of the
+ * page whose entire job is to be believed. The repository currently shows 2,
+ * and printing "2" under a heading about being worth trusting actively costs
+ * more than the row is worth.
+ *
+ * Nothing is faked and nothing is hidden that would mislead: the row appears on
+ * its own once the number is an argument, and `repo-stats` was already built to
+ * render correctly without it.
+ */
+const STARS_WORTH_SHOWING = 25;
+
+interface Fact {
+  readonly label: string;
+  readonly value: string;
+  readonly note: string;
+}
+
 export async function CredibilityStrip() {
   const stats = await repoStats();
+
+  const facts: readonly Fact[] = [
+    {
+      label: 'Licence',
+      value: 'MIT',
+      note: 'Depend on the colour engine in your own work.',
+    },
+    {
+      label: 'Colour space',
+      value: 'OKLCH',
+      note: 'Perceptually uniform end to end, which is what makes ordering by lightness mean anything.',
+    },
+    {
+      label: 'Standards',
+      value: 'WCAG + APCA',
+      note: 'The compliance number and the perceptual one, carried together rather than one standing in for the other.',
+    },
+    ...(stats.stars !== null && stats.stars >= STARS_WORTH_SHOWING
+      ? [
+          {
+            label: 'Stars',
+            value: stats.stars.toLocaleString('en'),
+            note: 'On GitHub, where the whole thing lives.',
+          },
+        ]
+      : []),
+  ];
 
   return (
     <section className={styles.strip} aria-labelledby="credibility-heading">
       <div className={styles.inner}>
-        <h2 id="credibility-heading" className={styles.heading}>
-          Open source, and the engine is the point.
-        </h2>
+        <div className={styles.lead}>
+          <h2 id="credibility-heading" className={styles.heading}>
+            Open source, and the engine is the point.
+          </h2>
 
-        <dl className={styles.facts}>
-          <div className={styles.fact}>
-            <dt className={styles.factLabel}>Licence</dt>
-            <dd className={styles.factValue}>MIT</dd>
-            <p className={styles.factNote}>Depend on the colour engine in your own work.</p>
-          </div>
-
-          {stats.stars !== null && (
-            <div className={styles.fact}>
-              <dt className={styles.factLabel}>Stars</dt>
-              <dd className={styles.factValue}>{stats.stars.toLocaleString('en')}</dd>
-              <p className={styles.factNote}>On GitHub, where the whole thing lives.</p>
-            </div>
-          )}
-
-          <div className={styles.fact}>
-            <dt className={styles.factLabel}>Colour space</dt>
-            <dd className={styles.factValue}>OKLCH</dd>
-            <p className={styles.factNote}>
-              Perceptually uniform end to end, which is what makes ordering by lightness
-              mean anything.
-            </p>
-          </div>
-
-          <div className={styles.fact}>
-            <dt className={styles.factLabel}>Standards</dt>
-            <dd className={styles.factValue}>WCAG + APCA</dd>
-            <p className={styles.factNote}>
-              The compliance number and the perceptual one, carried together rather than
-              one standing in for the other.
-            </p>
-          </div>
-        </dl>
-
-        <div className={styles.actions}>
-          <a
-            className={styles.primary}
-            href={REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read the source
+          <a className={styles.action} href={REPO_URL} target="_blank" rel="noopener noreferrer">
+            <span className={styles.actionLabel}>Read the source</span>
+            {/* The same square mark the rooms use, so the page has one arrow
+                rather than a rounded pill here and a hard box above. */}
+            <span className={styles.actionArrow} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" focusable="false">
+                <path
+                  d="M4 12h15M13 6l6 6-6 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="square"
+                />
+              </svg>
+            </span>
           </a>
-          <span className={styles.actionsNote}>
-            No account, no trial, nothing to cancel.
-          </span>
+
+          <p className={styles.note}>No account, no trial, nothing to cancel.</p>
         </div>
+
+        {/*
+          A specification, not a set of cards.
+          
+          The previous version was a four-column auto-fit grid of stat tiles,
+          which is the shape every dashboard template ships with — and it read
+          as one. Rows against full-width rules read as documentation, which is
+          what these claims actually are.
+        */}
+        <dl className={styles.spec}>
+          {facts.map((fact) => (
+            <div className={styles.row} key={fact.label}>
+              <dt className={styles.rowLabel}>{fact.label}</dt>
+              <dd className={styles.rowValue}>{fact.value}</dd>
+              <dd className={styles.rowNote}>{fact.note}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

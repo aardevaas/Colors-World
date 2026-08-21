@@ -1,110 +1,221 @@
 /*
- * Deliberately plain after the globe: the page has just spent three screens
- * being spectacular, and the section whose job is to be believed should not
- * compete with it. Facts set in a row, one link, nothing moving.
+ * The one light surface on the page.
+ *
+ * Six saturated bands arrive above this and a dark footer follows it, so the
+ * ground flips here rather than dimming. That is GF Smith's device for
+ * separating sections, and it earns its place: after six colour arguments a
+ * white sheet says the arguing is over and these are the facts.
+ *
+ * Everything below is written against `--paper` and `--ink`, declared once at
+ * the top, so the section can be inverted again by changing two values — the
+ * same discipline the rooms use with their solved pairs.
+ *
+ * Radius is 0 throughout, as it is on the bands. The old version had a 999px
+ * pill here, which was the single loudest inconsistency left on the page once
+ * the rooms went square.
  */
 
 .strip {
+  --paper: oklch(96.5% 0.004 95);
+  --ink: oklch(17% 0.012 275);
+  --ink-quiet: oklch(44% 0.012 275);
+  --rule: oklch(17% 0.012 275 / 0.18);
+
   position: relative;
   z-index: 2;
-  background: var(--surface-void, #0b0b0c);
-  border-top: 1px solid var(--hairline);
-  padding: clamp(3rem, 8vw, 6rem) clamp(1.25rem, 5vw, 4rem);
+  background: var(--paper);
+  color: var(--ink);
+  padding: clamp(3.5rem, 9vw, 7rem) clamp(1.25rem, 5vw, 5rem);
 }
 
 .inner {
-  max-width: 68rem;
+  max-width: 78rem;
   margin-inline: auto;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(1.75rem, 4vw, 2.75rem);
+  display: grid;
+  gap: clamp(2.5rem, 6vw, 5rem);
+}
+
+/* ------------------------------------------------------------------ the lead */
+
+.lead {
+  display: grid;
+  justify-items: start;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
 }
 
 .heading {
   margin: 0;
-  max-width: 22ch;
-  font-family: var(--font-display), var(--font-ui), sans-serif;
-  font-size: clamp(1.75rem, 1rem + 3vw, 3rem);
+  /* Wide enough to keep "Open source," on one line. At the previous 16ch in a
+     22rem column it broke after "Open", which strands the weakest word in the
+     sentence on its own line and makes the rag read as an accident. */
+  max-width: 15ch;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(1.875rem, 1rem + 2.6vw, 3.1rem);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  /* Tight, as on the bands — this is display type, not a paragraph. */
+  line-height: 0.98;
+  letter-spacing: -0.03em;
   text-wrap: balance;
-  color: var(--text-primary);
+  color: var(--ink);
 }
 
-.facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem 2rem;
-  margin: 0;
-}
+/* --------------------------------------------------------------- the action */
 
-.fact {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--hairline);
-}
-
-.factLabel {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-
-.factValue {
-  margin: 0;
-  font-family: var(--font-display), var(--font-ui), sans-serif;
-  font-size: clamp(1.6rem, 1rem + 2vw, 2.4rem);
-  font-weight: 600;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-}
-
-.factNote {
-  margin: 0.25rem 0 0;
-  font-size: 0.82rem;
-  line-height: 1.55;
-  color: var(--text-tertiary);
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.25rem;
-}
-
-.primary {
-  display: inline-block;
-  padding: 0.7rem 1.4rem;
-  border-radius: 999px;
-  background: var(--text-primary);
-  color: var(--surface-void, #0b0b0c);
-  font-size: 0.9rem;
-  font-weight: 600;
+.action {
+  display: inline-flex;
+  align-items: stretch;
   text-decoration: none;
-  transition: transform var(--duration-fast, 150ms) var(--ease-out-expo, ease);
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  /* Square, like the arrow boxes on the bands. */
+  border-radius: 0;
+  transition:
+    background-color 320ms cubic-bezier(0.33, 1, 0.68, 1),
+    color 320ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-.primary:hover {
-  transform: translateY(-1px);
+.action:hover,
+.action:focus-visible {
+  background: var(--paper);
+  color: var(--ink);
 }
 
-.actionsNote {
-  font-size: 0.82rem;
-  color: var(--text-tertiary);
+.action:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.actionLabel {
+  padding: 0.85rem 1.35rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
+.actionArrow {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  /* Its own cell, divided from the label — the mark reads as a destination
+     rather than as an icon decorating a word. */
+  border-inline-start: 1px solid currentColor;
+}
+
+.actionArrow svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.action:hover .actionArrow svg,
+.action:focus-visible .actionArrow svg {
+  transform: translateX(2px);
+}
+
+.actionArrow svg {
+  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.note {
+  margin: 0;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: var(--ink-quiet);
+}
+
+/* ---------------------------------------------------------- the spec sheet */
+
+/*
+ * A container, so the rows below respond to the width they actually have.
+ *
+ * They were sized off viewport breakpoints, and at 1024px that was wrong in the
+ * way viewport breakpoints usually are: the two-column layout had already
+ * narrowed this column to ~417px while the media query still saw a 1024px
+ * "desktop" and kept three columns. The note column resolved to 0px, the text
+ * wrapped a character at a time, the section grew to 1253px tall and pushed
+ * 38px of horizontal overflow onto the document.
+ */
+.spec {
+  container-type: inline-size;
+  margin: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.row {
+  display: grid;
+  /* Label, value, note — a specification's three columns. Collapses to stacked
+     rows below the breakpoint at the end of this file. */
+  grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 14rem) minmax(0, 1fr);
+  gap: 0.35rem clamp(1rem, 3vw, 3rem);
+  align-items: baseline;
+  padding: clamp(1.1rem, 2vw, 1.6rem) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.rowLabel {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.rowValue {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(1.25rem, 0.9rem + 1.1vw, 1.875rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.rowNote {
+  margin: 0;
+  max-width: 44ch;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+  color: var(--ink-quiet);
+}
+
+/* ------------------------------------------------------------------ at width */
+
+/* Stack the row whenever ITS column is too narrow for three, whatever the
+   viewport happens to be doing. */
+@container (max-width: 34rem) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.3rem;
+  }
+}
+
+/*
+ * Two columns only once there is genuinely room for both. At 60rem there was
+ * not: splitting a 1024px viewport left the specification 417px, which is less
+ * than its own three columns need. 75rem leaves it 564px.
+ */
+@media (min-width: 75rem) {
+  .inner {
+    /* The claim on the left, the specification on the right. */
+    grid-template-columns: minmax(0, 27rem) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(3rem, 7vw, 7rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .primary {
+  .action,
+  .actionArrow svg {
     transition: none;
   }
-  .primary:hover {
+
+  .action:hover .actionArrow svg {
     transform: none;
   }
 }
