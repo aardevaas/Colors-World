@@ -1,10 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { roomPalette, seedHueFromRandom } from '@/lib/landing/room-palette';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
+
+// Dynamic + ssr:false is the boundary that keeps three.js out of the initial
+// bundle -- imported statically it put this route's First Load at 298kB
+// against a 150kB budget.
+const PaintHero = dynamic(() => import('./PaintHero'), {
+  ssr: false,
+  loading: () => <div className={styles.canvasFallback} />,
+});
 import { FeatureCards } from './FeatureCards';
 import styles from './landing.module.css';
 
@@ -97,6 +106,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
         style={{ height: `${SECTION_HEIGHT_VH}vh` }}
       >
         <div className={styles.pinned}>
+          <PaintHero reducedMotion={!motionEnabled} />
           <HeroHud
             ref={hudRef}
             motionEnabled={motionEnabled}
