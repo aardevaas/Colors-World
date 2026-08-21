@@ -3,7 +3,7 @@ import {
   MAX_POOL,
   POOL_COLUMNS,
   REST_MS,
-  TERMINAL_VELOCITY,
+  TERMINAL_NEAR,
   columnAt,
   createWorld,
   poolVolume,
@@ -32,6 +32,8 @@ function drop(overrides: Partial<SimDrop> = {}): SimDrop {
     host: -1,
     restLeft: 0,
     runoff: 1,
+    seed: 1.234,
+    terminal: TERMINAL_NEAR,
     ...overrides,
   };
 }
@@ -79,7 +81,7 @@ describe('falling', () => {
     expect(early).toBeGreaterThan(0);
 
     run(world, [], 10);
-    expect(d.vy).toBeLessThanOrEqual(TERMINAL_VELOCITY + 1e-6);
+    expect(d.vy).toBeLessThanOrEqual(TERMINAL_NEAR + 1e-6);
     expect(d.vy).toBeGreaterThan(early);
   });
 });
@@ -98,7 +100,7 @@ describe('landing on a surface', () => {
     // The reason collision is tested against the PREVIOUS position: at terminal
     // velocity a drop covers ~19px a frame, which is half this button's height.
     const world = createWorld(1000, 800);
-    const d = drop({ vy: TERMINAL_VELOCITY, y: BUTTON.top - 30 });
+    const d = drop({ vy: TERMINAL_NEAR, y: BUTTON.top - 30 });
     world.drops.push(d);
 
     run(world, [BUTTON], 0.5);
@@ -174,6 +176,46 @@ describe('absorption', () => {
     }
   });
 
+  it('spreads across the button instead of clumping', () => {
+    // The failure this exists to catch: motion derived from POSITION gave two
+    // nearby drops near-identical velocities, so the field converged into one
+    // blob — and the expression used had a negative mean, so the blob then
+    // migrated to a wall and stayed. The reference shows dozens of blobs spread
+    // over the whole pill.
+    const world = createWorld(1000, 800);
+    for (let i = 0; i < 14; i += 1) {
+      world.drops.push(drop({ x: 710 + (i % 7) * 26, y: -i * 30, seed: i * 1.7 }));
+    }
+    run(world, [SPONGE], 40);
+
+    const xs = world.drops.map((d) => d.x);
+    const spread = Math.max(...xs) - Math.min(...xs);
+    const usable = SPONGE.right - SPONGE.left;
+    // Occupying at least half the width is the difference between a field and
+    // a clump; a converged set collapses to a few pixels.
+    expect(spread).toBeGreaterThan(usable * 0.5);
+  });
+
+  it('keeps absorbed drops from overlapping each other', () => {
+    const world = createWorld(1000, 800);
+    for (let i = 0; i < 10; i += 1) {
+      world.drops.push(drop({ x: 800, y: -i * 25, seed: i * 0.9 }));
+    }
+    run(world, [SPONGE], 40);
+
+    for (let i = 0; i < world.drops.length; i += 1) {
+      for (let j = i + 1; j < world.drops.length; j += 1) {
+        const a = world.drops[i];
+        const b = world.drops[j];
+        if (a === undefined || b === undefined) continue;
+        const gap = Math.hypot(b.x - a.x, b.y - a.y);
+        // Separation runs once a frame, so allow a little interpenetration
+        // rather than demanding it be resolved perfectly every step.
+        expect(gap).toBeGreaterThan(((a.size + b.size) / 2) * 0.6);
+      }
+    }
+  });
+
   it('never lets an absorbed drop come to a dead stop', () => {
     const world = createWorld(1000, 800);
     const d = drop({ x: 800 });
@@ -186,17 +228,21 @@ describe('absorption', () => {
 describe('the pool', () => {
   it('collects drops that reach the floor', () => {
     const world = createWorld(1000, 800);
-    world.drops.push(drop({ x: 500 }));
+    const d = drop({ x: 500 });
+    world.drops.push(d);
 
-    run(world, [], 3);
-    expect(world.drops[0]?.phase).toBe('pooled');
+    // Waits for the landing rather than guessing how long the fall takes: the
+    // rain was deliberately slowed to roughly a fifth of real gravity, and a
+    // fixed three seconds no longer reaches the floor.
+    expect(runUntil(world, [], () => d.phase === 'pooled', 30)).toBe(true);
     expect(poolVolume(world)).toBeGreaterThan(0);
   });
 
   it('puts the paint in the column it landed in', () => {
     const world = createWorld(1000, 800);
-    world.drops.push(drop({ x: 120 }));
-    run(world, [], 3);
+    const d = drop({ x: 120 });
+    world.drops.push(d);
+    runUntil(world, [], () => d.phase === 'pooled', 30);
 
     const target = columnAt(world, 120);
     // Waves spread it, so check the neighbourhood rather than one column.
@@ -208,8 +254,9 @@ describe('the pool', () => {
 
   it('takes on the colour of what landed in it', () => {
     const world = createWorld(1000, 800);
-    world.drops.push(drop({ x: 500, color: 1 })); // green
-    run(world, [], 3);
+    const d = drop({ x: 500, color: 1 }); // green
+    world.drops.push(d);
+    runUntil(world, [], () => d.phase === 'pooled', 30);
 
     const column = world.pool[columnAt(world, 500)];
     expect(column).toBeDefined();
@@ -222,8 +269,9 @@ describe('the pool', () => {
     // is shallow early on that showed as a dark trough between the places it
     // had rained hardest. Paint on a floor is the colour of the paint.
     const world = createWorld(1000, 800);
-    world.drops.push(drop({ x: 500, color: 0 })); // pure red
-    run(world, [], 3);
+    const d = drop({ x: 500, color: 0 }); // pure red
+    world.drops.push(d);
+    runUntil(world, [], () => d.phase === 'pooled', 30);
 
     const column = world.pool[columnAt(world, 500)];
     expect(column).toBeDefined();

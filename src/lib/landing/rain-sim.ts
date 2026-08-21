@@ -53,6 +53,11 @@ export interface SimDrop {
   restLeft: number;
   /** Which way it will run off. -1 left, 1 right. */
   runoff: number;
+  /** Fixed per drop, so two drops in the same place still move differently.
+   *  See `stepAbsorbed` for why this had to stop being derived from position. */
+  seed: number;
+  /** This drop's own top speed. Depth drives it: near drops fall faster. */
+  terminal: number;
 }
 
 /** A thing in the world the rain can land on. Viewport coordinates. */
@@ -89,10 +94,20 @@ export interface World {
 
 /* ------------------------------------------------------------------ physics */
 
-/** px/s². Heavier than earth so drops read as paint rather than feathers. */
-export const GRAVITY = 1500;
-/** px/s. Without a terminal velocity the tall page turns drops into streaks. */
-export const TERMINAL_VELOCITY = 1150;
+/**
+ * px/s². Gentle on purpose.
+ *
+ * This was 1500, which is roughly real gravity and completely wrong for the
+ * page: the CSS build it replaced took 6-26 seconds to cross the viewport,
+ * about 48-210px/s, and at 1500 a drop passed the whole hero in under a second.
+ * The rain is meant to drift.
+ */
+export const GRAVITY = 145;
+
+/** The range of top speeds, px/s, spanned by depth — near drops fall fastest.
+ *  Matches the spread the original keyframe durations produced. */
+export const TERMINAL_NEAR = 215;
+export const TERMINAL_FAR = 52;
 /** How long a drop sits where it landed before it starts to run off, ms. */
 export const REST_MS = 380;
 /** px/s², sideways, once it starts running. */
@@ -139,7 +154,8 @@ export function step(
   world: World,
   dt: number,
   surfaces: readonly Surface[],
-  colors: readonly [number, number, number][]
+  colors: readonly [number, number, number][],
+  time = 0
 ): void {
   for (const drop of world.drops) {
     switch (drop.phase) {
@@ -150,12 +166,13 @@ export function step(
         stepResting(drop, dt, surfaces);
         break;
       case 'absorbed':
-        stepAbsorbed(drop, dt, surfaces);
+        stepAbsorbed(drop, dt, surfaces, time);
         break;
       case 'pooled':
         break;
     }
   }
+  separate(world.drops, surfaces);
   stepPool(world, dt);
 }
 
@@ -168,7 +185,7 @@ function stepFalling(
 ): void {
   const previousBottom = drop.y + drop.size / 2;
 
-  drop.vy = Math.min(TERMINAL_VELOCITY, drop.vy + GRAVITY * dt);
+  drop.vy = Math.min(drop.terminal, drop.vy + GRAVITY * dt);
   drop.y += drop.vy * dt;
   drop.x += drop.vx * dt;
 
@@ -186,6 +203,23 @@ function stepFalling(
     if (surface.absorbs) {
       drop.phase = 'absorbed';
       drop.host = i;
+      /*
+       * It swells on the way in.
+       *
+       * A raindrop is 2.5-22px and reads as a speck once it is inside a 56px
+       * pill — the reference is packed with blobs a third the pill's height. A
+       * drop entering liquid spreading out is also the physically sensible
+       * reading, and doing it to `size` rather than at draw time means the
+       * separation pass keeps them off each other at their real size.
+       */
+      // Capped against the host's own height as well as an absolute ceiling: a
+      // blob wider than the button it is in cannot be kept inside it, and the
+      // separation pass below would spend every frame shoving it through a wall.
+      drop.size = Math.min(
+        30,
+        (surface.bottom - surface.top) * 0.62,
+        drop.size * 2.2 + 5
+      );
       // Enters travelling, and keeps a little of the speed it arrived with.
       drop.vx = (drop.vx + (drop.x < (surface.left + surface.right) / 2 ? 40 : -40)) * 0.4;
       drop.vy = drop.vy * 0.12;
@@ -204,7 +238,15 @@ function stepFalling(
     return;
   }
 
-  if (bottom >= world.floor) {
+  // Meets the PAINT, not the floor under it.
+  //
+  // Testing against `world.floor` meant a drop sank through the visible surface
+  // of the pool and only vanished at the true bottom, so as the paint deepened
+  // there appeared to be an invisible shelf some way below the waves. The
+  // surface a drop lands on is the top of whatever has already gathered in its
+  // own column.
+  const surfaceHere = world.floor - (world.pool[columnAt(world, drop.x)]?.h ?? 0);
+  if (bottom >= surfaceHere) {
     addToPool(world, drop, colors);
   }
 }
@@ -241,18 +283,46 @@ function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): v
  * falling through it. Bouncing rather than wrapping so the motion stays legible
  * as one object moving around a space.
  */
-function stepAbsorbed(drop: SimDrop, dt: number, surfaces: readonly Surface[]): void {
+function stepAbsorbed(
+  drop: SimDrop,
+  dt: number,
+  surfaces: readonly Surface[],
+  time: number
+): void {
   const surface = surfaces[drop.host];
   if (surface === undefined) {
     drop.phase = 'falling';
     return;
   }
 
+  /*
+   * Two slow oscillators, offset by this drop's own seed.
+   *
+   * The previous version derived the wander from POSITION —
+   * `Math.sin(drop.y * 0.05) * 2 - 1` — and it had two faults that between them
+   * broke the effect entirely. Position-derived motion means two drops that
+   * happen to be near each other receive near-identical velocities and travel
+   * together forever, so the field converged into a single clump. And that
+   * expression ranges [-3, 1]: its mean is -1, a permanent leftward push, so
+   * the clump then migrated to one wall and sat there.
+   *
+   * Seeded time-based oscillators are independent by construction and centred
+   * on zero, which is what the reference actually shows: dozens of blobs
+   * spread across the whole pill, each going its own way.
+   */
+  const wanderX = Math.sin(time * 0.7 + drop.seed) + Math.sin(time * 0.31 + drop.seed * 2.3);
+  const wanderY = Math.cos(time * 0.53 + drop.seed * 1.7) + Math.cos(time * 0.23 + drop.seed);
+  drop.vx += wanderX * 9 * dt;
+  drop.vy += wanderY * 9 * dt;
+
+  drop.vx = clamp(drop.vx * 0.985, -26, 26);
+  drop.vy = clamp(drop.vy * 0.985, -26, 26);
+
   drop.x += drop.vx * dt;
   drop.y += drop.vy * dt;
 
   const r = drop.size / 2;
-  const inset = 2;
+  const inset = 1.5;
   if (drop.x - r < surface.left + inset) {
     drop.x = surface.left + inset + r;
     drop.vx = Math.abs(drop.vx);
@@ -267,11 +337,66 @@ function stepAbsorbed(drop: SimDrop, dt: number, surfaces: readonly Surface[]): 
     drop.y = surface.bottom - inset - r;
     drop.vy = -Math.abs(drop.vy);
   }
+}
 
-  // A slow wander, so a button holding several drops does not look like a
-  // pinball table.
-  drop.vx = clamp(drop.vx * 0.999 + (Math.sin(drop.y * 0.05) * 2 - 1) * dt * 6, -34, 34);
-  drop.vy = clamp(drop.vy * 0.999 + (Math.cos(drop.x * 0.05) * 2 - 1) * dt * 6, -34, 34);
+/**
+ * Keeps absorbed drops off one another.
+ *
+ * Oscillators alone still let two drops occupy the same spot by coincidence,
+ * and overlapping circles read as one blob rather than two. A light separation
+ * pass pushes any overlapping pair apart along the line between them, which is
+ * what holds the even spread the reference has. O(n²) over at most a couple of
+ * dozen drops per surface — a few hundred comparisons a frame.
+ */
+function separate(drops: readonly SimDrop[], surfaces: readonly Surface[]): void {
+  for (let i = 0; i < drops.length; i += 1) {
+    const a = drops[i];
+    if (a === undefined || a.phase !== 'absorbed') continue;
+
+    for (let j = i + 1; j < drops.length; j += 1) {
+      const b = drops[j];
+      if (b === undefined || b.phase !== 'absorbed' || b.host !== a.host) continue;
+
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.hypot(dx, dy);
+      const want = (a.size + b.size) / 2;
+      if (distance >= want || distance === 0) continue;
+
+      const push = (want - distance) / 2;
+      const nx = dx / distance;
+      const ny = dy / distance;
+      a.x -= nx * push;
+      a.y -= ny * push;
+      b.x += nx * push;
+      b.y += ny * push;
+
+      // Re-contained immediately.
+      //
+      // The wall clamp lives in `stepAbsorbed`, which has already run by the
+      // time separation happens, so a push resolved here would otherwise sit
+      // outside the button until the next frame — and in a button barely taller
+      // than a blob, two of them pressing apart will always push through a wall.
+      contain(a, surfaces[a.host]);
+      contain(b, surfaces[b.host]);
+    }
+  }
+}
+
+/** Keeps a drop inside its host, killing any velocity that took it out. */
+function contain(drop: SimDrop, surface: Surface | undefined): void {
+  if (surface === undefined) return;
+  const r = drop.size / 2;
+  const inset = 1.5;
+
+  const minX = surface.left + inset + r;
+  const maxX = surface.right - inset - r;
+  const minY = surface.top + inset + r;
+  const maxY = surface.bottom - inset - r;
+
+  // A blob wider than its host would give an inverted range; centre it instead.
+  drop.x = minX > maxX ? (surface.left + surface.right) / 2 : clamp(drop.x, minX, maxX);
+  drop.y = minY > maxY ? (surface.top + surface.bottom) / 2 : clamp(drop.y, minY, maxY);
 }
 
 /* -------------------------------------------------------------------- pool */

@@ -1,4 +1,6 @@
+import { formatOklchCss, parseColor } from '@/lib/color-engine';
 import { REPO_URL, repoStats } from '@/lib/landing/repo-stats';
+import { TEXT_MIN_RATIO, solveForeground } from '@/lib/landing/room-theme';
 import styles from './credibility-strip.module.css';
 
 /**
@@ -46,9 +48,45 @@ import styles from './credibility-strip.module.css';
  */
 const STARS_WORTH_SHOWING = 25;
 
+/**
+ * The colours the options are told apart by, solved rather than picked.
+ *
+ * The values used to be one string with middots between them — "sRGB · Display
+ * P3 · Rec2020" — which makes a reader parse a list before they can count it.
+ * Colour does that job instantly and without punctuation.
+ *
+ * Solved against this section's paper by the same function the six rooms use,
+ * so every one of them clears 4.5:1 on it by construction. Hand-picking six
+ * accents to sit on a near-white ground is exactly the job this codebase
+ * already has a solver for, and picking them by eye on the page that sells the
+ * solver would be the wrong way round.
+ */
+const PAPER = parseColor('oklch(96.5% 0.004 95)');
+
+const OPTION_HUES = [25, 150, 262, 88, 320, 200] as const;
+
+/*
+ * Each hue is solved against PAPER — against paper's own lightness carried to
+ * that hue, which is the same thing here because paper is all but neutral at
+ * c: 0.004.
+ *
+ * The first attempt passed `{ l: 0.5, c: 0.12, h }` as the background, which is
+ * a mid-tone of the hue and not the ground these sit on at all. The solver
+ * dutifully returned foregrounds that clear 4.5:1 against THAT, and they came
+ * out as pale tints — barely legible on a near-white sheet, in a section whose
+ * subject is contrast. `side: 'darker'` then keeps the whole set as inks rather
+ * than letting some solve light and some dark.
+ */
+const OPTION_COLORS: readonly string[] = OPTION_HUES.map((hue) =>
+  formatOklchCss(
+    solveForeground({ l: PAPER.l, c: PAPER.c, h: hue }, TEXT_MIN_RATIO, undefined, 'darker')
+  )
+);
+
 interface Fact {
   readonly label: string;
-  readonly value: string;
+  /** Split into its options rather than joined — see OPTION_COLORS. */
+  readonly value: readonly string[];
   readonly note: string;
 }
 
@@ -67,34 +105,34 @@ export async function CredibilityStrip() {
   const facts: readonly Fact[] = [
     {
       label: 'Licence',
-      value: 'MIT',
+      value: ['MIT'],
       note: 'Depend on the color engine in your own work.',
     },
     {
       label: 'Working space',
-      value: 'OKLCH',
+      value: ['OKLCH'],
       note: 'Perceptually uniform end to end, which is what makes ordering by lightness mean anything.',
     },
     {
       label: 'Gamuts',
-      value: 'sRGB · Display P3 · Rec2020',
+      value: ['sRGB', 'Display P3', 'Rec2020'],
       note: 'Every step of every ramp marked in all three, with a separate mapping for what print can hold.',
     },
     {
       label: 'Formats',
-      value: 'HEX · RGB · HSL · CMYK',
+      value: ['HEX', 'RGB', 'HSL', 'CMYK'],
       note: 'Read in and written out around the same OKLCH core, so nothing drifts on the round trip.',
     },
     {
       label: 'Standards',
-      value: 'WCAG 2.2 · APCA',
+      value: ['WCAG 2.2', 'APCA'],
       note: 'The compliance number and the perceptual one, carried together rather than one standing in for the other — with ΔEOK for difference and four models of color blindness.',
     },
     ...(stats.stars !== null && stats.stars >= STARS_WORTH_SHOWING
       ? [
           {
             label: 'Stars',
-            value: stats.stars.toLocaleString('en'),
+            value: [stats.stars.toLocaleString('en')],
             note: 'On GitHub, where the whole thing lives.',
           },
         ]
@@ -103,10 +141,18 @@ export async function CredibilityStrip() {
 
   return (
     <section className={styles.strip} aria-labelledby="credibility-heading">
+      {/*
+        Six cells across three columns.
+
+        The claim is one of them rather than a column of its own: with five
+        facts beside it, a two-column split left the specification tall and
+        narrow while most of the width went unused. Three and three fills the
+        measure and puts everything on the same footing.
+      */}
       <div className={styles.inner}>
         <div className={styles.lead}>
           <h2 id="credibility-heading" className={styles.heading}>
-            Open-source, you're welcome.
+            Open-source, you&rsquo;re welcome.
           </h2>
 
           <a className={styles.action} href={REPO_URL} target="_blank" rel="noopener noreferrer">
@@ -128,23 +174,28 @@ export async function CredibilityStrip() {
           <p className={styles.note}>No account, no trial, nothing to cancel.</p>
         </div>
 
-        {/*
-          A specification, not a set of cards.
-          
-          The previous version was a four-column auto-fit grid of stat tiles,
-          which is the shape every dashboard template ships with — and it read
-          as one. Rows against full-width rules read as documentation, which is
-          what these claims actually are.
-        */}
-        <dl className={styles.spec}>
-          {facts.map((fact) => (
-            <div className={styles.row} key={fact.label}>
-              <dt className={styles.rowLabel}>{fact.label}</dt>
-              <dd className={styles.rowValue}>{fact.value}</dd>
-              <dd className={styles.rowNote}>{fact.note}</dd>
-            </div>
-          ))}
-        </dl>
+        {facts.map((fact) => (
+          <dl className={styles.fact} key={fact.label}>
+            <dt className={styles.factLabel}>{fact.label}</dt>
+            <dd className={styles.factValue}>
+              {fact.value.map((option, index) => (
+                <span
+                  key={option}
+                  className={styles.option}
+                  style={
+                    {
+                      '--option-color':
+                        OPTION_COLORS[index % OPTION_COLORS.length] ?? 'currentColor',
+                    } as React.CSSProperties
+                  }
+                >
+                  {option}
+                </span>
+              ))}
+            </dd>
+            <dd className={styles.factNote}>{fact.note}</dd>
+          </dl>
+        ))}
       </div>
     </section>
   );

@@ -5,6 +5,8 @@ import { MAX_DROPS, buildDrops, fieldOpacity } from '@/lib/landing/rain';
 import {
   MAX_POOL,
   POOL_COLUMNS,
+  TERMINAL_FAR,
+  TERMINAL_NEAR,
   createWorld,
   step,
   type SimDrop,
@@ -50,8 +52,9 @@ interface PaintRainProps {
 }
 
 /** Beyond this the absorbing button is full and starts shedding like the rest.
- *  Without a cap the whole field eventually ends up inside one pill. */
-const ABSORB_CAPACITY = 16;
+ *  Without a cap the whole field eventually ends up inside one pill. Set for
+ *  the density the reference has — dozens of blobs, not a handful. */
+const ABSORB_CAPACITY = 26;
 
 /** Longest frame the simulation will accept, seconds. A backgrounded tab hands
  *  back a delta of several seconds, and every drop would teleport through every
@@ -79,8 +82,10 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
       // Spread through the fall on the first frame rather than released as a
       // wave from the top edge — the same job the negative CSS delay did.
       y: -window.innerHeight * 0.4 + ((index / MAX_DROPS) * 1.6 - 0.2) * window.innerHeight,
-      vx: drop.sway * 0.4,
-      vy: 120 + (1 - drop.depth) * 240,
+      vx: drop.sway * 0.16,
+      // Starts at its own top speed rather than accelerating into frame, so
+      // the field looks like rain already falling rather than rain released.
+      vy: TERMINAL_FAR + (1 - drop.depth) * (TERMINAL_NEAR - TERMINAL_FAR),
       size: drop.size,
       color: drop.roomIndex,
       depth: drop.depth,
@@ -88,6 +93,10 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
       host: -1,
       restLeft: 0,
       runoff: 1,
+      // Deterministic, from the field's own index — a random seed here would
+      // differ between server and client and trip hydration.
+      seed: (index * 2.399963) % (Math.PI * 2),
+      terminal: TERMINAL_FAR + (1 - drop.depth) * (TERMINAL_NEAR - TERMINAL_FAR),
     }));
     world.drops.push(...drops);
 
@@ -120,7 +129,7 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
       world.floor = document.documentElement.scrollHeight - window.scrollY;
 
       recycle(world.drops, countRef.current);
-      step(world, dt, surfaces, palette);
+      step(world, dt, surfaces, palette, now / 1000);
       draw(context, world, surfaces, palette, dpr, countRef.current);
     };
     frame = requestAnimationFrame(tick);
@@ -185,8 +194,8 @@ function recycle(drops: SimDrop[], target: number): void {
     drop.phase = 'falling';
     drop.x = Math.random() * window.innerWidth;
     drop.y = -drop.size - Math.random() * window.innerHeight * 0.5;
-    drop.vy = 120;
-    drop.vx = (Math.random() - 0.5) * 30;
+    drop.vy = drop.terminal * 0.7;
+    drop.vx = (Math.random() - 0.5) * 12;
     drop.host = -1;
     airborne += 1;
   }
@@ -254,12 +263,36 @@ function drawDrop(
   context.translate(drop.x, drop.y);
   context.globalAlpha *= dim;
 
-  context.beginPath();
   if (suspended) {
-    // Inside a button it is a bubble, not a falling drop — nothing is pulling
-    // it into a teardrop in there.
+    /*
+     * Inside a button it is a blob suspended in liquid, not a falling drop —
+     * nothing in there is pulling it into a teardrop.
+     *
+     * Drawn with a soft edge scaled by depth, which is the thing the reference
+     * gets its sense of volume from: the blobs further back in the liquid are
+     * blurred, the ones near the surface are sharp, and it reads as depth of
+     * field rather than as a pattern of flat dots. A canvas `filter: blur()`
+     * per drop would cost a full-surface repaint each time, so the softness is
+     * in the gradient instead.
+     */
+    // Softest blobs still hold a core, or the field reads as fog rather than
+    // as things suspended at different depths.
+    const softness = 0.12 + drop.depth * 0.34;
+    const blob = context.createRadialGradient(0, 0, 0, 0, 0, r);
+    blob.addColorStop(0, `rgb(${red} ${green} ${blue})`);
+    blob.addColorStop(Math.max(0.05, 1 - softness), `rgb(${red} ${green} ${blue})`);
+    blob.addColorStop(1, `rgba(${red} ${green} ${blue} / 0)`);
+    context.globalAlpha *= 0.72 + (1 - drop.depth) * 0.28;
+    context.beginPath();
     context.arc(0, 0, r, 0, Math.PI * 2);
-  } else {
+    context.fillStyle = blob;
+    context.fill();
+    context.restore();
+    return;
+  }
+
+  context.beginPath();
+  {
     context.moveTo(0, -r * 1.5);
     context.bezierCurveTo(r * 0.92, -r * 0.28, r, r * 0.34, 0, r);
     context.bezierCurveTo(-r, r * 0.34, -r * 0.92, -r * 0.28, 0, -r * 1.5);

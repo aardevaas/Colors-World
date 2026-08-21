@@ -32,25 +32,24 @@
   max-width: 78rem;
   margin-inline: auto;
   display: grid;
-  gap: clamp(2.5rem, 6vw, 5rem);
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: start;
 }
 
 /* ------------------------------------------------------------------ the lead */
 
 .lead {
   display: grid;
-  justify-items: start;
-  gap: clamp(1.25rem, 2.5vw, 2rem);
+  justify-items: center;
+  align-content: start;
+  gap: clamp(1rem, 2vw, 1.5rem);
 }
 
 .heading {
   margin: 0;
-  /* Wide enough to keep "Open source," on one line. At the previous 16ch in a
-     22rem column it broke after "Open", which strands the weakest word in the
-     sentence on its own line and makes the rag read as an accident. */
-  max-width: 15ch;
+  max-width: 14ch;
   font-family: var(--font-display), system-ui, sans-serif;
-  font-size: clamp(1.875rem, 1rem + 2.6vw, 3.1rem);
+  font-size: clamp(1.75rem, 1rem + 2.2vw, 2.75rem);
   font-weight: 700;
   /* Tight, as on the bands — this is display type, not a paragraph. */
   line-height: 0.98;
@@ -87,7 +86,7 @@
 }
 
 .actionLabel {
-  padding: 0.85rem 1.35rem;
+  padding: 0.8rem 1.25rem;
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -98,24 +97,22 @@
 .actionArrow {
   display: grid;
   place-items: center;
-  width: 3rem;
+  width: 2.9rem;
   /* Its own cell, divided from the label — the mark reads as a destination
      rather than as an icon decorating a word. */
   border-inline-start: 1px solid currentColor;
+  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .actionArrow svg {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .action:hover .actionArrow svg,
 .action:focus-visible .actionArrow svg {
   transform: translateX(2px);
-}
-
-.actionArrow svg {
-  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .note {
@@ -125,36 +122,28 @@
   color: var(--ink-quiet);
 }
 
-/* ---------------------------------------------------------- the spec sheet */
+/* ------------------------------------------------------------------- a fact */
 
 /*
- * A container, so the rows below respond to the width they actually have.
+ * Each fact is its own centred block rather than a row in a table.
  *
- * They were sized off viewport breakpoints, and at 1024px that was wrong in the
- * way viewport breakpoints usually are: the two-column layout had already
- * narrowed this column to ~417px while the media query still saw a 1024px
- * "desktop" and kept three columns. The note column resolved to 0px, the text
- * wrapped a character at a time, the section grew to 1253px tall and pushed
- * 38px of horizontal overflow onto the document.
+ * The specification was three columns — label, value, note — stacked as five
+ * rows down one side. That left it tall and narrow while most of the width went
+ * unused, which is what made the section feel long. Six blocks across three
+ * columns fills the measure and halves the height.
  */
-.spec {
-  container-type: inline-size;
+.fact {
   margin: 0;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding-top: clamp(1rem, 2vw, 1.5rem);
   border-top: 1px solid var(--rule);
 }
 
-.row {
-  display: grid;
-  /* Label, value, note — a specification's three columns. Collapses to stacked
-     rows below the breakpoint at the end of this file. */
-  grid-template-columns: minmax(7rem, 10rem) minmax(8rem, 14rem) minmax(0, 1fr);
-  gap: 0.35rem clamp(1rem, 3vw, 3rem);
-  align-items: baseline;
-  padding: clamp(1.1rem, 2vw, 1.6rem) 0;
-  border-bottom: 1px solid var(--rule);
-}
-
-.rowLabel {
+.factLabel {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.6875rem;
   font-weight: 400;
@@ -163,22 +152,40 @@
   color: var(--ink-quiet);
 }
 
-.rowValue {
+/*
+ * The options, told apart by colour rather than by punctuation.
+ *
+ * They were one string joined with middots. Colour separates them at a glance
+ * and needs no separator at all, which is the whole reason the middots are
+ * gone. Wrapped in a flex row so a long list breaks cleanly instead of
+ * splitting an option across two lines.
+ */
+.factValue {
   margin: 0;
-  font-family: var(--font-display), system-ui, sans-serif;
-  font-size: clamp(1.25rem, 0.9rem + 1.1vw, 1.875rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem 0.65rem;
 }
 
-.rowNote {
+.option {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(1.15rem, 0.9rem + 0.7vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  /* Solved against this section's paper in CredibilityStrip.tsx, so every one
+     of these clears 4.5:1 on it by construction. */
+  color: var(--option-color, var(--ink));
+  white-space: nowrap;
+}
+
+.factNote {
   margin: 0;
-  max-width: 44ch;
+  max-width: 30ch;
   font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   line-height: 1.55;
   text-wrap: pretty;
   color: var(--ink-quiet);
@@ -186,26 +193,17 @@
 
 /* ------------------------------------------------------------------ at width */
 
-/* Stack the row whenever ITS column is too narrow for three, whatever the
-   viewport happens to be doing. */
-@container (max-width: 34rem) {
-  .row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.3rem;
+@media (min-width: 48rem) {
+  .inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-/*
- * Two columns only once there is genuinely room for both. At 60rem there was
- * not: splitting a 1024px viewport left the specification 417px, which is less
- * than its own three columns need. 75rem leaves it 564px.
- */
-@media (min-width: 75rem) {
+@media (min-width: 64rem) {
   .inner {
-    /* The claim on the left, the specification on the right. */
-    grid-template-columns: minmax(0, 27rem) minmax(0, 1fr);
-    align-items: start;
-    gap: clamp(3rem, 7vw, 7rem);
+    /* Three and three. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(2rem, 4vw, 3.5rem);
   }
 }
 

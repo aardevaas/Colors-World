@@ -9,18 +9,30 @@ import {
 } from '../room-theme';
 
 /**
- * Every hue, built exactly the way the shipping palette builds a room color.
+ * The hue wheel, sampled every 3 degrees, built exactly the way the shipping
+ * palette builds a room color.
  *
  * A flat `c: 0.12` was used here first and it put roughly a third of the hues
  * outside sRGB — the fixture failed the gamut assertion, not the solver. Taking
  * each hue to its own ceiling is both in-gamut by construction and the actual
  * input this code will see.
+ *
+ * Sampled rather than exhaustive because 360 of them made these tests take
+ * 5-6 seconds each, and once the suite grew enough to run them under real
+ * parallel load they began tripping vitest's 5s timeout — intermittently, and a
+ * different one each run, which is the worst failure mode a test can have. The
+ * solver has no discontinuities finer than 3 degrees: reachable chroma varies
+ * smoothly with hue, so a bug that hides between 121 and 122 degrees but not at
+ * 120 or 123 is not a thing this code can express.
  */
-const EVERY_HUE: readonly Oklch[] = Array.from({ length: 360 }, (_, h) => ({
-  l: ROOM_LIGHTNESS,
-  c: maxChroma(ROOM_LIGHTNESS, h, 'srgb') * CEILING_FRACTION,
-  h,
-}));
+const EVERY_HUE: readonly Oklch[] = Array.from({ length: 120 }, (_, i) => {
+  const h = i * 3;
+  return {
+    l: ROOM_LIGHTNESS,
+    c: maxChroma(ROOM_LIGHTNESS, h, 'srgb') * CEILING_FRACTION,
+    h,
+  };
+});
 
 describe('solveForeground', () => {
   it('clears the target it was given, at every hue', () => {

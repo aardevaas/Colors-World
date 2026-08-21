@@ -261,14 +261,17 @@
 
   /* The glass itself: a barely-there fill, and the stage behind it genuinely
      blurred rather than faked with a lighter panel. */
+  /* Barely any fill at all. Glass is mostly what is behind it, and the pane
+     reads as glass because of its EDGES and what it does to that background —
+     not because of a milky panel painted over it. */
   background: linear-gradient(
-    150deg,
-    oklch(100% 0 0 / 0.1) 0%,
-    oklch(100% 0 0 / 0.045) 42%,
-    oklch(100% 0 0 / 0.08) 100%
+    152deg,
+    oklch(100% 0 0 / 0.07) 0%,
+    oklch(100% 0 0 / 0.02) 46%,
+    oklch(100% 0 0 / 0.055) 100%
   );
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.35) brightness(1.08);
+  -webkit-backdrop-filter: blur(20px) saturate(1.35) brightness(1.08);
 
   transform: perspective(700px) translateZ(var(--lift))
     rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
@@ -276,9 +279,13 @@
 
   box-shadow:
     /* The bright top edge, where a sheet of glass catches the light. */
-    inset 0 1px 0 0 oklch(100% 0 0 / 0.34),
+    inset 0 1px 0 0 oklch(100% 0 0 / 0.4),
     /* And the dark bottom edge, which is its thickness. */
-    inset 0 -1px 0 0 oklch(0% 0 0 / 0.28),
+    inset 0 -1px 0 0 oklch(0% 0 0 / 0.3),
+    /* A faint inner rim all the way round — the second surface of the pane,
+       seen through the first. This is the detail that stops it reading as a
+       flat panel with a highlight drawn on the top. */
+    inset 0 0 0 1px oklch(100% 0 0 / 0.06),
     /* Cast on the wall behind, offset down — the plate is above the light. */
     0 18px 34px -14px oklch(0% 0 0 / 0.72),
     0 4px 10px -4px oklch(0% 0 0 / 0.5);
@@ -452,9 +459,17 @@
   transition: filter 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/*
+ * The name lights up under the pointer.
+ *
+ * `brightness` on top of the saturation, so it does not merely gain its colour
+ * back but visibly brightens — the plate is glass catching light, and the thing
+ * written on it should catch some too. Only the name: "Built by:" and the icon
+ * stay where they are, which is what keeps the credit a credit.
+ */
 .builtBy:hover .builtByName,
 .builtBy:focus-visible .builtByName {
-  filter: saturate(1) opacity(1);
+  filter: saturate(1.15) brightness(1.35) opacity(1);
   animation: spectrumDrift 2.2s linear infinite;
 }
 
