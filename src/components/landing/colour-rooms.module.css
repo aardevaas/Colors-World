@@ -89,6 +89,9 @@
 }
 
 .link {
+  /* Above the texture layer, which is absolutely positioned at z-index 0. */
+  position: relative;
+  z-index: 1;
   display: grid;
   /* Numeral and arrow are fixed rails; the type takes what is left. */
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -117,6 +120,97 @@
 .link:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: -12px;
+}
+
+/* --------------------------------------------------------------- the texture */
+
+/*
+ * One texture per room, drawn in that room's own ink.
+ *
+ * Built from `--ink` through `color-mix` rather than from a grey or an image,
+ * for the same reason everything else here is: it stays inside the pair system,
+ * so the texture turns with the band on hover without a second rule.
+ *
+ * The alphas are deliberately low. Text sits above this layer, and the contrast
+ * guarantee in `room-theme.ts` is between the ink and the GROUND — a texture
+ * dense enough to shift the effective local background would quietly invalidate
+ * the number the band prints on itself. Fine marks at ~8-22% do not.
+ *
+ * Each is also apt for its room rather than assigned at random: a ramp gets
+ * bands, the visualizer gets graph paper, typography gets ruled baselines.
+ */
+.texture {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* library — halftone. Tiny marks, so a higher alpha still covers little area. */
+.texDots {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--ink) 22%, transparent) 1.4px,
+    transparent 1.5px
+  );
+  background-size: 17px 17px;
+}
+
+/* compose — hatching, as in a drawing being worked up. */
+.texHatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--ink) 13%, transparent) 0 1px,
+    transparent 1px 9px
+  );
+}
+
+/* scales — even bands, the ramp the room builds. */
+.texSteps {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--ink) 9%, transparent) 0 12px,
+    transparent 12px 24px
+  );
+}
+
+/* visualizer — graph paper, since the room plots things. */
+.texGrid {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklab, var(--ink) 10%, transparent) 0 1px,
+      transparent 1px 34px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink) 10%, transparent) 0 1px,
+      transparent 1px 34px
+    );
+}
+
+/* typography — ruled paper: a baseline every 13px, a heavier rule every fourth,
+   which is what a real baseline grid looks like. */
+.texRules {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink) 16%, transparent) 0 1px,
+      transparent 1px 52px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--ink) 7%, transparent) 0 1px,
+      transparent 1px 13px
+    );
+}
+
+/* studio — grain. The one texture that cannot read the ink: an SVG filter takes
+   no custom properties, so it is neutral noise laid over the ground with a
+   blend mode instead, which works on any colour. */
+.texGrain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.5;
 }
 
 /* --------------------------------------------------------------- the numeral */
@@ -189,6 +283,35 @@
   padding-bottom: 0.126em;
 }
 
+/*
+ * The typography room's nameplate, set from loose sorts.
+ *
+ * The letters keep the band's own `font-size` as their base and scale from it,
+ * so this stays on the same container-driven sizing as every other room — the
+ * word cannot outgrow its column just because it is set in six faces.
+ *
+ * `letter-spacing` is reset to normal here. The house tracking is -0.045em,
+ * which is tuned for Unbounded at display size and closes mixed faces into each
+ * other badly.
+ */
+.handSet {
+  letter-spacing: normal;
+  /* Rotated sorts sweep slightly wider than their boxes. */
+  padding-inline: 0.04em;
+}
+
+.sort {
+  display: inline-block;
+  font-family: var(--sort-family), var(--font-display), system-ui, sans-serif;
+  font-weight: var(--sort-weight, 800);
+  font-style: var(--sort-style, normal);
+  font-size: calc(1em * var(--sort-size, 1));
+  transform: rotate(var(--sort-rotate, 0deg)) translateY(var(--sort-shift, 0));
+  /* Each sort turns about its own foot, the way a letter locked in a forme
+     would, rather than about its centre. */
+  transform-origin: 50% 100%;
+}
+
 /* --------------------------------------------------------------- the one line */
 
 .line {
@@ -252,21 +375,56 @@
 
 /* ---------------------------------------------------------------- the reveal */
 
+/*
+ * Each band wipes in from the left, one after the next.
+ *
+ * A clip-path rather than a transform, for the same reason the first version
+ * used one: the bands are full-bleed, and a translated band briefly exposes the
+ * page behind its trailing edge. Clipping the inline-end edge draws the colour
+ * on as if it were being pulled across, which is the right gesture for a page
+ * whose subject is paint.
+ *
+ * `--reveal-delay` is set per band by the observer rather than by nth-child.
+ * Two or three bands are in view at once on a short viewport, so a fixed
+ * per-index delay would either fire them together or leave the later ones
+ * waiting on a stagger that started before they arrived.
+ */
 .willReveal {
-  opacity: 0;
-  /* clip-path rather than transform: the bands are full-bleed, and a
-     translated band briefly exposes the page behind its trailing edge. */
-  clip-path: inset(38% 0 0 0);
+  clip-path: inset(0 100% 0 0);
 }
 
 .isRevealing {
-  animation: band-in 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: band-wipe 1000ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms) both;
 }
 
-@keyframes band-in {
+@keyframes band-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/*
+ * The contents follow the wipe in rather than arriving with it, so the band
+ * reads as colour first and type second. Slightly longer and slightly later
+ * than the wipe, which is what keeps the two from looking like one movement.
+ */
+.willReveal .link > * {
+  opacity: 0;
+  transform: translateX(-1.5rem);
+}
+
+.isRevealing .link > * {
+  animation: content-in 780ms cubic-bezier(0.16, 1, 0.3, 1)
+    calc(var(--reveal-delay, 0ms) + 220ms) both;
+}
+
+@keyframes content-in {
   to {
     opacity: 1;
-    clip-path: inset(0 0 0 0);
+    transform: none;
   }
 }
 
@@ -313,12 +471,15 @@
     transition: none;
   }
 
-  .willReveal {
+  .willReveal,
+  .willReveal .link > * {
     opacity: 1;
     clip-path: none;
+    transform: none;
   }
 
-  .isRevealing {
+  .isRevealing,
+  .isRevealing .link > * {
     animation: none;
   }
 }

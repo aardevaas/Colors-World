@@ -76,16 +76,23 @@ describe('buildDrops — the field itself', () => {
   });
 });
 
-describe('visibleDrops — sparse at the top is the whole brief', () => {
+describe('visibleDrops — the top of the page stays the sparse end', () => {
   it('shows nothing at zero', () => {
     expect(visibleDrops(0)).toBe(0);
   });
 
   it('is genuinely sparse early, not merely reduced', () => {
-    // "Very very lightly" at rest. A linear ramp already reads as weather by
-    // 0.2, which is why the curve is quadratic.
-    expect(visibleDrops(0.2)).toBeLessThan(4);
-    expect(visibleDrops(0.35)).toBeLessThan(9);
+    // A linear ramp already reads as weather by 0.2, which is why the curve is
+    // quadratic.
+    //
+    // Stated as a fraction of the field rather than a drop count. The brief
+    // moved once already — the page was asked to rain harder, MAX_DROPS went
+    // from 54 to 76, and these read as failures when nothing about the shape
+    // of the ramp had changed. What is actually being asserted is that the top
+    // of the page is a small share of full rain, and that survives the next
+    // density change too.
+    expect(visibleDrops(0.2) / MAX_DROPS).toBeLessThan(0.08);
+    expect(visibleDrops(0.35) / MAX_DROPS).toBeLessThan(0.16);
   });
 
   it('reaches the full field by the end', () => {
@@ -125,7 +132,8 @@ describe('fieldOpacity', () => {
 describe('rainIntensityAt — the scroll ramp', () => {
   it('rests low at the top of the page', () => {
     expect(rainIntensityAt(0)).toBeCloseTo(RESTING_INTENSITY, 5);
-    expect(visibleDrops(rainIntensityAt(0))).toBeLessThan(8);
+    // As above: a share of the field, not a count.
+    expect(visibleDrops(rainIntensityAt(0)) / MAX_DROPS).toBeLessThan(0.2);
   });
 
   it('never rains less as you scroll further', () => {

@@ -16,8 +16,11 @@
 import { ROOM_IDS } from '@/lib/nav/tabs';
 
 /** The full field. `intensity` selects how many of these are actually shown,
- *  so scrolling reveals more drops without ever remounting the layer. */
-export const MAX_DROPS = 54;
+ *  so scrolling reveals more drops without ever remounting the layer.
+ *
+ *  Raised from 54 on request — the page wanted more weather throughout, not a
+ *  different curve. The shape of the ramp below is unchanged. */
+export const MAX_DROPS = 76;
 
 /** Below this the layer is effectively off — used to skip work entirely. */
 export const MIN_VISIBLE_INTENSITY = 0.01;
@@ -127,7 +130,12 @@ function clamp01(value: number): number {
  * Rests low so the top of the page is barely raining, then climbs as the reader
  * leaves the hero and the rooms come up to be painted.
  */
-export const RESTING_INTENSITY = 0.34;
+/**
+ * Raised from 0.34 with `MAX_DROPS`. The hero is still the sparse end of the
+ * page — about a dozen drops rather than half a dozen — but "barely raining"
+ * has become "raining lightly", which is what was asked for.
+ */
+export const RESTING_INTENSITY = 0.38;
 
 export function rainIntensityAt(progress: number): number {
   const p = Number.isFinite(progress) ? Math.max(0, progress) : 0;

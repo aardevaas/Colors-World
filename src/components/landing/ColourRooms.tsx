@@ -72,6 +72,62 @@ const ROOM_LINE: Record<TabId, string> = {
     'Where the system stops being yours and becomes something you can hand over.',
 };
 
+/**
+ * The typography room sets its own name in mixed type — one face per letter,
+ * as if the word had been hand-set from a case of loose sorts.
+ *
+ * Every other room uses the house display face, and that contrast is the point:
+ * this is the room whose claim is that contrast is a property of type, so it
+ * makes the claim in its own nameplate rather than only in its one line of copy.
+ *
+ * Each sort carries a size factor because the six families do not share an
+ * x-height — Instrument Serif set at Archivo Black's size looks a third
+ * smaller. The factors bring them to the same optical weight on the line rather
+ * than the same nominal one.
+ *
+ * The rotation and baseline shift are small on purpose: enough to read as metal
+ * type set by hand and locked up slightly out of true, not enough to look
+ * broken. Cycled with `%` so the array is not coupled to the label's length.
+ */
+interface Sort {
+  readonly family: string;
+  readonly weight: number;
+  readonly italic?: true;
+  /** Multiplier on the band's display size. */
+  readonly size: number;
+  /** Degrees, as if the sort sat slightly askew in the forme. */
+  readonly rotate: number;
+  /** Baseline shift in em. */
+  readonly shift: number;
+}
+
+const HAND_SET: readonly Sort[] = [
+  { family: 'var(--font-display)', weight: 800, size: 1, rotate: -1.5, shift: 0 },
+  { family: 'var(--font-serif)', weight: 400, italic: true, size: 1.34, rotate: 2, shift: 0.01 },
+  { family: 'var(--font-grotesque)', weight: 400, size: 1.08, rotate: -0.5, shift: -0.015 },
+  { family: 'var(--font-mono)', weight: 500, size: 1.02, rotate: 2.5, shift: 0.02 },
+  { family: 'var(--font-hand)', weight: 700, size: 1.42, rotate: -3, shift: -0.01 },
+  { family: 'var(--font-body)', weight: 600, size: 1.06, rotate: 1, shift: 0.015 },
+  { family: 'var(--font-serif)', weight: 400, size: 1.34, rotate: -2, shift: 0 },
+  { family: 'var(--font-display)', weight: 600, size: 0.98, rotate: 1.5, shift: -0.02 },
+  { family: 'var(--font-grotesque)', weight: 400, size: 1.08, rotate: -1, shift: 0.01 },
+  { family: 'var(--font-hand)', weight: 700, size: 1.42, rotate: 2.5, shift: -0.005 },
+];
+
+/**
+ * Which texture each room wears. A `Record` keyed by `TabId` rather than an
+ * array or an `nth-child` rule, so adding a room is a type error here instead
+ * of a band that silently comes out plain.
+ */
+const ROOM_TEXTURE: Record<TabId, string | undefined> = {
+  library: styles.texDots,
+  compose: styles.texHatch,
+  scales: styles.texSteps,
+  visualizer: styles.texGrid,
+  typography: styles.texRules,
+  studio: styles.texGrain,
+};
+
 export function ColourRooms({ rooms }: ColourRoomsProps) {
   const listRef = useRef<HTMLOListElement>(null);
 
@@ -119,6 +175,11 @@ export function ColourRooms({ rooms }: ColourRoomsProps) {
                 } as React.CSSProperties
               }
             >
+              <span
+                className={`${styles.texture} ${ROOM_TEXTURE[tab.id] ?? ''}`}
+                aria-hidden="true"
+              />
+
               <Link href={tab.href} className={styles.link}>
                 <span className={styles.index}>
                   {String(index + 1).padStart(2, '0')}
@@ -128,7 +189,42 @@ export function ColourRooms({ rooms }: ColourRoomsProps) {
                     column it actually occupies rather than the viewport — see
                     the note on `.name`. */}
                 <div className={styles.nameCell}>
-                  <h3 className={styles.name}>{tab.label}</h3>
+                  {/* `aria-label` so the word is announced as a word. Splitting
+                      a heading into per-letter inline-blocks otherwise invites
+                      a screen reader to spell it out. */}
+                  <h3
+                    className={
+                      tab.id === 'typography'
+                        ? `${styles.name} ${styles.handSet}`
+                        : styles.name
+                    }
+                    aria-label={tab.id === 'typography' ? tab.label : undefined}
+                  >
+                    {tab.id === 'typography'
+                      ? [...tab.label].map((letter, position) => {
+                          const sort = HAND_SET[position % HAND_SET.length];
+                          if (sort === undefined) return letter;
+                          return (
+                            <span
+                              key={`${letter}-${position}`}
+                              className={styles.sort}
+                              style={
+                                {
+                                  '--sort-family': sort.family,
+                                  '--sort-weight': sort.weight,
+                                  '--sort-style': sort.italic === true ? 'italic' : 'normal',
+                                  '--sort-size': sort.size,
+                                  '--sort-rotate': `${sort.rotate}deg`,
+                                  '--sort-shift': `${sort.shift}em`,
+                                } as React.CSSProperties
+                              }
+                            >
+                              {letter}
+                            </span>
+                          );
+                        })
+                      : tab.label}
+                  </h3>
                 </div>
 
                 <p className={styles.line}>{ROOM_LINE[tab.id]}</p>
@@ -159,8 +255,11 @@ export function ColourRooms({ rooms }: ColourRoomsProps) {
   );
 }
 
+/** Gap between two bands that arrive in the same callback. */
+const STAGGER_MS = 130;
+
 /**
- * Reveals each band as it arrives.
+ * Reveals each band as it arrives, wiping in from the left.
  *
  * An IntersectionObserver rather than `animation-timeline: view()` for the same
  * reason the cards used one: scroll timelines never advance in the headless
@@ -187,18 +286,30 @@ function useRevealOnEnter(ref: React.RefObject<HTMLOListElement | null>): void {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const band = entry.target as HTMLElement;
+        // Staggered across whatever arrived together, in document order.
+        //
+        // On a short viewport two or three bands cross the threshold in the
+        // same callback, and revealing them simultaneously loses the
+        // one-after-the-next reading entirely. Ordering by position rather
+        // than by the entries array matters: IntersectionObserver makes no
+        // promise about the order it reports, and scrolling up delivers them
+        // bottom-first.
+        const arrived = entries
+          .filter((entry) => entry.isIntersecting)
+          .map((entry) => entry.target as HTMLElement)
+          .sort((a, b) => a.offsetTop - b.offsetTop);
+
+        arrived.forEach((band, position) => {
           observer.unobserve(band);
 
+          band.style.setProperty('--reveal-delay', `${position * STAGGER_MS}ms`);
           band.classList.add(willReveal);
           // Flush the hidden state before the animating class lands; without
           // this the browser coalesces both into one change and there is
           // nothing to animate from.
           void band.offsetWidth;
           band.classList.add(isRevealing);
-        }
+        });
       },
       { rootMargin: '0px 0px -15% 0px', threshold: 0.08 }
     );
