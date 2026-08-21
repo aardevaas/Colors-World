@@ -116,7 +116,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
           />
         </div>
       </section>
-      <FeatureCards />
+      <FeatureCards rooms={rooms} />
       {credibility}
       {footer}
     </>

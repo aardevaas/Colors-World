@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import { routeBarcodeGradient } from '@/lib/landing/barcode-pattern';
+import { useEffect, useRef } from 'react';
+import type { RoomColor } from '@/lib/landing/room-palette';
+import { PaintedCard } from './PaintedCard';
 import styles from './feature-cards.module.css';
 
 /**
@@ -23,10 +24,9 @@ import styles from './feature-cards.module.css';
  */
 
 interface FeatureCardsProps {
-  /** The colour picked on the globe, if any — carried into the Library
-   *  card's link specifically, so choosing to enter Library still opens on
-   *  the colour that was searched for rather than losing it. */
-  readonly pickedColorHex?: string;
+  /** The generated six. Each card is painted in its own room's colour, so the
+   *  rain that lands on it and the panel it becomes are the same paint. */
+  readonly rooms: readonly RoomColor[];
 }
 
 interface FeatureCard {
@@ -101,92 +101,45 @@ const FEATURE_CARDS: readonly FeatureCard[] = [
   },
 ];
 
-/** Spread deterministically per card index — purely decorative, standing in
- *  for the reference's QR code as "this tool touches the whole spectrum,"
- *  not a real data visualization. */
-function SwatchStrip({ seed }: { seed: number }) {
-  const swatches = Array.from({ length: 6 }, (_, i) => (60 * i + seed * 47) % 360);
-  return (
-    <div className={styles.swatchGrid} aria-hidden="true">
-      {swatches.map((hue, i) => (
-        // eslint-disable-next-line react/no-array-index-key -- fixed-length decorative strip, never reordered/inserted/removed
-        <span key={i} className={styles.swatch} style={{ background: `oklch(72% 0.19 ${hue})` }} />
-      ))}
-    </div>
-  );
-}
+export function FeatureCards({ rooms }: FeatureCardsProps) {
+  const gridRef = useRef<HTMLDivElement>(null);
 
-function handlePointerMove(event: React.PointerEvent<HTMLAnchorElement>) {
-  const rect = event.currentTarget.getBoundingClientRect();
-  const mx = ((event.clientX - rect.left) / rect.width) * 100;
-  const my = ((event.clientY - rect.top) / rect.height) * 100;
-  event.currentTarget.style.setProperty('--mx', `${mx}%`);
-  event.currentTarget.style.setProperty('--my', `${my}%`);
-}
+  /*
+   * Both classes are applied together, at the moment a card is about to paint.
+   *
+   * The earlier version put every card into the unpainted state on mount and
+   * waited for the observer to release it. That is one missed callback away
+   * from a permanently blank card — and a blank card is a far worse outcome
+   * than a card that simply appears without ceremony. Applying the hidden state
+   * only when the reveal is already committed makes that impossible: no
+   * callback means no hidden state, and the card renders as normal.
+   */
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (grid === null) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-function handlePointerLeave(event: React.PointerEvent<HTMLAnchorElement>) {
-  event.currentTarget.style.setProperty('--mx', '50%');
-  event.currentTarget.style.setProperty('--my', '50%');
-}
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const card = entry.target as HTMLElement;
+          observer.unobserve(card);
 
-function FeatureCardPanel({
-  card,
-  href,
-  index,
-}: {
-  card: FeatureCard;
-  href: string;
-  index: number;
-}) {
-  return (
-    <Link
-      href={href}
-      className={card.featured ? `${styles.card} ${styles.cardFeatured}` : styles.card}
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-    >
-      {/* Pointer-reactive holographic sheen — position tracked via CSS custom
-          properties written directly on pointermove (not React state), same
-          reasoning as the hero's scroll-driven fade: this fires far too
-          often to route through a re-render. */}
-      <span className={styles.foil} aria-hidden="true" />
+          card.classList.add('willPaint');
+          // Read back a layout value to flush the unpainted state before the
+          // animating class lands; without it the browser coalesces both into
+          // one style change and there is nothing to animate from.
+          void card.offsetWidth;
+          card.classList.add('isPainting');
+        }
+      },
+      { rootMargin: '0px 0px -12% 0px', threshold: 0.15 }
+    );
 
-      <div className={styles.stub} aria-hidden="true">
-        <span className={styles.stubIndex}>0{index + 1}</span>
-        <span className={styles.stubTab}>{card.tab}</span>
-      </div>
-
-      <div className={styles.body}>
-        <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}>{card.tab}</h3>
-          <span className={styles.cardRoute}>{card.route}</span>
-        </div>
-        <p className={styles.cardSubtitle}>{card.subtitle}</p>
-        <ul className={styles.cardHighlights}>
-          {card.highlights.map((highlight) => (
-            <li key={highlight}>{highlight}</li>
-          ))}
-        </ul>
-
-        <div className={styles.ticketFooter}>
-          <span
-            className={styles.barcode}
-            style={{ backgroundImage: routeBarcodeGradient(card.route) }}
-            aria-hidden="true"
-          />
-          <SwatchStrip seed={index} />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-export function FeatureCards({ pickedColorHex }: FeatureCardsProps) {
-  const [library, ...rest] = FEATURE_CARDS;
-  const libraryHref =
-    library !== undefined && pickedColorHex !== undefined
-      ? `${library.route}?color=${pickedColorHex.replace('#', '')}`
-      : (library?.route ?? '/library');
+    for (const card of grid.children) observer.observe(card);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section className={styles.section}>
@@ -203,12 +156,19 @@ export function FeatureCards({ pickedColorHex }: FeatureCardsProps) {
         </p>
       </header>
 
-      <div className={styles.grid}>
-        {library !== undefined && (
-          <FeatureCardPanel card={library} href={libraryHref} index={0} />
-        )}
-        {rest.map((card, i) => (
-          <FeatureCardPanel key={card.route} card={card} href={card.route} index={i + 1} />
+      <div className={styles.grid} ref={gridRef}>
+        {FEATURE_CARDS.map((card, i) => (
+          <PaintedCard
+            key={card.route}
+            href={card.route}
+            index={i}
+            hex={rooms[i % Math.max(1, rooms.length)]?.hex ?? '#7c5cff'}
+            room={card.tab}
+            route={card.route}
+            subtitle={card.subtitle}
+            highlights={card.highlights}
+            featured={card.featured}
+          />
         ))}
       </div>
     </section>
