@@ -22,12 +22,57 @@
      flattens into a shear that reads as a skew. Same structure as the liquid
      pill, so both respond identically. */
   perspective: 620px;
+  transform-style: preserve-3d;
   position: relative;
   display: inline-block;
   border-radius: 999px;
   text-decoration: none;
-  isolation: isolate;
+  /* `isolation: isolate` used to live here, and it is a grouping property:
+     an element carrying one is forced back to `transform-style: flat`, which
+     collapses the underside into the face's plane and kills the thickness the
+     tilt is supposed to reveal. It belongs on .face, which is where the
+     screen-blended glows actually need something to composite against. */
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * The rotating coordinate space — the same one the liquid pill uses, reading
+ * the same `--rot-x` / `--rot-y` the shared pointer hook writes.
+ *
+ * This rule was the whole bug. The span existed, the hook ran, and the two
+ * custom properties landed on the anchor every frame — but nothing on this
+ * side ever read them, so the prism pill sat dead still next to a GitHub
+ * button turning in 3D.
+ *
+ * It also carries the radius. `.face` asks for `border-radius: inherit`, and
+ * inherit walks to the *parent element*, not to the styled ancestor that
+ * happens to have the value: with no radius here the chain resolved to 0 and
+ * the pill rendered with square corners.
+ */
+.tilt {
+  position: relative;
+  display: inline-block;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rot-x, 0deg)) rotateY(var(--rot-y, 0deg));
+}
+
+/*
+ * The pill's shaded underside, so the turn reveals a thickness instead of
+ * rotating a sheet of paper. Inside the rotating group, exactly as on the
+ * liquid pill — parked beside it in the parent it would stay flat while the
+ * face turned and cut straight through it.
+ *
+ * Darker and cooler than the face rather than a lighter accent: this is the
+ * side of the capsule the light does not reach.
+ */
+.underside {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform: translateZ(-10px);
+  background: linear-gradient(to bottom, oklch(20% 0.014 275), oklch(9% 0.008 275));
+  pointer-events: none;
 }
 
 .face {
@@ -40,6 +85,9 @@
   padding: 0.95rem 1.9rem;
   border-radius: inherit;
   overflow: hidden;
+  /* Moved down off .button — see the note there. The screen-blended glows,
+     filament and fringe all composite against this face's own dark ground. */
+  isolation: isolate;
   background: oklch(13% 0.01 275);
   border: 1px solid oklch(100% 0 0 / 0.14);
   transition: border-color 260ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -190,6 +238,31 @@
   );
   -webkit-mask-image: linear-gradient(to bottom, #000 0 2px, transparent 2px);
   mask-image: linear-gradient(to bottom, #000 0 2px, transparent 2px);
+  mix-blend-mode: screen;
+}
+
+/*
+ * The specular, sliding on `--shine-x` — the third value the shared pointer
+ * hook writes, and the one that makes the tilt read as a curved face turning
+ * under a light rather than a flat rectangle being rotated.
+ *
+ * Held far dimmer than the liquid pill's gloss: that one is a cream capsule
+ * catching a window, this is near-black glass, and anything stronger washes
+ * out the spectral masses underneath.
+ */
+.gloss {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      70% 130% at var(--shine-x, 50%) -14%,
+      oklch(100% 0 0 / 0.3) 0%,
+      oklch(100% 0 0 / 0.08) 38%,
+      transparent 72%
+    );
   mix-blend-mode: screen;
 }
 

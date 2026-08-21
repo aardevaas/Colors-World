@@ -46,40 +46,46 @@ export function PrismButton({ href, children, className }: PrismButtonProps) {
       href={href}
       className={className === undefined ? styles.button : `${styles.button} ${className}`}
     >
+      {/* The underside lives INSIDE the rotating group, same as on the liquid
+          pill: outside it, it stays flat while the face turns and the face's
+          far edge sinks behind it. Rotated together it stays directly behind
+          the face and only ever shows as a sliver of thickness. */}
       <span className={styles.tilt}>
-      <span className={styles.face}>
-        <span className={styles.glowLeft} aria-hidden="true" />
-        <span className={styles.glowRight} aria-hidden="true" />
-        <span className={styles.filament} aria-hidden="true">
-          <svg
-            className={styles.svg}
-            viewBox="0 0 200 56"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <defs>
-              <linearGradient id="prism-spectrum" x1="0" y1="0" x2="1" y2="0">
-                {/* Dispersion order, warm through white to cool — the sequence
-                    light actually separates into. A symmetrical rainbow reads
-                    as a generic gradient instead. */}
-                <stop offset="0%" stopColor="oklch(72% 0.21 30)" />
-                <stop offset="14%" stopColor="oklch(86% 0.18 85)" />
-                <stop offset="28%" stopColor="oklch(84% 0.17 150)" />
-                <stop offset="46%" stopColor="oklch(99% 0.02 220)" />
-                <stop offset="64%" stopColor="oklch(90% 0.12 210)" />
-                <stop offset="82%" stopColor="oklch(76% 0.18 240)" />
-                <stop offset="100%" stopColor="oklch(66% 0.21 285)" />
-              </linearGradient>
-            </defs>
-            <path d={RIBBON_PATH} className={styles.strokeWide} stroke="url(#prism-spectrum)" />
-            <path d={RIBBON_PATH} className={styles.strokeMid} stroke="url(#prism-spectrum)" />
-            <path d={RIBBON_PATH} className={styles.strokeCore} />
-          </svg>
+        <span className={styles.underside} aria-hidden="true" />
+        <span className={styles.face}>
+          <span className={styles.glowLeft} aria-hidden="true" />
+          <span className={styles.glowRight} aria-hidden="true" />
+          <span className={styles.filament} aria-hidden="true">
+            <svg
+              className={styles.svg}
+              viewBox="0 0 200 56"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <defs>
+                <linearGradient id="prism-spectrum" x1="0" y1="0" x2="1" y2="0">
+                  {/* Dispersion order, warm through white to cool — the sequence
+                      light actually separates into. A symmetrical rainbow reads
+                      as a generic gradient instead. */}
+                  <stop offset="0%" stopColor="oklch(72% 0.21 30)" />
+                  <stop offset="14%" stopColor="oklch(86% 0.18 85)" />
+                  <stop offset="28%" stopColor="oklch(84% 0.17 150)" />
+                  <stop offset="46%" stopColor="oklch(99% 0.02 220)" />
+                  <stop offset="64%" stopColor="oklch(90% 0.12 210)" />
+                  <stop offset="82%" stopColor="oklch(76% 0.18 240)" />
+                  <stop offset="100%" stopColor="oklch(66% 0.21 285)" />
+                </linearGradient>
+              </defs>
+              <path d={RIBBON_PATH} className={styles.strokeWide} stroke="url(#prism-spectrum)" />
+              <path d={RIBBON_PATH} className={styles.strokeMid} stroke="url(#prism-spectrum)" />
+              <path d={RIBBON_PATH} className={styles.strokeCore} />
+            </svg>
+          </span>
+          <span className={styles.fringe} aria-hidden="true" />
+          <span className={styles.gloss} aria-hidden="true" />
+          <span className={styles.label}>{children}</span>
         </span>
-        <span className={styles.fringe} aria-hidden="true" />
-        <span className={styles.label}>{children}</span>
-      </span>
       </span>
     </Link>
   );
