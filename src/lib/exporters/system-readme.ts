@@ -2,14 +2,14 @@
  * The system, written down.
  *
  * Every tool in this category exports tokens. A file of hex values tells the
- * next person what the colours are and nothing about why, so the reasoning
+ * next person what the colors are and nothing about why, so the reasoning
  * lives in the head of whoever made it and evaporates the moment they move on.
  * The questions that actually come up later — why is the border that light,
- * can I use the accent for body text, is this safe for colour blindness — are
+ * can I use the accent for body text, is this safe for color blindness — are
  * all answerable from what this app already computes, and all unanswerable
  * from a token file.
  *
- * So this emits the document instead: which colour took which role, what every
+ * So this emits the document instead: which color took which role, what every
  * required pair actually measures, where the type stops being legible, what a
  * cheaper display does to the ramps. Every line is generated from measurement
  * rather than written by hand, which means it cannot drift from the system it
@@ -46,9 +46,9 @@ export interface SystemDocumentInput {
 const ROLE_PURPOSE: Record<string, string> = {
   background: 'The page itself',
   surface: 'Panels and cards sitting on the page',
-  primary: 'The brand colour — buttons, links, emphasis',
+  primary: 'The brand color — buttons, links, emphasis',
   text: 'Body copy',
-  accent: 'A second brand colour, for secondary emphasis',
+  accent: 'A second brand color, for secondary emphasis',
   border: 'Edges of panels and controls',
 };
 
@@ -72,9 +72,9 @@ export function toSystemReadme(input: SystemDocumentInput): string {
 function heading(system: System): string {
   const count = system.palette.length;
   return [
-    '# Colour system',
+    '# Color system',
     '',
-    `${count} colour${count === 1 ? '' : 's'}, ${SEMANTIC_ROLES.length} roles, ` +
+    `${count} color${count === 1 ? '' : 's'}, ${SEMANTIC_ROLES.length} roles, ` +
       `${system.scales.steps}-step scales in ${system.scales.gamut}, ${system.mode} polarity.`,
     '',
     'Generated from the system itself. Every number below was measured, not asserted.',
@@ -88,10 +88,10 @@ function rolesSection(roles: RoleAssignment): string {
   return [
     '## Roles',
     '',
-    'Assigned by OKLCH lightness rather than by the order the colours were',
+    'Assigned by OKLCH lightness rather than by the order the colors were',
     'collected, so the same palette always means the same thing.',
     '',
-    '| Role | Colour | What it is for |',
+    '| Role | Color | What it is for |',
     '| --- | --- | --- |',
     ...rows,
   ].join('\n');
@@ -129,7 +129,7 @@ function visionSection(roles: RoleAssignment): string {
 
   if (report.safe) {
     return [
-      '## Colour vision',
+      '## Color vision',
       '',
       'No pair of roles collapses under protanopia, deuteranopia, tritanopia or',
       'achromatopsia. Separating by lightness rather than by hue is what buys that.',
@@ -145,7 +145,7 @@ function visionSection(roles: RoleAssignment): string {
   );
 
   return [
-    '## Colour vision',
+    '## Color vision',
     '',
     'These pairs are distinct in normal vision and stop being so under simulation.',
     'The percentage is how much of their separation survives.',
@@ -167,7 +167,7 @@ function typographySection(system: System, roles: RoleAssignment): string {
     'passes-when-large':
       'This pair only carries **large** text — 24px, or 18.66px when bold. Below that it fails, and no weight changes that.',
     'passes-nowhere':
-      'This pair carries text at **no** size or weight. Only a colour change fixes it.',
+      'This pair carries text at **no** size or weight. Only a color change fixes it.',
   }[field.verdict];
 
   const rows = scale.map(
@@ -248,7 +248,7 @@ function footer(input: SystemDocumentInput): string {
     lines.push(`Reopen this system: ${input.shareUrl}`, '');
   }
   lines.push(
-    'Built with Colors World. Colour in OKLCH, contrast in WCAG 2.2 and APCA,',
+    'Built with Colors World. Color in OKLCH, contrast in WCAG 2.2 and APCA,',
     'gamut mapping to sRGB, Display P3 and Rec2020.'
   );
   return lines.join('\n');
@@ -257,5 +257,5 @@ function footer(input: SystemDocumentInput): string {
 /** Re-exported so the download filename and the document agree on a name. */
 export function systemFilename(system: System): string {
   const count = system.palette.length;
-  return `colour-system-${count}-colour-${system.mode}.md`;
+  return `color-system-${count}-color-${system.mode}.md`;
 }

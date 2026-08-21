@@ -44,7 +44,7 @@ function Magazine() {
         </p>
         <p data-audit-size="body" data-audit-weight="400">
           Type carries the argument because it is the only part of a design that has
-          to be read rather than merely seen. A colour can be admired at a glance. A
+          to be read rather than merely seen. A color can be admired at a glance. A
           sentence has to be walked through, one word at a time, at whatever pace the
           letterforms allow. Set it too tight and the reader hurries. Set it too
           loose and they drift.
@@ -65,7 +65,7 @@ function Document() {
         Installing the engine
       </h2>
       <p data-audit-size="body" data-audit-weight="400">
-        The colour engine ships as an MIT-licensed module. Install it, then import
+        The color engine ships as an MIT-licensed module. Install it, then import
         only what you need — every export is individually tree-shakeable.
       </p>
 

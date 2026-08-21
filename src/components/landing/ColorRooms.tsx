@@ -7,7 +7,7 @@ import type { RoomColor } from '@/lib/landing/room-palette';
 import { roomTheme } from '@/lib/landing/room-theme';
 import { useTextureRipple } from '@/lib/landing/use-texture-ripple';
 import { TABS, type TabId } from '@/lib/nav/tabs';
-import styles from './colour-rooms.module.css';
+import styles from './color-rooms.module.css';
 
 /**
  * The six rooms, as six flooded bands. After GF Smith.
@@ -19,7 +19,7 @@ import styles from './colour-rooms.module.css';
  * reference teardown was that the cards were fine as objects and wrong as an
  * argument: eighteen bullets across six boxes is a specification, and this is
  * the top of a landing page. GF Smith's site puts one idea on one ground and
- * lets the colour do the work, which is the correct move for a colour tool.
+ * lets the color do the work, which is the correct move for a color tool.
  *
  * ## The architecture, taken from GF Smith
  *
@@ -27,10 +27,10 @@ import styles from './colour-rooms.module.css';
  * sets nothing but a background and a foreground; a single rule then re-points
  * every semantic token — heading, text, link, even the site header — at that
  * pair; and every component is written against the semantics and never names a
- * colour. One class re-skins a whole section.
+ * color. One class re-skins a whole section.
  *
  * The same three layers are here. The pair arrives as inline custom properties
- * (it has to: the colours are generated per visit and cannot be in a
+ * (it has to: the colors are generated per visit and cannot be in a
  * stylesheet), `.room` maps pair to semantics, and everything below reads only
  * the semantics. The hover state is one rule that swaps the pair — which is why
  * a band, its type, its rule and its arrow all turn together.
@@ -38,7 +38,7 @@ import styles from './colour-rooms.module.css';
  * ## The part GF Smith cannot do
  *
  * Their 42 pairs are hand-picked against physical swatches, which is available
- * to you when your colours shipped in 2011 and never change. Ours are generated
+ * to you when your colors shipped in 2011 and never change. Ours are generated
  * from a seed on every visit, so no one can check them. They are solved instead
  * — see `room-theme.ts` — against a 4.5:1 floor that holds for every hue and
  * every hover state.
@@ -50,7 +50,7 @@ import styles from './colour-rooms.module.css';
  * unchanged.
  */
 
-interface ColourRoomsProps {
+interface ColorRoomsProps {
   /** The generated six, in manifest order. */
   readonly rooms: readonly RoomColor[];
 }
@@ -66,13 +66,13 @@ const ROOM_LINE: Record<TabId, string> = {
   library:
     'All 16.7 million of them, computed on demand rather than pulled from a list somebody curated.',
   compose:
-    'One colour in, a whole system out — reconciled against the gamut rather than clipped to it.',
+    'One color in, a whole system out — reconciled against the gamut rather than clipped to it.',
   scales:
-    'Every colour deepened into a ramp, with sRGB, Display P3 and Rec2020 marked on every step.',
+    'Every color deepened into a ramp, with sRGB, Display P3 and Rec2020 marked on every step.',
   visualizer:
     'Proof on real interfaces rather than swatches, audited live as you change it.',
   typography:
-    'Because contrast is a property of type, not just of colour. The boundary, drawn.',
+    'Because contrast is a property of type, not just of color. The boundary, drawn.',
   studio:
     'Where the system stops being yours and becomes something you can hand over.',
 };
@@ -111,13 +111,13 @@ function spellCount(count: number): string {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-export function ColourRooms({ rooms }: ColourRoomsProps) {
+export function ColorRooms({ rooms }: ColorRoomsProps) {
   const listRef = useRef<HTMLOListElement>(null);
 
   /**
    * Solving six pairs costs around 10ms, which is worth paying once and never
    * again. `rooms` is regenerated only when the seed changes, so this recomputes
-   * exactly when the colours actually change.
+   * exactly when the colors actually change.
    */
   const themes = useMemo(
     () => rooms.map((room) => ({ room, theme: roomTheme(room.oklch) })),
@@ -300,4 +300,4 @@ function useRevealOnEnter(ref: React.RefObject<HTMLOListElement | null>): void {
   }, [ref]);
 }
 
-export default ColourRooms;
+export default ColorRooms;

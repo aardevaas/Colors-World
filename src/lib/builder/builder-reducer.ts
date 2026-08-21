@@ -19,7 +19,7 @@ import type { ScaleSettings } from '@/lib/system/types';
  * component, a browser, or the dock's own localStorage.
  *
  * Every scale here holds exactly one anchor (see PaletteBuilderScale) — the
- * locked architecture decision from the Tab 02 plan: N collected colours
+ * locked architecture decision from the Tab 02 plan: N collected colors
  * become N independent scales, not one scale with N anchors. That single-
  * anchor shape is precisely what makes generateScale's "anchors must get
  * darker as step increases" constraint unreachable in this reducer's output
@@ -163,8 +163,8 @@ function clampStepCount(count: number): number {
 
 /**
  * Picks the step whose position on the *default* lightness ramp is closest
- * to the colour's own lightness — a reasonable starting anchor step for a
- * freshly collected colour, without requiring the user to place it by hand.
+ * to the color's own lightness — a reasonable starting anchor step for a
+ * freshly collected color, without requiring the user to place it by hand.
  * Deliberately approximate (a linear walk of the default range, not the real
  * monotone-cubic ramp generateScale builds) — this only needs to pick a
  * good starting point, not reproduce the generator exactly.
@@ -192,7 +192,7 @@ export function defaultAnchorStepFor(oklch: Oklch, stepCount: number): number {
  * Re-derives auto-generated names in dock order: the primary entry becomes
  * "primary", every other non-custom-named entry becomes "accent-1",
  * "accent-2", … in the order it appears. A scale the user has explicitly
- * renamed (nameIsCustom) is left untouched — renaming which colour is
+ * renamed (nameIsCustom) is left untouched — renaming which color is
  * primary should never silently overwrite someone's own label.
  */
 function withDerivedNames(
@@ -250,7 +250,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
     case 'hydrateSpecs': {
       // Reopening a saved palette. Deliberately self-contained — it does not
       // wait for a prior syncFromDock to have created matching entries; it
-      // builds the scales directly from the specs (anchor colour is always
+      // builds the scales directly from the specs (anchor color is always
       // spec.anchors[0].color, since /builder only ever saves single-anchor
       // scales — see specFor in BuilderShell.tsx). The dock is populated
       // separately by the caller for consistency, but this doesn't depend

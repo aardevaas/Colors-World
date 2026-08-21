@@ -36,25 +36,25 @@ describe('extractDominantColors', () => {
     expect(extractDominantColors(pixels, 3)).toEqual(extractDominantColors(pixels, 3));
   });
 
-  test('never returns more colours than there are pixels', () => {
+  test('never returns more colors than there are pixels', () => {
     const pixels = repeat({ r: 100, g: 100, b: 100 }, 2);
     expect(extractDominantColors(pixels, 5).length).toBeLessThanOrEqual(2);
   });
 
-  test('returns one colour for an image that only contains one', () => {
+  test('returns one color for an image that only contains one', () => {
     // Previously this returned as many duplicate centroids as were asked for.
-    // A palette of the same colour repeated is not a palette, and downstream
+    // A palette of the same color repeated is not a palette, and downstream
     // the repeats collapse anyway -- leaving a palette shorter than it claims.
     const pixels = repeat({ r: 100, g: 100, b: 100 }, 40);
     expect(extractDominantColors(pixels, 6)).toEqual([{ r: 100, g: 100, b: 100 }]);
   });
 
-  test('finds every distinct colour rather than merging two into a blend', () => {
-    // Found by dropping a four-colour image into the browser: orange and
+  test('finds every distinct color rather than merging two into a blend', () => {
+    // Found by dropping a four-color image into the browser: orange and
     // violet came back exactly, while green and near-white were returned as a
     // single pale green -- at every image size and layout tried. Seeding
     // spaced centroids by position in the pixel array, so two seeds could land
-    // on the same colour and leave another with none, and its pixels were then
+    // on the same color and leave another with none, and its pixels were then
     // absorbed into whichever cluster was nearest.
     const pixels = [
       ...repeat({ r: 230, g: 98, b: 12 }, 25),
@@ -69,8 +69,8 @@ describe('extractDominantColors', () => {
     }
   });
 
-  test('finds distinct colours whatever order the pixels arrive in', () => {
-    // Position-based seeding was sensitive to layout; colour-space seeding
+  test('finds distinct colors whatever order the pixels arrive in', () => {
+    // Position-based seeding was sensitive to layout; color-space seeding
     // must not be. Interleaving is the arrangement that broke it worst.
     const four = [
       { r: 230, g: 98, b: 12 },
@@ -145,16 +145,16 @@ describe('extractDominantColors — OKLab clustering separates what sRGB distanc
   // but perceptually further from green than pink is (0.749 vs 0.555 in
   // OKLab) — a real crossover, not just a magnitude difference. With k=2,
   // sRGB-space k-means merges navy into the green cluster; OKLab-space
-  // k-means keeps navy as its own distinct dominant colour instead.
+  // k-means keeps navy as its own distinct dominant color instead.
   const navy: RgbSample = { r: 4, g: 7, b: 28 };
   const pink: RgbSample = { r: 244, g: 82, b: 251 };
   const green: RgbSample = { r: 6, g: 238, b: 5 };
   const pixels = [...repeat(navy, 30), ...repeat(pink, 30), ...repeat(green, 30)];
 
-  test('sanity check: raw sRGB distance and OKLab distance disagree on which colour green is closer to', () => {
+  test('sanity check: raw sRGB distance and OKLab distance disagree on which color green is closer to', () => {
     // This is the premise the rest of the test relies on — confirmed via
     // the module's own OKLab-space clustering behaviour below, not
-    // asserted directly here to avoid re-implementing colour conversion.
+    // asserted directly here to avoid re-implementing color conversion.
     expect(rgbDistance(green, navy)).toBeLessThan(rgbDistance(green, pink));
   });
 

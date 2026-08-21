@@ -54,7 +54,7 @@ describe('findVibeMatches', () => {
     // The regression this guards: an earlier point-radius implementation
     // returned a wall of near-duplicate hexes for exactly this kind of
     // target, because adjacent indices in generate-color.ts's index space
-    // decode to near-identical rounded colours.
+    // decode to near-identical rounded colors.
     expect(distinctHexes.size).toBeGreaterThan(matches.length * 0.5);
   });
 

@@ -3,7 +3,7 @@
  *
  * Kept pure and separate from the React provider (system-context.tsx) so the
  * transitions that actually carry product rules — what happens to the anchor
- * when its colour is removed, whether adding a duplicate is a no-op — are
+ * when its color is removed, whether adding a duplicate is a no-op — are
  * testable without mounting a component, faking localStorage or driving a
  * router. This is the same split the dock reducer had; the state it operates
  * on is simply now the whole document rather than one tray.
@@ -48,7 +48,7 @@ export function systemReducer(state: System, action: SystemAction): System {
       if (state.palette.some((c) => c.hex.toLowerCase() === hex)) return state;
       if (state.palette.length >= MAX_PALETTE) return state;
       const palette = [...state.palette, { hex, oklch: action.oklch, addedAt: action.addedAt }];
-      // The first colour collected becomes the anchor automatically; later
+      // The first color collected becomes the anchor automatically; later
       // additions never bump an anchor that is already chosen.
       return { ...state, palette, anchorHex: state.anchorHex ?? hex };
     }
@@ -57,16 +57,16 @@ export function systemReducer(state: System, action: SystemAction): System {
       const hex = action.hex.toLowerCase();
       const palette = state.palette.filter((c) => c.hex.toLowerCase() !== hex);
       if (palette.length === state.palette.length) return state;
-      // Removing the anchor promotes the next-oldest colour rather than
+      // Removing the anchor promotes the next-oldest color rather than
       // leaving a populated palette with nothing to build scales from.
       const anchorHex =
         state.anchorHex?.toLowerCase() === hex ? (palette[0]?.hex ?? null) : state.anchorHex;
-      // A role pinned to a colour that no longer exists would keep painting a
-      // colour absent from the palette, with no swatch to explain where it
+      // A role pinned to a color that no longer exists would keep painting a
+      // color absent from the palette, with no swatch to explain where it
       // came from. Drop those pins and let the role derive again.
       const roleOverrides = dropOverridesFor(state.roleOverrides, hex);
-      // The scale belonged to a colour that is gone; keeping its curves would
-      // reattach them to whatever colour later took that hex.
+      // The scale belonged to a color that is gone; keeping its curves would
+      // reattach them to whatever color later took that hex.
       const byHex = { ...state.scales.byHex };
       delete byHex[hex];
       return { ...state, palette, anchorHex, roleOverrides, scales: { ...state.scales, byHex } };
@@ -92,9 +92,9 @@ export function systemReducer(state: System, action: SystemAction): System {
 
     case 'setPalette': {
       // Replacing the palette wholesale, as the generator does. Overrides are
-      // dropped rather than carried: they pinned roles to colours from the
+      // dropped rather than carried: they pinned roles to colors from the
       // previous palette, and keeping them would paint a generated system with
-      // colours that are no longer in it and have no swatch to explain them.
+      // colors that are no longer in it and have no swatch to explain them.
       const seen = new Set<string>();
       const palette = [];
       for (const color of action.colors) {
@@ -108,7 +108,7 @@ export function systemReducer(state: System, action: SystemAction): System {
         palette,
         anchorHex: palette[0]?.hex ?? null,
         roleOverrides: {},
-        // Curves were drawn against colours that are being replaced wholesale;
+        // Curves were drawn against colors that are being replaced wholesale;
         // step count and gamut are settings about the scales themselves and
         // survive.
         scales: { ...state.scales, byHex: {} },

@@ -4,11 +4,11 @@
  * A designer on a P3 laptop builds a ramp whose top steps are more saturated
  * than sRGB can reach. Nothing warns them, because on their screen it is
  * correct. On a cheap monitor those steps are mapped down — and mapping is not
- * a uniform dimming, it pulls chroma until the colour fits, which means two
+ * a uniform dimming, it pulls chroma until the color fits, which means two
  * steps that were distinct can arrive at nearly the same place. The ramp loses
  * its top end, and the person who made it never sees it happen.
  *
- * That is the finding here: not "these colours are out of gamut", which the
+ * That is the finding here: not "these colors are out of gamut", which the
  * step badges already say, but **which neighbouring steps stop being different**
  * on a narrower display. A step shifting on its own is usually fine — the
  * whole ramp shifting together still reads as a ramp. Two steps landing on top
@@ -31,7 +31,7 @@ export const DISPLAY_GAMUTS: readonly Gamut[] = ['rec2020', 'p3', 'srgb'];
 
 /**
  * Two steps closer than this read as one. The same just-noticeable-difference
- * figure the colour-vision report uses, for the same reason: a ramp whose
+ * figure the color-vision report uses, for the same reason: a ramp whose
  * neighbours are indistinguishable has lost a step whatever caused it.
  */
 export const COLLAPSE_DISTANCE = 0.04;

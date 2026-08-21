@@ -20,7 +20,7 @@ import styles from './prism-button.module.css';
  * The dispersion is three strokes on the same path — a wide soft body, a mid
  * band and a thin white core — with the two outer ones carrying a spectral
  * gradient. That is what separates into rainbow edges rather than reading as a
- * single coloured line.
+ * single colored line.
  */
 
 interface PrismButtonProps {

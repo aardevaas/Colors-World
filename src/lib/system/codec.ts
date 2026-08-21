@@ -26,7 +26,7 @@
  *
  * **Decoding never throws.** A URL is user-editable input arriving from a
  * chat message, a bookmark or a typo; every field independently falls back to
- * its default, and a single bad colour costs you that colour, not the page.
+ * its default, and a single bad color costs you that color, not the page.
  */
 
 import { formatHex, parseColor, type ControlPoint, type Gamut } from '@/lib/color-engine';
@@ -53,7 +53,7 @@ const PARAM_SCALES = 's';
 /**
  * A hand-edited URL is the one input nobody can validate before it arrives, so
  * the palette is capped. Without this, `c=` with a few thousand segments parses
- * a few thousand colours and lays out a few thousand DOM nodes before anything
+ * a few thousand colors and lays out a few thousand DOM nodes before anything
  * paints.
  */
 const MAX_PALETTE = 32;
@@ -160,7 +160,7 @@ function decodePalette(raw: string | null): readonly SystemColor[] {
 function decodeAnchor(raw: string | null, palette: readonly SystemColor[]): string | null {
   if (palette.length === 0) return null;
   const wanted = raw === null ? null : normalizeHex(raw);
-  // An anchor naming a colour that is not in the palette would leave the
+  // An anchor naming a color that is not in the palette would leave the
   // scale builder pointing at something nobody can see.
   const match = wanted === null ? undefined : palette.find((c) => c.hex === wanted);
   return match?.hex ?? palette[0]!.hex;
@@ -267,7 +267,7 @@ function decodeScales(
     if (entry === '') continue;
     const [rawIndex, ...fields] = entry.split(TYPE_SEPARATOR);
     const index = Number(rawIndex);
-    // An index past the end of the palette refers to a colour that is not
+    // An index past the end of the palette refers to a color that is not
     // here — from a hand-edited URL, or a link whose palette was trimmed.
     if (!Number.isInteger(index) || index < 0 || index >= palette.length) continue;
 

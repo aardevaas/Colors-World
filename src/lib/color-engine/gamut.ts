@@ -5,11 +5,11 @@ import { normalizeHue } from './interpolate';
 
 export interface GamutMapResult {
   readonly oklch: Oklch;
-  /** True when chroma had to be reduced to make the colour displayable. */
+  /** True when chroma had to be reduced to make the color displayable. */
   readonly clamped: boolean;
 }
 
-/** Chroma difference below which we treat two colours as the same. */
+/** Chroma difference below which we treat two colors as the same. */
 const CHROMA_EPSILON = 1e-4;
 
 /**
@@ -64,7 +64,7 @@ export function isInGamut(color: Oklch, gamut: Gamut): boolean {
 }
 
 /**
- * Projects a colour into the target gamut by reducing chroma while holding
+ * Projects a color into the target gamut by reducing chroma while holding
  * lightness and hue fixed — the CSS Color 4 gamut-mapping strategy.
  *
  * Naive per-channel RGB clipping is the common alternative and it is wrong for
@@ -73,7 +73,7 @@ export function isInGamut(color: Oklch, gamut: Gamut): boolean {
  *
  * For `'print'`, the same lightness/hue-preserving strategy is applied against
  * the approximate press boundary above rather than an RGB primary volume —
- * it's what turns a bright digital colour honestly dull instead of clipping
+ * it's what turns a bright digital color honestly dull instead of clipping
  * it towards some unrelated hue.
  */
 export function mapToGamut(color: Oklch, gamut: Gamut): GamutMapResult {

@@ -3,7 +3,7 @@ import { deltaEOk, diffSnapshots, shortestHueDelta } from '../diff';
 import { parseColor } from '@/lib/color-engine';
 
 describe('deltaEOk', () => {
-  test('zero for identical colours', () => {
+  test('zero for identical colors', () => {
     const color = parseColor('#3b82f6');
     expect(deltaEOk(color, color)).toBeCloseTo(0, 10);
   });

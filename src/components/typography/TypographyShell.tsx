@@ -48,14 +48,14 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
     ensurePresetLoaded(preset);
   }, [preset]);
 
-  // Colours come from the dock so type is judged in the palette it will ship
+  // Colors come from the dock so type is judged in the palette it will ship
   // in — the whole reason this tab shares a dock with the others.
   //
-  // Which colour becomes text and which becomes the page is decided by the
+  // Which color becomes text and which becomes the page is decided by the
   // shared role model, exactly as /visualizer decides it, so one dock means
   // one thing across the product. This used to map by *position* —
   // `items[0]` was text and `items[1]` the background — which made the
-  // specimen depend on the order you happened to click colours in: a violet
+  // specimen depend on the order you happened to click colors in: a violet
   // on a lurid green page scored 4.60:1 and was therefore reported as
   // passing, so the tool blessed a page nobody could read.
   const palette = system.palette;
@@ -92,7 +92,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
       '--type-weight': String(weight),
       // The role model's own hex, not a re-derivation from its OKLCH: the
       // inspector prints `roles.*.hex`, so round-tripping through formatHex
-      // here would let the specimen render a colour one step off the one the
+      // here would let the specimen render a color one step off the one the
       // readout names.
       '--type-fg': roles.text.hex,
       '--type-bg': roles.background.hex,
@@ -113,7 +113,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
 
   function applyFix() {
     if (bodyFix.status === 'thicken') setType({ weight: bodyFix.weight });
-    // A recolour is a palette change, not a type change — surfaced as advice
+    // A recolor is a palette change, not a type change — surfaced as advice
     // rather than silently rewriting the dock from this tab.
   }
 
@@ -178,17 +178,17 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
         </section>
 
         <aside className={styles.inspector}>
-          <h2 className={styles.inspectorTitle}>Colour</h2>
+          <h2 className={styles.inspectorTitle}>Color</h2>
           {palette.length === 0 ? (
             <p className={styles.hint}>
-              Collect colours in the Harmonic Dock and they map onto text and page
+              Collect colors in the Harmonic Dock and they map onto text and page
               automatically — the same roles /visualizer paints with. Until then this
               specimen is set in a neutral fallback pair.
             </p>
           ) : (
             <p className={styles.hint}>
               Derived from your {palette.length} dock{' '}
-              {palette.length === 1 ? 'colour' : 'colours'} by lightness, not by the
+              {palette.length === 1 ? 'color' : 'colors'} by lightness, not by the
               order you collected them.
             </p>
           )}
@@ -274,12 +274,12 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
             </p>
             {bodyFix.status === 'thicken' && (
               <button type="button" className={styles.fixButton} onClick={applyFix}>
-                thicken to {bodyFix.weight} — no colour change
+                thicken to {bodyFix.weight} — no color change
               </button>
             )}
-            {bodyFix.status === 'recolour' && (
+            {bodyFix.status === 'recolor' && (
               <p className={styles.hint}>
-                No weight fixes this at {bodyEntry.px}px. Nearest passing text colour:{' '}
+                No weight fixes this at {bodyEntry.px}px. Nearest passing text color:{' '}
                 <span className={styles.mono}>{bodyFix.hex}</span>
               </p>
             )}
@@ -326,9 +326,9 @@ interface RoleReadoutProps {
 }
 
 /**
- * Names the colour each role actually resolved to. The mapping was previously
+ * Names the color each role actually resolved to. The mapping was previously
  * invisible, so a surprising specimen read as a bug rather than as a palette
- * that needs another colour in it.
+ * that needs another color in it.
  */
 function RoleReadout({ label, hex }: RoleReadoutProps) {
   return (

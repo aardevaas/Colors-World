@@ -3,7 +3,7 @@ import { normalizeHue } from '@/lib/color-engine';
 import { shortestHueDelta } from './diff';
 
 /**
- * Linearly blends two colours in OKLCH, `t = 0` returning `a` and `t = 1`
+ * Linearly blends two colors in OKLCH, `t = 0` returning `a` and `t = 1`
  * returning `b`. This is the resolution mechanism for a merge conflict that
  * isn't a clean pick of "ours" or "theirs" — a designer dragging a slider
  * between two divergent edits until the result looks right.

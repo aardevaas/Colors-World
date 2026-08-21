@@ -55,7 +55,7 @@ space that hit top-100 growth.
    `@colorsworld/engine`; keep the full application PolyForm NC.
    *Why this is the strongest option:* the thing most likely to make this a
    top-100 repo is **not the app — it's the engine.** A pure-TypeScript
-   16.7M-colour arithmetic engine with OKLCH throughout, WCAG + APCA, gamut
+   16.7M-color arithmetic engine with OKLCH throughout, WCAG + APCA, gamut
    mapping across sRGB/P3/Rec2020, CVD simulation, and 500 tests is a genuinely
    rare dependency. People star dependencies they can build on. Almost nobody
    stars an app they're not allowed to use at work. This gets you real growth
@@ -102,7 +102,7 @@ Worth being blunt, because it changes the ordering below:
 |---|---|
 | Tabs built | 3 of 5 (`/library`, `/builder`, `/studio`) |
 | Tests | 500 passing, 54 files, `tsc` clean, production build clean |
-| Live data | 100,000 colour rows · 6 profiles · 1 project |
+| Live data | 100,000 color rows · 6 profiles · 1 project |
 | **Deployed** | ✅ **Live** — [colors-world.vercel.app](https://colors-world.vercel.app), GitHub→Vercel auto-deploy on every push to `main` |
 | README | No demo media; tab names stale |
 | Licence | PolyForm NC (see above) |
@@ -239,7 +239,7 @@ own launch moment rather than one big anticlimactic reveal.
 5. **Hosted vs self-host** *(carried unresolved since v3)* — shapes auth, rate
    limiting, abuse handling, and how the Gemini vibe-search key is managed.
 6. **Library/Spectrum ordering** *(carried since v3)* — hue-major is the only
-   implemented ordering and reads as a colour-professional's model, not a
+   implemented ordering and reads as a color-professional's model, not a
    browsing-for-inspiration one. More orderings are cheap; which ones?
 
 ---

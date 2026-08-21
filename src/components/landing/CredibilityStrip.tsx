@@ -4,7 +4,7 @@ import styles from './credibility-strip.module.css';
 /**
  * The section that converts a visitor into someone who trusts this.
  *
- * Every claim here is one they can check — the licence, the colour space, the
+ * Every claim here is one they can check — the licence, the color space, the
  * standards, and a link to the code that demonstrably does all three. Nothing
  * on this page is an adjective.
  *
@@ -19,7 +19,7 @@ import styles from './credibility-strip.module.css';
  *
  * So it flips the ground instead — the one paper-white surface on the page.
  * That is the same device GF Smith uses to separate sections, and it does more
- * work here than a colour would: after six colour arguments, a white sheet says
+ * work here than a color would: after six color arguments, a white sheet says
  * the arguing is over and these are the facts. It is also the register the
  * content wants, which is a spec sheet rather than a pitch.
  *
@@ -55,21 +55,40 @@ interface Fact {
 export async function CredibilityStrip() {
   const stats = await repoStats();
 
+  /*
+   * Every row is checkable in the repository, and the list is what the engine
+   * actually does rather than what sounds impressive.
+   *
+   * "Color space: OKLCH" used to be the whole of it, which undersold the engine
+   * badly — OKLCH is the space it *works* in, not the extent of what it speaks.
+   * Separating the working space from the gamuts it maps into and the formats
+   * it reads and writes is both more accurate and a stronger claim.
+   */
   const facts: readonly Fact[] = [
     {
       label: 'Licence',
       value: 'MIT',
-      note: 'Depend on the colour engine in your own work.',
+      note: 'Depend on the color engine in your own work.',
     },
     {
-      label: 'Colour space',
+      label: 'Working space',
       value: 'OKLCH',
       note: 'Perceptually uniform end to end, which is what makes ordering by lightness mean anything.',
     },
     {
+      label: 'Gamuts',
+      value: 'sRGB · Display P3 · Rec2020',
+      note: 'Every step of every ramp marked in all three, with a separate mapping for what print can hold.',
+    },
+    {
+      label: 'Formats',
+      value: 'HEX · RGB · HSL · CMYK',
+      note: 'Read in and written out around the same OKLCH core, so nothing drifts on the round trip.',
+    },
+    {
       label: 'Standards',
-      value: 'WCAG + APCA',
-      note: 'The compliance number and the perceptual one, carried together rather than one standing in for the other.',
+      value: 'WCAG 2.2 · APCA',
+      note: 'The compliance number and the perceptual one, carried together rather than one standing in for the other — with ΔEOK for difference and four models of color blindness.',
     },
     ...(stats.stars !== null && stats.stars >= STARS_WORTH_SHOWING
       ? [

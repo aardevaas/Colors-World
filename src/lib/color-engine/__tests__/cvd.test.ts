@@ -44,7 +44,7 @@ describe('simulateCvd', () => {
     }
   });
 
-  test('always returns a displayable sRGB colour', () => {
+  test('always returns a displayable sRGB color', () => {
     for (const type of CVD_TYPES) {
       const hex = formatHex(simulateCvd(parseColor('#e5484d'), type));
       expect(hex).toMatch(/^#[0-9a-f]{6}$/i);

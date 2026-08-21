@@ -9,7 +9,7 @@ import {
 } from '../generate-color';
 
 describe('TOTAL_SPECTRUM_SIZE', () => {
-  test('is exactly 256³ — the full 8-bit-per-channel colour space', () => {
+  test('is exactly 256³ — the full 8-bit-per-channel color space', () => {
     expect(TOTAL_SPECTRUM_SIZE).toBe(16_777_216);
     expect(TOTAL_SPECTRUM_SIZE).toBe(SPECTRUM_STEPS ** 3);
   });

@@ -88,7 +88,7 @@ const DEFAULT_SEARCH_LIMIT = 60;
  * Full-text search across name, category, description, and every tag column
  * — the `search_vector` generated column in `supabase/schema.sql` already
  * concatenates all of them, so this is one index lookup, not N column scans.
- * An empty query returns the most recently added colours rather than nothing,
+ * An empty query returns the most recently added colors rather than nothing,
  * so the library page has something to show before the user types.
  */
 export async function searchColors(
@@ -143,14 +143,14 @@ interface SemanticMatchRow extends ColorRow {
 }
 
 /**
- * The Library's semantic overlay: given the bucket indices of the colours
+ * The Library's semantic overlay: given the bucket indices of the colors
  * currently on screen (see src/lib/spectrum/bucket-index.ts), finds any
  * curated `colors` rows that landed in those same buckets — one indexed
  * query for a whole visible batch, not one query per card.
  *
  * Most requested buckets will have no match at all — 256^3 buckets vs.
  * ~100K seed rows means an exact hit is the exception, not the rule. That's
- * expected: this enriches a generated swatch when a nearby curated colour
+ * expected: this enriches a generated swatch when a nearby curated color
  * exists, it never promises one does. When more than one curated row shares
  * a bucket, the first one returned wins — picking a specific "best" tie
  * would need a real ranking signal (verified provenance over seed, maybe),

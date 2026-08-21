@@ -1,10 +1,10 @@
 /*
  * PRISM design tokens.
  *
- * Direction: laboratory instrument. Near-black ground so emitted colour is the
+ * Direction: laboratory instrument. Near-black ground so emitted color is the
  * only saturated thing on screen; numerics set in mono because they are data,
  * not prose; hairline rules instead of boxes so nothing competes with a swatch.
- * No web fonts — the character comes from scale, rhythm and colour, and the
+ * No web fonts — the character comes from scale, rhythm and color, and the
  * network budget is better spent on nothing at all.
  */
 

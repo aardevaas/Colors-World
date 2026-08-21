@@ -14,7 +14,7 @@
  *
  * ## What it moves, and what it will not
  *
- * Only the neutral ladder. The brand colours are what the person chose, and
+ * Only the neutral ladder. The brand colors are what the person chose, and
  * silently desaturating or relighting someone's brand to win a contrast
  * argument is the kind of help nobody asked for. Every neutral, by contrast,
  * exists only to serve the interface, so it is fair game — and contrast
@@ -23,7 +23,7 @@
  *
  * ## Failing usefully
  *
- * "Six colours, every pair AA, one hue family" is frequently unsatisfiable,
+ * "Six colors, every pair AA, one hue family" is frequently unsatisfiable,
  * and a solver that answers a hard question with a blank screen is worse than
  * no solver. So an unsatisfiable request comes back naming the constraint that
  * blocked it, the best ratio actually reached, and what relaxing it would
@@ -93,7 +93,7 @@ export interface SolveResult {
 }
 
 /** Which ladder rung each role is built from. Roles absent here are brand
- *  colours, which the solver does not touch. */
+ *  colors, which the solver does not touch. */
 const LADDER_KEY: Partial<Record<SemanticRole, keyof NeutralLadder>> = {
   background: 'background',
   surface: 'surface',
@@ -104,7 +104,7 @@ const LADDER_KEY: Partial<Record<SemanticRole, keyof NeutralLadder>> = {
 const MAX_STEPS = 60;
 const INITIAL_STEP = 0.05;
 const MIN_STEP = 0.004;
-/** Neutrals stay inside this band; 0 and 1 are unusable as interface colours. */
+/** Neutrals stay inside this band; 0 and 1 are unusable as interface colors. */
 const LIGHTNESS_BOUNDS = { min: 0.04, max: 0.985 } as const;
 
 export function solvePalette(seed: Oklch, options: SolveOptions = {}): SolveResult {
@@ -181,7 +181,7 @@ function evaluate(
  * Moves one rung of the ladder to widen a failing pair.
  *
  * Returns null when neither side of the pair is a neutral — a target between
- * two brand colours cannot be repaired without changing what the person chose,
+ * two brand colors cannot be repaired without changing what the person chose,
  * and pretending otherwise would produce a palette they did not ask for.
  */
 function nudge(

@@ -115,7 +115,7 @@ describe('findSnap — bento grid snap', () => {
 });
 
 describe('findSnap — editorial palette docking', () => {
-  it('docks a colour-bearing card to the nearest edge of an image', () => {
+  it('docks a color-bearing card to the nearest edge of an image', () => {
     const image = card({ id: 'img', x: 0, y: 0, width: 400, height: 300, isImage: true });
     // Dragged sits just to the right of the image, closer to its right edge.
     const dragged = card({
@@ -133,7 +133,7 @@ describe('findSnap — editorial palette docking', () => {
     expect(result.x).toBe(400 + BENTO_GAP);
   });
 
-  it('only docks colour-bearing cards — a plain note near an image just falls through to bento/no-snap', () => {
+  it('only docks color-bearing cards — a plain note near an image just falls through to bento/no-snap', () => {
     const image = card({ id: 'img', x: 0, y: 0, width: 400, height: 300, isImage: true });
     const dragged = card({ id: 'note', x: 400 + 5, y: 50, width: 60, height: 60, isColorBearing: false });
     const result = findSnap(dragged, [image], 1);
@@ -181,7 +181,7 @@ describe('findSnap — editorial palette docking', () => {
 
   it('image docking takes priority over a bento match when both are in range', () => {
     const image = card({ id: 'img', x: 0, y: 0, width: 400, height: 300, isImage: true });
-    // Also placed near another colour card's edge, so a bento match would
+    // Also placed near another color card's edge, so a bento match would
     // also be found — image-dock should still win.
     const otherColor = card({
       id: 'other-color',

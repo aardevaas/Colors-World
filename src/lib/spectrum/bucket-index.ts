@@ -7,20 +7,20 @@ import {
 } from './generate-color';
 
 /**
- * The inverse of indexToOklch: given a real, continuous OKLCH colour (from
+ * The inverse of indexToOklch: given a real, continuous OKLCH color (from
  * the curated `colors` table, or any external source), finds which of the
  * 256^3 generated-swatch buckets it falls nearest to.
  *
  * This is a *nearest-bucket* classification, not an exact round-trip — a
- * curated colour's real l/c/h essentially never lands exactly on one of the
+ * curated color's real l/c/h essentially never lands exactly on one of the
  * 256 discrete steps per axis. That's fine for what this powers (the
  * Library's semantic overlay, joining a curated row to whichever generated
  * swatch is closest to it); it would not be fine for anything claiming the
- * curated colour *is* that exact generated swatch.
+ * curated color *is* that exact generated swatch.
  *
  * Must stay the true inverse of indexToOklch's formula — the chroma step in
  * particular depends on maxChroma at this exact lightness/hue, the same way
- * indexToOklch's forward direction does, so a real colour's available
+ * indexToOklch's forward direction does, so a real color's available
  * chroma ceiling is estimated at its own (continuous) l/h rather than a
  * quantized one. That's an approximation on top of an approximation, which
  * is a reasonable trade for a fuzzy-match enrichment lookup.

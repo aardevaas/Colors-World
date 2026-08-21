@@ -21,7 +21,7 @@ describe('buildLegibilityField — shape', () => {
     for (const row of f.rows) expect(row).toHaveLength(FIELD_SIZES.length);
   });
 
-  it('carries one ratio for the whole field, because the colours never change', () => {
+  it('carries one ratio for the whole field, because the colors never change', () => {
     // The single most losable idea in a grid like this: the field varies
     // because the *requirement* moves, not because the pair does.
     const f = field(MIDDLING);
@@ -122,16 +122,16 @@ describe('findExits', () => {
     expect(exits.grow).toBeNull();
   });
 
-  it('always carries a colour exit, since that is the one that always exists', () => {
+  it('always carries a color exit, since that is the one that always exists', () => {
     const exits = findExits(MIDDLING[0], MIDDLING[1], 16, 400);
-    expect(['recolour', 'thicken', 'unreachable', 'already-passes']).toContain(
-      exits.recolour.status
+    expect(['recolor', 'thicken', 'unreachable', 'already-passes']).toContain(
+      exits.recolor.status
     );
   });
 
   it('says a passing setting already passes rather than inventing a fix', () => {
     const exits = findExits(STRONG[0], STRONG[1], 16, 400);
-    expect(exits.recolour.status).toBe('already-passes');
+    expect(exits.recolor.status).toBe('already-passes');
     expect(exits.grow).toBe(18);
   });
 
@@ -144,7 +144,7 @@ describe('findExits', () => {
 
 describe('the claim this feature rests on', () => {
   it('answers a question no contrast checker can', () => {
-    // "Can I keep this colour if I bump the weight?" A pair that fails at
+    // "Can I keep this color if I bump the weight?" A pair that fails at
     // 18px/400 and passes at 20px/700 is not describable by a single ratio,
     // and every tool in this category reports exactly one ratio.
     const [text, background] = MIDDLING;
@@ -153,7 +153,7 @@ describe('the claim this feature rests on', () => {
 
     expect(failing.rows[0]![0]!.passes).toBe(false);
     expect(passing.rows[0]![0]!.passes).toBe(true);
-    // Same two colours, same measured contrast, opposite answers.
+    // Same two colors, same measured contrast, opposite answers.
     expect(failing.ratio).toBeCloseTo(passing.ratio, 10);
   });
 });

@@ -17,7 +17,7 @@ function threeColors(): System {
 }
 
 describe('systemReducer — palette', () => {
-  it('makes the first colour the anchor automatically', () => {
+  it('makes the first color the anchor automatically', () => {
     expect(add(EMPTY_SYSTEM, VIOLET).anchorHex).toBe(VIOLET);
   });
 
@@ -31,18 +31,18 @@ describe('systemReducer — palette', () => {
     expect(add(once, VIOLET)).toBe(once);
   });
 
-  it('promotes the next colour when the anchor is removed', () => {
+  it('promotes the next color when the anchor is removed', () => {
     const after = systemReducer(threeColors(), { type: 'removeColor', hex: VIOLET });
     expect(after.anchorHex).toBe(GREEN);
     expect(after.palette).toHaveLength(2);
   });
 
-  it('leaves the anchor alone when some other colour is removed', () => {
+  it('leaves the anchor alone when some other color is removed', () => {
     const after = systemReducer(threeColors(), { type: 'removeColor', hex: TAN });
     expect(after.anchorHex).toBe(VIOLET);
   });
 
-  it('clears the anchor when the last colour goes', () => {
+  it('clears the anchor when the last color goes', () => {
     const after = systemReducer(add(EMPTY_SYSTEM, VIOLET), { type: 'removeColor', hex: VIOLET });
     expect(after.anchorHex).toBeNull();
     expect(after.palette).toEqual([]);
@@ -74,14 +74,14 @@ describe('systemReducer — roles', () => {
       .toBeUndefined();
   });
 
-  it('drops an override when its colour leaves the palette', () => {
-    // Otherwise a role keeps painting a colour with no swatch to explain it.
+  it('drops an override when its color leaves the palette', () => {
+    // Otherwise a role keeps painting a color with no swatch to explain it.
     const pinned = systemReducer(threeColors(), { type: 'setRoleOverride', role: 'primary', hex: TAN });
     const after = systemReducer(pinned, { type: 'removeColor', hex: TAN });
     expect(after.roleOverrides.primary).toBeUndefined();
   });
 
-  it('keeps unrelated overrides when a colour leaves', () => {
+  it('keeps unrelated overrides when a color leaves', () => {
     let state = systemReducer(threeColors(), { type: 'setRoleOverride', role: 'primary', hex: TAN });
     state = systemReducer(state, { type: 'setRoleOverride', role: 'text', hex: GREEN });
     const after = systemReducer(state, { type: 'removeColor', hex: TAN });
@@ -124,14 +124,14 @@ describe('systemReducer — type and mode', () => {
 describe('systemReducer — setPalette', () => {
   const generated = [VIOLET, GREEN, TAN].map((hex) => ({ hex, oklch: parseColor(hex) }));
 
-  it('replaces the palette wholesale and anchors on the first colour', () => {
+  it('replaces the palette wholesale and anchors on the first color', () => {
     const after = systemReducer(EMPTY_SYSTEM, { type: 'setPalette', colors: generated });
     expect(after.palette.map((c) => c.hex)).toEqual([VIOLET, GREEN, TAN]);
     expect(after.anchorHex).toBe(VIOLET);
   });
 
   it('drops role pins, which referred to the palette being replaced', () => {
-    // Keeping them would paint a freshly generated system with colours that
+    // Keeping them would paint a freshly generated system with colors that
     // are no longer in it and have no swatch to explain where they came from.
     const pinned = systemReducer(threeColors(), { type: 'setRoleOverride', role: 'primary', hex: TAN });
     const after = systemReducer(pinned, { type: 'setPalette', colors: [{ hex: '#ffffff', oklch: parseColor('#ffffff') }] });

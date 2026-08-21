@@ -20,8 +20,8 @@ export interface TabRoute {
 }
 
 /**
- * Ordered as the work is done, not alphabetically or by age: find a colour,
- * make a palette from it, deepen each colour into a scale, prove the result on
+ * Ordered as the work is done, not alphabetically or by age: find a color,
+ * make a palette from it, deepen each color into a scale, prove the result on
  * real UI and real type, then assemble it. A person reading the nav should be
  * able to infer the workflow without being told it.
  */

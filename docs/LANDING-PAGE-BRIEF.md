@@ -18,12 +18,12 @@
 | H1 / wordmark | **"Colors World"** is the name. "16.7 Million Colors" was Gemini's placeholder — it's a *tagline*, not the name. |
 | Hero copy | Keep exactly as-is (the founder called it "perfect"). |
 | Creator credit | "Built by: aardevaas" + glowing GitHub icon → `github.com/aardevaas`. |
-| Brand colour | **None.** All colours are the brand. The identity *is* the spectrum. |
+| Brand color | **None.** All colors are the brand. The identity *is* the spectrum. |
 
 **Live hero copy (do not rewrite without asking):**
 - Eyebrow: `Open-source · Free forever`
-- H1: `Every colour.` / `All 16.7 million of them.` ("16.7 million" is the gradient-swept accent)
-- Sub: `The free, open-source studio for colour, palettes, branding, and typography — built in the open, for everyone.`
+- H1: `Every color.` / `All 16.7 million of them.` ("16.7 million" is the gradient-swept accent)
+- Sub: `The free, open-source studio for color, palettes, branding, and typography — built in the open, for everyone.`
 - CTAs: **`Enter the studio for free`** (primary) + **`Star on GitHub`** (secondary)
 
 ---
@@ -95,12 +95,12 @@ one source of truth, identical result.
 
 ---
 
-## 5. Colour system — the "16.7 million" question, settled
+## 5. Color system — the "16.7 million" question, settled
 
 **There is no "base" to upload. There never was.**
 
 16,777,216 = 256³ = every 24-bit RGB triplet. The integer index **is** the
-colour. Zero database rows, zero storage, O(1) lookup — already implemented in
+color. Zero database rows, zero storage, O(1) lookup — already implemented in
 `src/lib/spectrum/generate-color.ts` (`composeIndex` / `indexToSwatch`). Every
 output format is a pure function of that index and already exists in
 `src/lib/color-engine`: **HEX · sRGB · CMYK · OKLCH**.
@@ -110,17 +110,17 @@ This is the most efficient possible design; there is nothing to optimise.
 ### Globe mapping — deviates from the Gemini spec, on purpose
 The spec said HSL (hue=longitude, sat/light=latitude). **Rejected.** The whole
 product is OKLCH-based; HSL would be perceptually lumpy *and* inconsistent with
-what the Spectrum actually shows. Particles use the real engine, so a colour on
-the landing page is literally a colour in the product.
+what the Spectrum actually shows. Particles use the real engine, so a color on
+the landing page is literally a color in the product.
 
 Positions come from a **Fibonacci lattice**, not a lat/long grid — a lat/long
 grid bunches at the poles and gaps at the equator. A unit test asserts **<5%
 population deviation across equal-area bands**, which is the mathematical
 guarantee the globe reads as a gapless shell.
 
-Colour is derived *from* each particle's own seat: longitude → hue,
+Color is derived *from* each particle's own seat: longitude → hue,
 latitude → lightness. The globe is therefore a smooth spectrum **by
-construction**, and the rain already wears its final colour as it falls.
+construction**, and the rain already wears its final color as it falls.
 
 ### ⚠️ The Supabase `colors` table must NOT be deleted
 The founder asked to drop it once told the 16.7M space needs no storage.
@@ -138,7 +138,7 @@ shades, tones, *meanings*, and *variations*".
 
 Storage is ~100k text rows against a 500MB free tier. This is not a space
 problem. **Correct framing: arithmetic supersedes the table for *listing*
-colours; the table remains the only source of *meaning*.**
+colors; the table remains the only source of *meaning*.**
 
 ---
 
@@ -160,14 +160,14 @@ colours; the table remains the only source of *meaning*.**
 - **Desktop hover:** localised particle glow/scale + cursor tooltip reading
   `#HEX • Click to Explore`.
 - **Click:** raycast the particle → capture exact hex → trigger the explosion →
-  navigate to **`/library?color=FF5733`** with that colour pre-loaded as the base.
+  navigate to **`/library?color=FF5733`** with that color pre-loaded as the base.
 - **Mobile tap:** same — capture, explode, navigate.
 
 ---
 
 ## 7. Explosion & Phase 5 handoff
 
-- **Trigger: clicking the sphere / a colour.** (Scroll-past trigger dropped.)
+- **Trigger: clicking the sphere / a color.** (Scroll-past trigger dropped.)
 - Post-processing: **selective bloom + chromatic aberration**, mounted **only**
   for the ~1s climax, then unmounted. Disabled entirely on touch/mobile.
   Auto-bypassed below 50 FPS via drei's `PerformanceMonitor`. Bloom stays on
@@ -182,7 +182,7 @@ colours; the table remains the only source of *meaning*.**
 
 ## 8. Routes & the 5 feature cards (Phase 5)
 
-`/` = landing. Each card maps **1:1** to a primary app route. Colour selections
+`/` = landing. Each card maps **1:1** to a primary app route. Color selections
 hand off via URL search params (e.g. `/library?color=FF5733`).
 
 The old tool sprawl (Palette Generator, Image Picker, Palette Visualizer,
@@ -199,7 +199,7 @@ Miro Canvas, Brand Assets, Typography) consolidates into **5 flagship tabs**:
 
 **Card 1 — Library:** replaces raw spectrum lists with an endless discovery
 grid (Coolors-inspired); search/filter all 16.7M by hue, shade, tone, meaning,
-variation; instant colour info + accessibility breakdown.
+variation; instant color info + accessibility breakdown.
 **Globe clicks land here.**
 
 **Card 2 — Builder:** fully customisable generator + anchor-based scale engine
@@ -207,7 +207,7 @@ variation; instant colour info + accessibility breakdown.
 CVD sims (protanopia, deuteranopia, tritanopia, achromatopsia); 1-click export
 to Tailwind, CSS variables, Figma.
 
-**Card 3 — Studio:** Miro-like infinite spatial moodboard; drag/pin colours and
+**Card 3 — Studio:** Miro-like infinite spatial moodboard; drag/pin colors and
 palettes; integrated Brand Asset Vault for logos, marks, reference images.
 
 **Card 4 — Visualizer:** preview palettes on real UI components; extract hexes
@@ -215,7 +215,7 @@ and dominant palettes from uploaded images; Tailwind live theme previewer; WCAG
 contrast checker.
 
 **Card 5 — Typography:** dynamic font pairing + hierarchy visualiser;
-real-time text-over-colour WCAG scoring; dark/light font scaling for web and
+real-time text-over-color WCAG scoring; dark/light font scaling for web and
 mobile.
 
 > ⚠️ **Route migration still outstanding.** Today the app has `/spectrum`,
@@ -239,7 +239,7 @@ mobile.
   highlights, low-opacity backdrops, high-contrast type. Restrained, so all
   impact stays on the particle system.
 - **Vibe:** cinematic, premium, Apple-grade spacing. The dark void is a gallery
-  stage; the colours are the only light source.
+  stage; the colors are the only light source.
 
 ### Typography
 | Role | Face |
@@ -257,7 +257,7 @@ shift during WebGL init, and zero extra dependencies.
 - Bypass rain and scroll acceleration; render the assembled globe **statically**,
   serene, auto-rotation off.
 - No shockwave physics — clicking a particle does a clean fade straight to that
-  colour in the Library.
+  color in the Library.
 - Accessible **"Skip to content"** link first in the DOM.
 - Explicit **`Motion: On/Off`** HUD toggle that overrides the OS default in
   **both** directions, so someone who wants the spectacle can opt back in.
@@ -311,7 +311,7 @@ share `.next` and it produces `Cannot find module './XXX.js'`. Fix:
 - Phase 1's ~50 ambient cubes are a *stable subset* of the same 30k system, so
   the storm ramps continuously instead of swapping objects
 - Scroll-linked storm; canvas pinned across 300vh; fully reversible
-- Colours from the real 16.7M engine; sphere seats on a Fibonacci lattice
+- Colors from the real 16.7M engine; sphere seats on a Fibonacci lattice
 - `aSpherePos` + `uMorphProgress` already wired and held at 0 — **Phase 3 is a
   uniform ramp, not a rewrite**
 - Reduced-motion fallback + skip link + motion override toggle
@@ -400,7 +400,7 @@ browser** — unit tests are the only honest verification of the windows.
 - Globe-assembly window widened from 0.42-0.72 to 0.42-**0.88** of scroll —
   the creation read as too quick at the original pacing.
 - **Click-and-drag now lets you manually reorient the globe** to browse to any
-  colour by hand, not just whatever the auto-spin happens to show — this was
+  color by hand, not just whatever the auto-spin happens to show — this was
   previously listed below as deferred; it's built now. Horizontal drag = yaw,
   vertical drag = pitch (clamped to ±60° so the sphere never goes edge-on and
   reads as a flat disc). Auto-rotation pauses for the drag's duration plus 2
@@ -467,7 +467,7 @@ browser** — unit tests are the only honest verification of the windows.
 Real bug, found by the founder actually scrolling through it: the cards were
 mounted unconditionally as ordinary document-flow content right after
 `.stage`. Since `.stage` is a fixed 300vh regardless of whether anyone has
-ever clicked a colour, scrolling past it showed the cards laid directly over
+ever clicked a color, scrolling past it showed the cards laid directly over
 a fully intact, still auto-rotating, **unexploded** globe — "sitting on top
 of the globe, looks like a complete mess," their words. The fix isn't
 cosmetic — it's that the cards' *existence in the DOM* is now conditional:
@@ -480,12 +480,12 @@ cosmetic — it's that the cards' *existence in the DOM* is now conditional:
   all, which is what actually rules the bug out rather than a z-index or
   timing tweak that could still race.
 - **The auto-navigate-to-`/library` behaviour from Phase 4 is gone.**
-  Clicking a colour no longer teleports you off the landing page — the
+  Clicking a color no longer teleports you off the landing page — the
   explosion now reveals the toolkit (the cards) as the next beat of the
   story, matching "so they know what tabs they'll be able to work with."
-  The picked colour still isn't lost: it's carried into the **Library
+  The picked color still isn't lost: it's carried into the **Library
   card's own link specifically** (`/library?color=HEX`), so choosing to
-  actually enter Library still opens on the colour that was searched for —
+  actually enter Library still opens on the color that was searched for —
   it just waits for that to be a deliberate click on a card, not an
   automatic redirect.
 - Once the cards mount, the page smooth-scrolls to present them

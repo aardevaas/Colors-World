@@ -38,9 +38,9 @@ describe('assessLegibility', () => {
     expect(result.margin).toBeLessThan(0);
   });
 
-  it('can pass at display size while failing at body size, unchanged colours', () => {
+  it('can pass at display size while failing at body size, unchanged colors', () => {
     // ~3.45:1 — above the large threshold, below the normal one. The same
-    // colours are legible as a headline and not as body copy, which is the
+    // colors are legible as a headline and not as body copy, which is the
     // whole reason size belongs in this calculation.
     const text = c('#6B5BA8');
     const bg = c('#0B0B0C');
@@ -56,7 +56,7 @@ describe('suggestLegibilityFix', () => {
 
   it('prefers thickening when weight alone crosses the large-text threshold', () => {
     // 20px at 400 needs 4.5:1; at 700 it becomes "large" and needs only 3:1.
-    // ~3.45:1 sits between the two, so bold fixes it without touching colour.
+    // ~3.45:1 sits between the two, so bold fixes it without touching color.
     const fix = suggestLegibilityFix(c('#6B5BA8'), c('#0B0B0C'), 20, 400);
     expect(fix.status).toBe('thicken');
     if (fix.status === 'thicken') {
@@ -65,30 +65,30 @@ describe('suggestLegibilityFix', () => {
     }
   });
 
-  it('recolours when no weight can rescue it — small text stays small', () => {
+  it('recolors when no weight can rescue it — small text stays small', () => {
     // At 12px, weight never reaches the large-text threshold, so the only
-    // lever left is colour.
+    // lever left is color.
     const fix = suggestLegibilityFix(c('#5A3F73'), c('#0B0B0C'), 12, 400);
-    expect(fix.status).toBe('recolour');
-    if (fix.status === 'recolour') {
+    expect(fix.status).toBe('recolor');
+    if (fix.status === 'recolor') {
       expect(fix.achievedRatio).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
       expect(fix.hex).toMatch(/^#[0-9a-fA-F]{6}$/);
     }
   });
 
-  it('preserves hue and chroma when it recolours', () => {
+  it('preserves hue and chroma when it recolors', () => {
     const text = c('#5A3F73');
     const fix = suggestLegibilityFix(text, c('#0B0B0C'), 12, 400);
-    if (fix.status !== 'recolour') throw new Error('expected a recolour');
+    if (fix.status !== 'recolor') throw new Error('expected a recolor');
     expect(fix.color.h).toBe(text.h);
     expect(fix.color.c).toBe(text.c);
   });
 
   it('rescues even text sitting exactly on its own background', () => {
-    // Worth stating why this is a `recolour` and not `unreachable`: a neutral
+    // Worth stating why this is a `recolor` and not `unreachable`: a neutral
     // grey has almost no chroma, so its lightness can travel all the way to
     // black without gamut clipping, and black clears 4.5:1 against mid-grey.
-    // An earlier version of this test assumed identical colours were
+    // An earlier version of this test assumed identical colors were
     // unfixable — they are the *easiest* case, not the hardest.
     //
     // `unreachable` is a genuine branch but needs a target no lightness can
@@ -96,8 +96,8 @@ describe('suggestLegibilityFix', () => {
     // WCAG size/weight rules rather than accepting one, that path is exercised
     // directly in auto-fix.test.ts instead of contrived through here.
     const fix = suggestLegibilityFix(c('#808080'), c('#808080'), 12, 400);
-    expect(fix.status).toBe('recolour');
-    if (fix.status === 'recolour') {
+    expect(fix.status).toBe('recolor');
+    if (fix.status === 'recolor') {
       expect(fix.achievedRatio).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
     }
   });

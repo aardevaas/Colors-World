@@ -17,8 +17,8 @@ app, or measured in code. No finding here is inferred from reading source alone.
 
 Three tabs are genuinely excellent in isolation. What is missing is the thing
 that makes five tabs feel like *one* product: a shared, explained, predictable
-model of what your collected colours **mean** as they move between tabs. Today
-the same three colours produce a considered role mapping in one tab and a lurid
+model of what your collected colors **mean** as they move between tabs. Today
+the same three colors produce a considered role mapping in one tab and a lurid
 accident in another, and nothing anywhere tells you why.
 
 That is the single highest-leverage fix in this document, and it is a design
@@ -42,8 +42,8 @@ The consequence is concrete. A visitor scrolls past a beautiful globe and the
 page simply ends. They are never told:
 
 - that there are five tools, or what any of them do
-- that the colour engine is MIT and they could depend on it
-- that 16.7M colours are *computed*, which is the actual differentiator
+- that the color engine is MIT and they could depend on it
+- that 16.7M colors are *computed*, which is the actual differentiator
 - any reason to star the repo
 
 **For the top-100 growth goal, the missing credibility strip is the specific
@@ -56,7 +56,7 @@ whose absence directly costs the stated objective.
 Scrolled through with real wheel events (it is scroll-driven, so programmatic
 scrolling shows a black frame — worth knowing before anyone else "discovers"
 that as a bug). The globe does assemble. But at its final state it fills the
-entire viewport as a dense wall of colour — the *globe* read, which is the whole
+entire viewport as a dense wall of color — the *globe* read, which is the whole
 point of the set piece, is gone. It reads as noise, not as a world.
 
 There is a `#E6620C — Click to explore` affordance hidden in it. **That is the
@@ -65,7 +65,7 @@ exists.** It deserves to be the hero of a section, not an easter egg.
 
 ## 1.3 The particle field renders over the primary CTA 🟠
 
-Visible in the first screenshot: coloured particles pass **in front of** the
+Visible in the first screenshot: colored particles pass **in front of** the
 "Star on GitHub" button, breaking up its label. On the one button whose entire
 job is the growth goal, decoration should never sit on top of the words.
 
@@ -74,11 +74,11 @@ job is the growth goal, decoration should never sit on top of the words.
 `Enter the studio for free → /studio`.
 
 For someone who has never used the product, `/studio` is a **blank canvas with
-a dot grid**. The hero promises "every colour, all 16.7 million of them" and
+a dot grid**. The hero promises "every color, all 16.7 million of them" and
 then delivers an empty page with an "add a card" button.
 
 `/library` is the payoff for that exact promise — an infinite grid of computed
-colour, immediately gorgeous, requiring nothing from the visitor. **Point the
+color, immediately gorgeous, requiring nothing from the visitor. **Point the
 primary CTA at `/library`.** `/studio` is where you go once you have something
 to arrange; it is the wrong first room.
 
@@ -103,7 +103,7 @@ This is where the product is furthest from world-class, and it is fixable.
 
 ## 2.1 The Harmonic Dock is the spine of the product and is never explained 🔴
 
-The dock is what makes five tabs one product. Collect colours once, and every
+The dock is what makes five tabs one product. Collect colors once, and every
 tab uses them.
 
 **Nothing anywhere tells a user this.** Searched the whole codebase: the phrase
@@ -117,41 +117,41 @@ nothing → leave. The connective tissue is invisible.
 ## 2.2 The same dock means something different in every tab 🔴
 
 This is the finding I would fix first. Verified live with one dock containing
-three colours — `#5A3F73` violet, `#19D368` green, `#CFA15D` tan:
+three colors — `#5A3F73` violet, `#19D368` green, `#CFA15D` tan:
 
 | Tab | What it does with them | Result |
 |---|---|---|
-| `/builder` | every colour becomes its own scale | sensible, predictable |
+| `/builder` | every color becomes its own scale | sensible, predictable |
 | `/visualizer` | roles derived by **OKLCH lightness**, overridable | considered — this is the right model |
 | `/typography` | `items[0]` = text, `items[1]` = background, **by position** | violet text on a **lurid green page** |
 | `/studio` | not consumed at all | dock is decorative here |
 
 `/typography`'s positional mapping is arbitrary and undiscoverable — the result
-depends on the *order you happened to collect colours in*. It scored 4.60:1 and
+depends on the *order you happened to collect colors in*. It scored 4.60:1 and
 therefore "passed", which makes it worse: the tool blessed an unusable page.
 
 **Fix:** `/visualizer`'s lightness-derived, override-able model should be the
 shared one. Extract it, use it in `/typography`, and let `/studio` consume it
 too. One model, explained once.
 
-## 2.3 Role derivation collides below six colours 🔴 *(bug)*
+## 2.3 Role derivation collides below six colors 🔴 *(bug)*
 
 Found while investigating 2.2 and confirmed in code across palette sizes:
 
 | Palette size | Collision |
 |---|---|
-| 2 colours | `background`+`primary`, `text`+`accent` |
-| 3 colours | `surface`+`primary` |
-| 4 colours | `surface`+`accent`, `primary`+`border` |
-| 6 colours | clean |
+| 2 colors | `background`+`primary`, `text`+`accent` |
+| 3 colors | `surface`+`primary` |
+| 4 colors | `surface`+`accent`, `primary`+`border` |
+| 6 colors | clean |
 
-Designers collect three to five colours. That is the **common** case, not the
+Designers collect three to five colors. That is the **common** case, not the
 edge case. Live consequence in `/visualizer`: `surface` and `primary` resolved
 to the same tan, the dashboard's metric cards dissolved into their own
 background, and `text on surface` fell to **1.22:1**.
 
 `deriveRoles` fills *missing* roles from a neutral fallback but never checks
-whether a colour has already been used. It should assign each role distinctly,
+whether a color has already been used. It should assign each role distinctly,
 falling back to the neutral set rather than duplicating.
 
 To its credit, `/visualizer`'s own audit **correctly flagged the 1.22:1
@@ -161,12 +161,12 @@ instinct and worth keeping.
 ## 2.4 `/typography` is the only tab with no empty state 🟠
 
 `/builder`, `/visualizer` and `/studio` all guide a user with an empty dock.
-`/typography` renders a specimen in fallback colours with no indication that the
+`/typography` renders a specimen in fallback colors with no indication that the
 dock drives it at all — so it silently looks *finished* while being unconfigured.
 
 ## 2.5 The hand-offs between tabs do not exist 🟠
 
-The dock carries colour, but there is no path that says *"you built a scale —
+The dock carries color, but there is no path that says *"you built a scale —
 now go see it on real UI"*. Each tab is entered from the nav, never from the
 tab before it. The product has a natural workflow —
 
@@ -190,7 +190,7 @@ Measured live on one screen of `/library`:
 - **19 tab stops** to reach the *first* "Add to dock"
 
 So **72% of all tab stops are steppers**, and a keyboard user presses Tab
-nineteen times to collect one colour, then roughly fifteen more per colour after
+nineteen times to collect one color, then roughly fifteen more per color after
 that.
 
 The per-card shade stepper is a genuinely good idea. It should not be ten
@@ -217,8 +217,8 @@ visit would do it.
 Being fair, because the fixes above are worth doing *because* the foundation is
 strong:
 
-- **The colour engine.** OKLCH throughout, WCAG + APCA, gamut mapping, CVD, ΔE
-  in OKLab. 16.7M colours computed rather than stored. Genuinely rare.
+- **The color engine.** OKLCH throughout, WCAG + APCA, gamut mapping, CVD, ΔE
+  in OKLab. 16.7M colors computed rather than stored. Genuinely rare.
 - **`/builder`'s curve manipulation** with live gamut badges per step.
 - **`/studio`'s canvas** — zoom-to-cursor verified accurate to 0.09px, snapping,
   ambient glow, watermarked export.
@@ -235,7 +235,7 @@ strong:
 # Prioritised fix list
 
 **P0 — coherence and correctness**
-1. Fix `deriveRoles` collisions below six colours *(bug, §2.3)*
+1. Fix `deriveRoles` collisions below six colors *(bug, §2.3)*
 2. Unify the role model — `/visualizer`'s, everywhere *(§2.2)*
 3. Point the landing CTA at `/library`, not `/studio` *(§1.4)*
 4. Fix the skip link — give `#main` real content *(§1.5)*
@@ -259,11 +259,11 @@ strong:
 
 **The globe's "click to explore" should become a section, not stay an easter
 egg.** It is the single most on-brand interaction in the product — a live,
-clickable 16.7M-colour world on the marketing page. Right now almost nobody will
+clickable 16.7M-color world on the marketing page. Right now almost nobody will
 find it.
 
 **"For designers, by designers" argues for one opinionated default over many
-knobs.** `/library` currently exposes every axis of every colour as a control.
-The stronger version shows the colour, and reveals the axes on demand. Fewer
+knobs.** `/library` currently exposes every axis of every color as a control.
+The stronger version shows the color, and reveals the axes on demand. Fewer
 tab stops is a side effect; the real gain is that the page stops looking like a
 control panel and starts looking like a place.

@@ -1,7 +1,7 @@
 -- PRISM — palette persistence schema.
 --
 -- Mirrors src/lib/versioning/types.ts exactly:
---   PaletteSnapshot -> palette_versions.snapshot (jsonb, token name -> CSS colour string)
+--   PaletteSnapshot -> palette_versions.snapshot (jsonb, token name -> CSS color string)
 --   VersionNode      -> palette_versions (id, parent_ids)
 --
 -- Run this once, in full, in the Supabase SQL Editor of a fresh project.
@@ -70,12 +70,12 @@ create trigger palette_versions_touch_updated_at
   execute function touch_palette_updated_at();
 
 -- ============================================================================
--- Knowledge graph, phase 1: a flat, searchable colour library.
+-- Knowledge graph, phase 1: a flat, searchable color library.
 --
 -- Deliberately NOT the generic kg_node/kg_edge graph the architecture doc
 -- originally sketched. Nothing in the app yet needs cross-entity graph
--- traversal ("show every colour used in this art movement") — what it needs
--- is "type a word, find matching colours with their tags." A flat table with
+-- traversal ("show every color used in this art movement") — what it needs
+-- is "type a word, find matching colors with their tags." A flat table with
 -- full-text search delivers that with a fraction of the schema and query
 -- complexity. Graduate to the graph model if/when a real feature (RAG
 -- grounding for AI generation, a graph browser) actually needs traversal.
@@ -127,7 +127,7 @@ create index if not exists colors_search_idx on colors using gin (search_vector)
 create index if not exists colors_name_idx on colors (name);
 
 -- ============================================================================
--- The Spectrum (roadmap phase 2): every colour, perceptually ordered.
+-- The Spectrum (roadmap phase 2): every color, perceptually ordered.
 --
 -- spectrum_index is a precomputed position in the hue -> lightness -> chroma
 -- ordering. Offset pagination ("skip 40,000 rows") degrades badly at this
@@ -164,7 +164,7 @@ create unique index if not exists colors_spectrum_index_idx
 
 -- ============================================================================
 -- The Library (roadmap phase 6): the semantic overlay on the arithmetic
--- 16.7M-colour space.
+-- 16.7M-color space.
 --
 -- bucket_index is a *different* mapping from spectrum_index above — it is
 -- NOT a rank among curated rows. It's each row's own position in the exact
@@ -174,7 +174,7 @@ create unique index if not exists colors_spectrum_index_idx
 -- column: `WHERE bucket_index = ANY($1)` for a batch of on-screen swatches.
 -- Most buckets will have no curated row at all (256^3 buckets vs. ~100K
 -- rows) — that's expected. This is an enrichment when a nearby curated
--- colour exists, not a guarantee every generated swatch has one.
+-- color exists, not a guarantee every generated swatch has one.
 --
 -- Left nullable and backfilled by a Node script rather than the inline SQL
 -- block spectrum_index used above, because computing it requires the actual

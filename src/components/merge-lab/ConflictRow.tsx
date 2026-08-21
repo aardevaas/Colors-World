@@ -22,7 +22,7 @@ export function ConflictRow({ conflict, resolution, onResolve }: ConflictRowProp
   const [blendT, setBlendT] = useState(0.5);
 
   const { oursOklch, theirsOklch, magnitude } = useMemo(() => {
-    // A modify/delete conflict has no colour on one side — blending needs
+    // A modify/delete conflict has no color on one side — blending needs
     // both, so it falls back to the surviving side rather than crashing.
     const ours = conflict.ours === null ? null : parseColor(conflict.ours);
     const theirs = conflict.theirs === null ? null : parseColor(conflict.theirs);

@@ -1,7 +1,7 @@
 /**
- * One colour in, a usable palette out.
+ * One color in, a usable palette out.
  *
- * `generateHarmony` answers "what colours are related to this one", which is
+ * `generateHarmony` answers "what colors are related to this one", which is
  * the classical question, and on its own it does not produce something you can
  * build an interface from. A triad is three vivid mid-tones: a lovely swatch
  * strip and an unusable UI, because there is no ground to sit on, no panel
@@ -15,7 +15,7 @@
  *
  * The shape is chosen so the shared role model (`deriveRoles`) has exactly the
  * material it looks for: two dark tinted neutrals for background and surface, a
- * light one for text, a mid one for border, and the harmony's colours for
+ * light one for text, a mid one for border, and the harmony's colors for
  * primary and accent. Those assignments are asserted in the tests rather than
  * assumed here — this module does not know about roles, and should not.
  */
@@ -32,7 +32,7 @@ const DEFAULT_SIZE = 6;
 /** How much of the seed's hue bleeds into the greys. */
 const DEFAULT_NEUTRAL_CHROMA = 0.012;
 
-/** Neutrals are held to a fraction of the least chromatic brand colour. */
+/** Neutrals are held to a fraction of the least chromatic brand color. */
 const NEUTRAL_CHROMA_HEADROOM = 0.5;
 
 /** Brand slots the ladder can use, so a short harmony knows how far to fill. */
@@ -57,11 +57,11 @@ export const DEFAULT_NEUTRAL_LADDER: NeutralLadder = {
   text: 0.95,
 };
 
-/** Where harmony colours are placed so they read as brand against the ladder. */
+/** Where harmony colors are placed so they read as brand against the ladder. */
 const BRAND_LIGHTNESS = 0.62;
 
 /**
- * Lightnesses used to extend a harmony that does not supply enough colours.
+ * Lightnesses used to extend a harmony that does not supply enough colors.
  * `monochromatic` is one hue by definition, so a monochromatic *palette* has
  * to be built from tones of it -- which is exactly what the word means to a
  * designer, and what the hue-only harmony cannot express on its own.
@@ -113,15 +113,15 @@ export function generatePalette(seed: Oklch, options: PaletteOptions = {}): Gene
   );
 
   // Build the full candidate ladder in priority order, then take `count`. The
-  // order is what degrades gracefully: a three-colour palette keeps a ground,
-  // text and a brand colour, which is the smallest set that still makes an
+  // order is what degrades gracefully: a three-color palette keeps a ground,
+  // text and a brand color, which is the smallest set that still makes an
   // interface rather than a mood board.
   const brands = brandCandidates(harmony, gamut);
 
-  // Neutrals must never be more chromatic than the brand colours. Beyond
-  // being obviously right -- the greys should not out-colour the colour --
+  // Neutrals must never be more chromatic than the brand colors. Beyond
+  // being obviously right -- the greys should not out-color the color --
   // this is load-bearing: the role model picks primary and accent by chroma,
-  // so a tinted neutral that beats a desaturated brand colour gets assigned
+  // so a tinted neutral that beats a desaturated brand color gets assigned
   // as the brand, and the interface ends up with a mid grey where its
   // surface should be. Seeds close to grey hit that immediately.
   const brandChroma = Math.min(...brands.map((color) => color.oklch.c));
@@ -147,14 +147,14 @@ function clampCount(count: number): number {
 }
 
 /**
- * The palette's brand colours: the harmony's hues, extended with tones of the
+ * The palette's brand colors: the harmony's hues, extended with tones of the
  * seed hue when the harmony supplies fewer than the ladder has slots for.
  */
 function brandCandidates(harmony: Harmony, gamut: Gamut): PaletteColor[] {
-  // Deduped, because a rule can return more entries than distinct colours:
-  // rotating hue on a colour with no chroma is a no-op, so a square harmony
+  // Deduped, because a rule can return more entries than distinct colors:
+  // rotating hue on a color with no chroma is a no-op, so a square harmony
   // from a grey seed is four identical greys. Counting entries rather than
-  // colours would skip the tonal fill below and leave the palette short.
+  // colors would skip the tonal fill below and leave the palette short.
   const fromHarmony: PaletteColor[] = dedupe(
     harmony.colors.map((color) => ({
       oklch: color.oklch,
@@ -191,7 +191,7 @@ function neutral(l: number, hue: number, chroma: number, gamut: Gamut): PaletteC
 /**
  * Two candidates can land on the same hex — a harmony hue whose gamut ceiling
  * collapses at this lightness, or a seed so dark that its neutrals converge.
- * A palette with a repeated colour would then hand the role model two
+ * A palette with a repeated color would then hand the role model two
  * identical entries and quietly lose a role.
  */
 function dedupe(colors: readonly PaletteColor[]): PaletteColor[] {

@@ -1,8 +1,8 @@
 /**
- * Six rooms, six colours, generated rather than branded.
+ * Six rooms, six colors, generated rather than branded.
  *
  * The landing page pours six streams of paint out of the hero, one into each
- * room. Those six could have been picked once and written down — but a colour
+ * room. Those six could have been picked once and written down — but a color
  * tool whose own landing page ships a hardcoded palette is arguing against
  * itself. These are generated per visit, which means every visitor sees a
  * different six and the page is a live output of the engine rather than a
@@ -10,8 +10,8 @@
  *
  * ## Why the ceiling, and not a harmony
  *
- * A harmony rule is the wrong tool here. Harmonies make colours *relate*, and
- * six related colours are harder to tell apart — the opposite of what six room
+ * A harmony rule is the wrong tool here. Harmonies make colors *relate*, and
+ * six related colors are harder to tell apart — the opposite of what six room
  * identities need. So the hues are spread evenly, which maximises mutual
  * separation by construction.
  *
@@ -39,12 +39,12 @@ import { ROOM_IDS, type TabId } from '@/lib/nav/tabs';
 /**
  * How much of each hue's own ceiling to use. Just short of 1: sitting exactly
  * on the hull round-trips through 8-bit hex landing a hair outside it, and a
- * colour that reports out-of-gamut on a page about gamut is not a good look.
+ * color that reports out-of-gamut on a page about gamut is not a good look.
  */
 export const CEILING_FRACTION = 0.92;
 
 /**
- * Lightness every room colour sits at. Mid-high: dark enough to hold white
+ * Lightness every room color sits at. Mid-high: dark enough to hold white
  * text nowhere near it, light enough to read as wet paint against the near
  * black page rather than as a stain.
  */
@@ -54,10 +54,10 @@ export const ROOM_LIGHTNESS = 0.68;
 export const PAGE_GROUND: Oklch = { l: 0.15, c: 0.006, h: 286 };
 
 /**
- * The least two room colours may resemble each other. Comfortably above the
+ * The least two room colors may resemble each other. Comfortably above the
  * 0.04 just-noticeable-difference the rest of the app uses — two rooms are not
  * two scale steps, and "technically distinguishable" is not the bar when the
- * colour is the room's identity.
+ * color is the room's identity.
  */
 export const ROOM_SEPARATION_FLOOR = 0.12;
 

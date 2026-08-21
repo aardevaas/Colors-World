@@ -88,7 +88,7 @@ describe('autoFixContrast — adjusting the background instead', () => {
 });
 
 describe('autoFixContrast — honest failure', () => {
-  it('reports unreachable rather than returning a colour that still fails', () => {
+  it('reports unreachable rather than returning a color that still fails', () => {
     // Against mid-grey, a target this high is not achievable by any lightness.
     const result = autoFixContrast(c('#808080'), c('#808080'), { target: 21 });
     expect(result.status).toBe('unreachable');

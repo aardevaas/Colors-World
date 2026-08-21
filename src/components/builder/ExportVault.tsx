@@ -34,9 +34,9 @@ export function ExportVault({ scales, primaryIndex, format, onFormatChange }: Ex
   const shadcnResult = format === 'shadcn' ? toShadcnTheme(scales, { primaryIndex }) : null;
 
   // The document is the only format that describes the system rather than
-  // restating it: which colour took which role, what every required pair
+  // restating it: which color took which role, what every required pair
   // measures, where the type stops being legible, what a narrower display
-  // does to the ramps. Tokens tell the next person what the colours are; this
+  // does to the ramps. Tokens tell the next person what the colors are; this
   // tells them why, which is the part that otherwise lives in one head.
   const code =
     scales.length === 0
@@ -116,14 +116,14 @@ export function ExportVault({ scales, primaryIndex, format, onFormatChange }: Ex
 
           {format === 'document' && code !== '' && (
             <p className={styles.vaultDocNote}>
-              Everything the other formats say, plus why: which colour took which role,
+              Everything the other formats say, plus why: which color took which role,
               what every required pair measures, where type stops being legible, and what
               a narrower display does to the ramps.
             </p>
           )}
 
           <pre className={styles.vaultCode} data-tall={format === 'document'}>
-            {code === '' ? '/* collect a colour to generate export code */' : code}
+            {code === '' ? '/* collect a color to generate export code */' : code}
           </pre>
 
           <div className={styles.vaultActions}>

@@ -22,7 +22,7 @@ export function SiteFooter() {
         <div className={styles.brandColumn}>
           <p className={styles.wordmark}>Colors World</p>
           <p className={styles.tagline}>
-            An open-source studio for colour and typography. Every colour computed, every
+            An open-source studio for color and typography. Every color computed, every
             claim measurable.
           </p>
         </div>
@@ -82,7 +82,7 @@ export function SiteFooter() {
         >
           aardevaas
         </a>
-        . Colour in OKLCH, contrast in WCAG and APCA, gamut mapping to sRGB, Display P3 and
+        . Color in OKLCH, contrast in WCAG and APCA, gamut mapping to sRGB, Display P3 and
         Rec2020.
       </p>
     </footer>

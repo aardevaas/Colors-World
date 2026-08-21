@@ -25,7 +25,7 @@ export function gamutMode(gamut: RgbGamut): string {
 }
 
 /**
- * Parses any CSS colour string into canonical OKLCH.
+ * Parses any CSS color string into canonical OKLCH.
  * Throws on unparseable input rather than silently yielding black — a silent
  * fallback here would poison an entire generated scale with a plausible-looking
  * but wrong hue.
@@ -33,16 +33,16 @@ export function gamutMode(gamut: RgbGamut): string {
 export function parseColor(input: string): Oklch {
   const parsed = culoriParse(input.trim());
   if (parsed === undefined) {
-    throw new Error(`Unparseable colour: "${input}"`);
+    throw new Error(`Unparseable color: "${input}"`);
   }
   const converted = toOklchColor(parsed);
   if (converted === undefined) {
-    throw new Error(`Colour could not be converted to OKLCH: "${input}"`);
+    throw new Error(`Color could not be converted to OKLCH: "${input}"`);
   }
   return {
     l: converted.l,
     c: converted.c,
-    // culori omits hue for achromatic colours; 0 is the conventional stand-in.
+    // culori omits hue for achromatic colors; 0 is the conventional stand-in.
     h: converted.h === undefined ? 0 : normalizeHue(converted.h),
     ...(converted.alpha === undefined ? {} : { alpha: converted.alpha }),
   };
@@ -109,7 +109,7 @@ export interface Hsl {
 export function toHsl(color: Oklch): Hsl {
   const converted = toHslColor(toCuloriOklch(color));
   return {
-    // culori omits hue for achromatic colours, same convention as parseColor.
+    // culori omits hue for achromatic colors, same convention as parseColor.
     h: converted?.h === undefined ? 0 : normalizeHue(converted.h),
     s: clamp01(converted?.s ?? 0) * 100,
     l: clamp01(converted?.l ?? 0) * 100,

@@ -12,7 +12,7 @@
 
 .glyph {
   display: inline-block;
-  /* Two shadows: a tight bright core and a wide coloured bloom. One alone
+  /* Two shadows: a tight bright core and a wide colored bloom. One alone
      reads as a blur rather than as light coming off the letter. */
   text-shadow:
     0 0 calc(var(--glow, 0.16) * 14px) oklch(100% 0 0 / calc(var(--glow, 0.16) * 0.85)),

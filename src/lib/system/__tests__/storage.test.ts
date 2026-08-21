@@ -60,7 +60,7 @@ describe('migrateLegacyDock', () => {
     expect(migrateLegacyDock(legacyDock([VIOLET, GREEN], GREEN))?.anchorHex).toBe(GREEN);
   });
 
-  it('falls back to the first colour when the stored anchor is bogus', () => {
+  it('falls back to the first color when the stored anchor is bogus', () => {
     expect(migrateLegacyDock(legacyDock([VIOLET, GREEN], '#ffffff'))?.anchorHex).toBe(VIOLET);
   });
 

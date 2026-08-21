@@ -101,7 +101,7 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
         setSwatchDragPayload(event, { hex: displayed.hex, oklch: displayed.oklch })
       }
       aria-label={
-        semanticMatch ? `${semanticMatch.name}, ${displayed.hex}` : `Generated colour ${displayed.hex}`
+        semanticMatch ? `${semanticMatch.name}, ${displayed.hex}` : `Generated color ${displayed.hex}`
       }
     >
       <div className={styles.cardSwatchLarge} style={{ background: displayed.hex }}>
@@ -168,7 +168,7 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
           className={styles.hoverActionButton}
           onClick={() => setTeleportOpen(true)}
           aria-label="Open teleport menu"
-          title="Send this colour elsewhere"
+          title="Send this color elsewhere"
         >
           ⋯
         </button>
@@ -179,7 +179,7 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
           className={styles.teleportOverlay}
           onClick={(e) => e.stopPropagation()}
           role="menu"
-          aria-label="Teleport this colour"
+          aria-label="Teleport this color"
         >
           {TELEPORT_TARGETS.map((target) =>
             target.href === null ? (

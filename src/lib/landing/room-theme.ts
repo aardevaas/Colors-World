@@ -1,19 +1,19 @@
 /**
- * A legible colour pair per room, solved rather than chosen.
+ * A legible color pair per room, solved rather than chosen.
  *
  * ## Where this comes from
  *
  * GF Smith's site is built on 21 named Colorplan papers combined into 42 pair
  * utilities — every pair, in both directions — each setting nothing but a
  * background and a foreground. Components there are written against semantic
- * tokens and never name a colour, so one class re-skins an entire section.
+ * tokens and never name a color, so one class re-skins an entire section.
  * That architecture is the part worth taking.
  *
  * The part worth *replacing* is how the pairs are arrived at. GF Smith's 42 are
  * hand-picked by a design team against physical paper swatches, which is the
- * only option when your colours shipped in 2011 and never change. Ours are
+ * only option when your colors shipped in 2011 and never change. Ours are
  * generated per visit from a seed — nobody can hand-pick them, and a landing
- * page for a colour tool that shipped an unchecked pair would be arguing
+ * page for a color tool that shipped an unchecked pair would be arguing
  * against itself in public.
  *
  * So each pair is solved here, and the guarantee is structural: a foreground is
@@ -35,7 +35,7 @@
  * `bestTextColor` answers the everyday question, black text or white text. That
  * is the right answer for UI and the wrong one here: two of the six bands would
  * come back white, two black, and the set would read as a template with the
- * colour poured in behind it.
+ * color poured in behind it.
  *
  * Colorplan pairs are *tonal* — a deep ink of a hue on a mid tone of the same
  * hue. So the search keeps the background's hue and looks for the foreground
@@ -97,7 +97,7 @@ const HOVER_SHIFT = 0.07;
  * Exists because the band must carry ONE ink in two strengths. Solved freely,
  * `fg` and `fgQuiet` can land on opposite sides — a magenta band came back with
  * near-black body text and near-white display type, which reads as two
- * unrelated decisions rather than one colour being spoken quietly and loudly.
+ * unrelated decisions rather than one color being spoken quietly and loudly.
  */
 export type InkSide = 'darker' | 'lighter' | 'either';
 
@@ -114,7 +114,7 @@ export interface RoomTheme {
   readonly fgHover: Oklch;
 }
 
-/** Solves the full pair for one room colour. */
+/** Solves the full pair for one room color. */
 export function roomTheme(bg: Oklch): RoomTheme {
   // One table for all four solves. `shiftAwayFrom` only moves lightness, and
   // the gamut map that follows it corrects chroma at constant lightness and
@@ -123,7 +123,7 @@ export function roomTheme(bg: Oklch): RoomTheme {
   const ceilings = chromaCeilings(bg.h);
 
   // The primary ink is solved freely; everything else on the band is then
-  // pinned to the side it chose, so the band speaks one colour at two volumes.
+  // pinned to the side it chose, so the band speaks one color at two volumes.
   const fg = solveForeground(bg, TEXT_MIN_RATIO, ceilings);
   const side: InkSide = fg.l <= bg.l ? 'darker' : 'lighter';
   const bgHover = shiftAwayFrom(bg, fg, HOVER_SHIFT);
@@ -150,7 +150,7 @@ export function roomTheme(bg: Oklch): RoomTheme {
  *
  * So chroma leads. Take the richest tint that can clear the target anywhere on
  * the lightness axis, then the lightness closest to the background at that
- * tint. Saturation is the larger part of reading as one colour world; lightness
+ * tint. Saturation is the larger part of reading as one color world; lightness
  * proximity is the tiebreak, not the objective.
  *
  * Falls back to plain white or black only if the hue cannot carry a foreground
@@ -210,7 +210,7 @@ function closestClearing(
 /**
  * Reachable chroma at every step of the lightness axis for one hue.
  *
- * `maxChroma` is a binary search through colour-space conversions, so it is
+ * `maxChroma` is a binary search through color-space conversions, so it is
  * hoisted out of the solve rather than called per probe. It depends on nothing
  * but lightness and hue, and all four solves for a room share a hue, so the
  * table is built once per room and handed down.

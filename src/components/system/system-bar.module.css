@@ -8,7 +8,7 @@
  * Inherited wholesale from the Harmonic Dock it replaces: the glass
  * treatment, the anchor ring and the drag-over state were already right and
  * already tuned against every route. What is new below is everything the
- * bar shows that a colour tray had no reason to -- roles, sections, and an
+ * bar shows that a color tray had no reason to -- roles, sections, and an
  * invitation for an empty System.
  */
 
@@ -252,7 +252,7 @@
 }
 
 /* The role strip is the point of the bar: it says, without being asked,
-   what each collected colour is currently doing everywhere else. */
+   what each collected color is currently doing everywhere else. */
 .roleRow {
   display: flex;
   flex-wrap: wrap;

@@ -1,6 +1,6 @@
 /* /typography's own world: a near-white reading surface for the specimen, with
    the instrument itself kept dark and quiet around it. The other tabs judge
-   colour, so they stay on obsidian — this one judges *reading*, and type has to
+   color, so they stay on obsidian — this one judges *reading*, and type has to
    be assessed on the kind of surface it will actually be read on. */
 
 .shell {
@@ -109,7 +109,7 @@
   overflow-y: auto;
 }
 
-/* The reading surface. Every size, family, leading and colour below resolves
+/* The reading surface. Every size, family, leading and color below resolves
    through the custom properties set on this element, so changing the ratio
    repaints the entire specimen with no React re-render. */
 .specimen {
@@ -406,7 +406,7 @@
   overflow-y: auto;
 }
 
-/* Sits inside a .legibilityRow label so the role name reads as "this colour,
+/* Sits inside a .legibilityRow label so the role name reads as "this color,
    called text" rather than as a legend the eye has to reconcile separately. */
 .roleSwatch {
   display: inline-block;

@@ -2,7 +2,7 @@ import { extractDominantColors, rgbToHex, type RgbSample } from './extract-palet
 
 /**
  * Browser-only: draws a File onto an offscreen canvas and samples it down
- * to dominant colours. Never import this from a Server Component or
+ * to dominant colors. Never import this from a Server Component or
  * Server Action — it needs `document`/`createImageBitmap`.
  */
 

@@ -22,7 +22,7 @@ describe('maxChroma', () => {
 });
 
 describe('generateScale — anchor fidelity', () => {
-  test('a pinned step resolves to exactly the pinned colour', () => {
+  test('a pinned step resolves to exactly the pinned color', () => {
     const scale = generateScale({
       name: 'blue',
       anchors: [{ step: 5, color: BRAND_BLUE }],
@@ -217,7 +217,7 @@ describe('generateScale — input validation', () => {
     ).toThrow(/darker as step increases/i);
   });
 
-  test('rejects an unparseable anchor colour', () => {
+  test('rejects an unparseable anchor color', () => {
     expect(() =>
       generateScale({ name: 'bad', anchors: [{ step: 5, color: 'chartreusey' }] })
     ).toThrow(/unparseable/i);
@@ -337,7 +337,7 @@ describe('generateScale — curve-aware ScaleSpec (/builder curve manipulator)',
     expect(Math.abs(custom.steps[1]!.oklch.h - linear.steps[1]!.oklch.h)).toBeGreaterThan(1);
   });
 
-  test('the anchor step still resolves to its exact colour regardless of any curve', () => {
+  test('the anchor step still resolves to its exact color regardless of any curve', () => {
     const scale = generateScale({
       name: 'anchor-fidelity',
       anchors: [{ step: 5, color: BRAND_BLUE }],

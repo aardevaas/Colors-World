@@ -39,7 +39,7 @@ export function relativeLuminance(color: Oklch): number {
   );
 }
 
-/** WCAG contrast ratio between two colours, 1:1 to 21:1. Order-independent. */
+/** WCAG contrast ratio between two colors, 1:1 to 21:1. Order-independent. */
 export function contrastRatio(a: Oklch, b: Oklch): number {
   const luminanceA = relativeLuminance(a);
   const luminanceB = relativeLuminance(b);

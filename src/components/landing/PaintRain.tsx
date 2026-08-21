@@ -16,7 +16,7 @@ import styles from './paint-rain.module.css';
  *
  * Each drop carries one of the six room hues. That is deliberate groundwork:
  * the rain is meant to be what fills and feeds the six rooms further down, so
- * the colours have to agree from the first drop.
+ * the colors have to agree from the first drop.
  *
  * Fixed to the viewport rather than the document. Rain that scrolls with the
  * page is not rain — it is a texture sliding past.

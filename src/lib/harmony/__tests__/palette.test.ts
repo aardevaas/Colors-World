@@ -11,7 +11,7 @@ const GREEN: Oklch = parseColor('#19D368');
 const SEEDS = [VIOLET, TAN, GREEN, parseColor('#FF0000'), parseColor('#0B0B0C')];
 
 describe('generatePalette — shape', () => {
-  it('returns exactly the number of colours asked for', () => {
+  it('returns exactly the number of colors asked for', () => {
     for (const size of PALETTE_SIZES) {
       expect(generatePalette(VIOLET, { count: size }).colors).toHaveLength(size);
     }
@@ -21,7 +21,7 @@ describe('generatePalette — shape', () => {
     expect(generatePalette(VIOLET).colors).toHaveLength(6);
   });
 
-  it('never returns a duplicate colour', () => {
+  it('never returns a duplicate color', () => {
     for (const rule of HARMONY_RULES) {
       for (const size of PALETTE_SIZES) {
         for (const seed of SEEDS) {
@@ -53,9 +53,9 @@ describe('generatePalette — it has to feed the role model', () => {
   // The point of generating a palette rather than a harmony: a triad is three
   // vivid mid-tones, which makes a lovely swatch strip and an unusable
   // interface. What a UI needs is a ground to sit on, a panel above it, text
-  // that reads, and a brand colour. These assert the generator produces
+  // that reads, and a brand color. These assert the generator produces
   // material the shared role model can actually assign.
-  it('gives every role a distinct colour at every size', () => {
+  it('gives every role a distinct color at every size', () => {
     for (const rule of HARMONY_RULES) {
       for (const size of PALETTE_SIZES) {
         for (const seed of SEEDS) {
@@ -81,7 +81,7 @@ describe('generatePalette — it has to feed the role model', () => {
     }
   });
 
-  it('keeps the seed as the brand colour', () => {
+  it('keeps the seed as the brand color', () => {
     // Someone who seeds a palette from their brand violet expects to still
     // see their brand violet in it.
     const palette = generatePalette(VIOLET, { rule: 'triad', chroma: 'proportional' });
@@ -142,7 +142,7 @@ describe('generatePalette — what it reports', () => {
     expect(palette.harmony.colors.length).toBeGreaterThan(1);
   });
 
-  it('marks which colours came from the harmony and which are neutrals', () => {
+  it('marks which colors came from the harmony and which are neutrals', () => {
     const palette = generatePalette(VIOLET);
     expect(palette.colors.some((c) => c.origin === 'harmony')).toBe(true);
     expect(palette.colors.some((c) => c.origin === 'neutral')).toBe(true);

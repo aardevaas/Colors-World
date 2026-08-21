@@ -14,11 +14,11 @@ describe('toShadcnTheme — structure', () => {
     expect(css).toContain('.dark {');
   });
 
-  test('fills background/foreground/card/border regardless of which colours were collected', () => {
+  test('fills background/foreground/card/border regardless of which colors were collected', () => {
     const withBlue = toShadcnTheme([BLUE]);
     const withGreen = toShadcnTheme([GREEN]);
     // Neutral slots come from this project's own obsidian tokens, not from
-    // whatever brand colour happens to be collected — so they must be
+    // whatever brand color happens to be collected — so they must be
     // identical across totally different inputs.
     const extractBackground = (css: string) => css.match(/--background: ([^;]+);/)?.[1];
     expect(extractBackground(withBlue.css)).toBe(extractBackground(withGreen.css));
@@ -68,7 +68,7 @@ describe('toShadcnTheme — primary/secondary/accent from real scales', () => {
 });
 
 describe('toShadcnTheme — destructive is never invented', () => {
-  test('fills --destructive only when a collected colour is actually red/pink', () => {
+  test('fills --destructive only when a collected color is actually red/pink', () => {
     const withoutRed = toShadcnTheme([BLUE, GREEN]);
     expect(withoutRed.css).not.toContain('--destructive:');
     expect(withoutRed.unfilled.some((r) => r.includes('--destructive'))).toBe(true);
@@ -106,7 +106,7 @@ describe('toShadcnTheme — chart tokens', () => {
 });
 
 describe('toShadcnTheme — foreground pairing', () => {
-  test('every filled colour role has a corresponding -foreground pair', () => {
+  test('every filled color role has a corresponding -foreground pair', () => {
     const { css } = toShadcnTheme([BLUE, GREEN, PURPLE, RED]);
     for (const role of ['primary', 'secondary', 'accent', 'destructive']) {
       expect(css).toContain(`--${role}:`);

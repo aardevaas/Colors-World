@@ -12,9 +12,9 @@ function color(hex: string): RoleColor {
   return { hex, oklch: parseColor(hex) };
 }
 
-/** The audit's three colours — the palette that started all of this. */
+/** The audit's three colors — the palette that started all of this. */
 const AUDIT_ROLES = deriveRoles([color('#5A3F73'), color('#19D368'), color('#CFA15D')]);
-/** A deliberately good six-colour set. */
+/** A deliberately good six-color set. */
 const GOOD_ROLES = deriveRoles([
   color('#0B0B0C'),
   color('#17171A'),

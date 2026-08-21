@@ -1,7 +1,7 @@
 import type { Oklch } from './types';
 
 /**
- * OKLab coordinates for a colour, derived from its polar OKLCH form.
+ * OKLab coordinates for a color, derived from its polar OKLCH form.
  * a/b are the rectangular chroma axes — the form Euclidean distance is
  * actually meaningful in, since OKLCH's hue channel is circular and cannot be
  * subtracted directly.
@@ -16,7 +16,7 @@ function toOklab(color: Oklch): { l: number; a: number; b: number } {
 }
 
 /**
- * ΔE-OK: perceptual distance between two colours as Euclidean distance in
+ * ΔE-OK: perceptual distance between two colors as Euclidean distance in
  * OKLab. OKLab was designed so that equal distances represent approximately
  * equal perceived differences, which is precisely the property a version-diff
  * magnitude — or a gamut-clamp warning — needs: "how different does this

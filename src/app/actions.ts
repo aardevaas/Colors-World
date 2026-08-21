@@ -55,7 +55,7 @@ export async function createNoteAction(): Promise<BoardItemRecord> {
   );
 }
 
-/** Pins a single Spectrum swatch to the Studio Wall — "individual colours, dragged from the Spectrum tray." */
+/** Pins a single Spectrum swatch to the Studio Wall — "individual colors, dragged from the Spectrum tray." */
 export async function pinColorAction(hex: string, name?: string): Promise<BoardItemRecord> {
   const { userId, supabase } = await requireUserId();
   const projectId = await resolveDefaultProjectId(userId, supabase);
@@ -201,7 +201,7 @@ export interface CreateImageResult {
 
 /**
  * Uploads a dropped image and, when the caller already sampled dominant
- * colours client-side, pins a second card: a real palette created from them.
+ * colors client-side, pins a second card: a real palette created from them.
  * "Drop a photo → its palette extracts instantly" is two board items from
  * one action, not a separate follow-up step.
  */
@@ -232,7 +232,7 @@ export async function createImageAction(formData: FormData): Promise<CreateImage
       projectId,
       itemType: 'image',
       // colors travel with the image itself (not just the companion palette
-      // below) so the extracted-colour pins overlaid on the image card
+      // below) so the extracted-color pins overlaid on the image card
       // survive a reload, not just the session that uploaded it.
       content: { path, colors },
       width: 220,

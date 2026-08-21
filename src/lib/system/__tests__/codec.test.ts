@@ -9,7 +9,7 @@ function color(hex: string, addedAt = 0): SystemColor {
   return { hex, oklch: parseColor(hex), addedAt };
 }
 
-/** The three colours used throughout the audit, in collection order. */
+/** The three colors used throughout the audit, in collection order. */
 const PALETTE = [color('#5A3F73', 1), color('#19D368', 2), color('#CFA15D', 3)];
 
 const FULL: System = {
@@ -80,8 +80,8 @@ describe('encodeSystem / decodeSystem', () => {
   });
 
   it('omits sections that are still at their defaults', () => {
-    const onlyColours: System = { ...EMPTY_SYSTEM, palette: PALETTE, anchorHex: '#5A3F73' };
-    const encoded = encodeSystem(onlyColours);
+    const onlyColors: System = { ...EMPTY_SYSTEM, palette: PALETTE, anchorHex: '#5A3F73' };
+    const encoded = encodeSystem(onlyColors);
     expect(encoded).toContain('c=');
     expect(encoded).not.toContain('t=');
     expect(encoded).not.toContain('m=');
@@ -111,7 +111,7 @@ describe('decodeSystem — hostile and hand-edited input', () => {
     }
   });
 
-  it('drops malformed colours but keeps the good ones', () => {
+  it('drops malformed colors but keeps the good ones', () => {
     const back = decodeSystem('c=5a3f73-nothex-19d368');
     expect(back.palette.map((c) => c.hex.toLowerCase())).toEqual(['#5a3f73', '#19d368']);
   });
@@ -122,11 +122,11 @@ describe('decodeSystem — hostile and hand-edited input', () => {
   });
 
   it('ignores an anchor that is not in the palette', () => {
-    // Otherwise the scale builder points at a colour nobody can see.
+    // Otherwise the scale builder points at a color nobody can see.
     expect(decodeSystem('c=5a3f73&a=ffffff').anchorHex).toBe('#5a3f73');
   });
 
-  it('falls back to the first colour when no anchor is given', () => {
+  it('falls back to the first color when no anchor is given', () => {
     expect(decodeSystem('c=5a3f73-19d368').anchorHex).toBe('#5a3f73');
   });
 
@@ -185,7 +185,7 @@ describe('encodeSystem / decodeSystem — the scales', () => {
   });
 
   it('costs nothing when no scale has been touched', () => {
-    // A palette of six colours nobody has customised must not lengthen the
+    // A palette of six colors nobody has customised must not lengthen the
     // URL by a single character.
     const encoded = encodeSystem(FULL);
     expect(encoded).not.toContain('s=');
@@ -209,7 +209,7 @@ describe('encodeSystem / decodeSystem — the scales', () => {
     expect(encodeSystem(noop)).not.toContain('s=');
   });
 
-  it('keeps settings attached to their colour when the palette is reordered', () => {
+  it('keeps settings attached to their color when the palette is reordered', () => {
     // The reason the model keys by hex even though the URL writes indices.
     const reordered: System = {
       ...WITH_SCALES,

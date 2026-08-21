@@ -1,6 +1,6 @@
 /*
  * Compose sits at the top of the Builder, above the scales, because that is
- * the actual order of the work: make the palette, then refine each colour into
+ * the actual order of the work: make the palette, then refine each color into
  * a ramp. It reads as a distinct band rather than another panel so the two
  * halves of the room stay legible as two steps.
  */

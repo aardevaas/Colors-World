@@ -1,5 +1,5 @@
 /**
- * PRISM colour engine — framework-agnostic, dependency-light, fully testable.
+ * PRISM color engine — framework-agnostic, dependency-light, fully testable.
  *
  * Nothing in this directory may import React, Next.js, or any browser global.
  * The same code has to run in the browser, in a Node build script that

@@ -10,16 +10,16 @@ import {
  * shadcn/ui theme exporter — the one export in the vault that can't just
  * reformat what generateScale already produced. shadcn's token vocabulary
  * (background/card/muted/destructive/…) doesn't map 1:1 onto "N generated
- * scales"; some slots have a real, honest basis in the collected colours and
+ * scales"; some slots have a real, honest basis in the collected colors and
  * some don't. This fills only the former and *discloses* the latter rather
  * than inventing plausible-looking values — the same standing policy this
  * project already applies to seed data ("not verified fact") and disabled
  * teleport targets in /library.
  *
- * Emits full CSS colour functions (`oklch(...)`) as values, matching this
+ * Emits full CSS color functions (`oklch(...)`) as values, matching this
  * project's existing convention (see tokens.ts's toCssCustomProperties) of
  * never emitting bare component lists — Tailwind v4's `@theme` and shadcn's
- * current (Tailwind v4) starter both accept arbitrary colour functions
+ * current (Tailwind v4) starter both accept arbitrary color functions
  * directly, unlike the older "raw HSL triplet wrapped in hsl(var(--x))"
  * convention from Tailwind v3-era shadcn.
  */
@@ -34,7 +34,7 @@ const MAX_CHART_TOKENS = 5;
  * This project's own obsidian neutral tokens (see src/app/globals.css) —
  * reused here rather than inventing a second, unrelated grey scale, so
  * shadcn's neutral slots (background/card/muted/border) stay visually
- * consistent with the rest of the app regardless of which brand colours
+ * consistent with the rest of the app regardless of which brand colors
  * were collected. Every real shadcn starter ships neutrals like these
  * before any brand customization happens — supplying them isn't invention,
  * it's the well-established default a blank theme already has.
@@ -85,7 +85,7 @@ export interface ShadcnThemeResult {
 
 /** A step roughly 40% down the scale reads as its "brand" tone — neither
  *  the near-white top nor the near-black bottom, without needing a second
- *  anchor to define what "the" colour of a scale is. */
+ *  anchor to define what "the" color of a scale is. */
 function brandTone(scale: GeneratedScale): Oklch {
   const index = Math.round((scale.steps.length - 1) * 0.4);
   return scale.steps[index]!.oklch;
@@ -98,7 +98,7 @@ function brandTone(scale: GeneratedScale): Oklch {
  * reds (Tailwind red-500 #ef4444, red-600, Material red, shadcn's own
  * default) commonly land around 20-30° in OKLCH because red hue shifts with
  * lightness — a narrower band would wrongly exclude legitimate red brand
- * colours from filling --destructive.
+ * colors from filling --destructive.
  */
 const DESTRUCTIVE_HUE_MAX = 30;
 const DESTRUCTIVE_HUE_MIN = 345;
@@ -133,17 +133,17 @@ export function toShadcnTheme(
   const unfilled: string[] = [];
   if (secondary === null) {
     unfilled.push(
-      '--secondary / --secondary-foreground — only one colour collected; add a second to the dock to fill this.'
+      '--secondary / --secondary-foreground — only one color collected; add a second to the dock to fill this.'
     );
   }
   if (accent === null) {
     unfilled.push(
-      '--accent / --accent-foreground — fewer than three colours collected; add a third to the dock to fill this.'
+      '--accent / --accent-foreground — fewer than three colors collected; add a third to the dock to fill this.'
     );
   }
   if (destructiveScale === null) {
     unfilled.push(
-      '--destructive / --destructive-foreground — none of the collected colours read as red; inventing a destructive red from an unrelated hue would misrepresent a danger/delete signal.'
+      '--destructive / --destructive-foreground — none of the collected colors read as red; inventing a destructive red from an unrelated hue would misrepresent a danger/delete signal.'
     );
   }
 
@@ -203,7 +203,7 @@ export function toShadcnTheme(
 
   const unfilledComment =
     unfilled.length > 0
-      ? `/*\n * Not filled — no honest basis from the collected colours yet:\n${unfilled
+      ? `/*\n * Not filled — no honest basis from the collected colors yet:\n${unfilled
           .map((reason) => ` * - ${reason}`)
           .join('\n')}\n */\n`
       : '';

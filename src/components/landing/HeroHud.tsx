@@ -51,14 +51,14 @@ export function HeroHud({ ref }: HeroHudProps) {
         <main id="main" tabIndex={-1} className={styles.copy}>
           <p className={styles.eyebrow}>Open-source · Free forever</p>
           <h1 className={styles.headline}>
-            <GlowTitle>Every colour.</GlowTitle>
+            <GlowTitle>Every color.</GlowTitle>
             <br />
             <GlowTitle>All </GlowTitle>
             <span className={styles.headlineAccent}>16.7 million</span>
             <GlowTitle> of them.</GlowTitle>
           </h1>
           <p className={styles.sub}>
-            The free, open-source studio for colour, palettes, branding, and
+            The free, open-source studio for color, palettes, branding, and
             typography — built in the open, for everyone.
           </p>
           <a
@@ -92,9 +92,9 @@ export function HeroHud({ ref }: HeroHudProps) {
             <GitHubIcon className={styles.builtByIcon} />
           </a>
           <div className={styles.ctaRow}>
-            {/* /library, not /studio. The headline promises "every colour,
+            {/* /library, not /studio. The headline promises "every color,
                 all 16.7 million of them" and /library is that promise made
-                good on sight — an infinite grid of computed colour that asks
+                good on sight — an infinite grid of computed color that asks
                 nothing of a first-time visitor. /studio is a blank canvas
                 with a dot grid: the right room once you have something to
                 arrange, and the wrong one to land in. */}

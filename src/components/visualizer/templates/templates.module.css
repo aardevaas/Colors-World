@@ -1,6 +1,6 @@
-/* Every colour in every template resolves through the semantic role custom
+/* Every color in every template resolves through the semantic role custom
    properties (--ui-background, --ui-surface, --ui-primary, --ui-text,
-   --ui-accent, --ui-border). Nothing here hardcodes a colour.
+   --ui-accent, --ui-border). Nothing here hardcodes a color.
    That is what lets a role change repaint the whole mockup instantly, with no
    React re-render and no prop threading — the stage sets the variables once on
    its wrapper and the browser does the rest. */

@@ -56,7 +56,7 @@ describe('toSystemReadme — it has to be valid Markdown', () => {
 });
 
 describe('toSystemReadme — it has to be true', () => {
-  it('names the colour that actually took each role', () => {
+  it('names the color that actually took each role', () => {
     const roles = rolesFrom(SAFE);
     const document = documentFor(SAFE);
     for (const hex of [roles.background.hex, roles.text.hex, roles.primary.hex]) {
@@ -81,7 +81,7 @@ describe('toSystemReadme — it has to be true', () => {
     }
   });
 
-  it('reports a colour-vision conflict when there is one', () => {
+  it('reports a color-vision conflict when there is one', () => {
     const document = documentFor(RISKY);
     expect(document).toMatch(/deuteranopia/);
     expect(document).toMatch(/Separation kept/);
@@ -123,22 +123,22 @@ describe('toSystemReadme — degenerate input', () => {
       roles: deriveRoles([]),
       scales: [],
     });
-    expect(document).toContain('# Colour system');
+    expect(document).toContain('# Color system');
     // No scales means no token dump and no gamut section, but the roles and
     // contrast of the fallback set are still worth stating.
     expect(document).toContain('## Roles');
     expect(document).not.toContain('## Tokens');
   });
 
-  it('handles a single-colour system', () => {
+  it('handles a single-color system', () => {
     expect(() => documentFor(['#7C5CFF'])).not.toThrow();
-    expect(documentFor(['#7C5CFF'])).toContain('1 colour,');
+    expect(documentFor(['#7C5CFF'])).toContain('1 color,');
   });
 });
 
 describe('systemFilename', () => {
   it('describes the system it belongs to', () => {
-    expect(systemFilename(systemFrom(SAFE))).toBe('colour-system-6-colour-dark.md');
+    expect(systemFilename(systemFrom(SAFE))).toBe('color-system-6-color-dark.md');
   });
 
   it('follows the polarity', () => {

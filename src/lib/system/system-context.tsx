@@ -51,7 +51,7 @@ import type { ScaleSettings, System, SystemMode, TypeSettings } from './types';
 /**
  * Actions that earn a history entry, so the back button walks a person's
  * decisions rather than every intermediate frame of a drag. Collecting a
- * colour is a decision; moving the tracking slider four pixels is not.
+ * color is a decision; moving the tracking slider four pixels is not.
  */
 const HISTORY_ACTIONS: ReadonlySet<SystemAction['type']> = new Set([
   'addColor',

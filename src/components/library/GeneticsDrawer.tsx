@@ -38,7 +38,7 @@ export function GeneticsDrawer({ swatch, semanticMatch, onClose, onInspect }: Ge
   const ramp = familyRamp(swatch.index, familyAxis);
 
   return (
-    <div className={styles.drawer} role="dialog" aria-label={`Colour inspector for ${swatch.hex}`}>
+    <div className={styles.drawer} role="dialog" aria-label={`Color inspector for ${swatch.hex}`}>
       <div className={styles.drawerHeader}>
         <button type="button" className={styles.drawerClose} onClick={onClose} aria-label="Close inspector">
           ×
@@ -120,7 +120,7 @@ export function GeneticsDrawer({ swatch, semanticMatch, onClose, onInspect }: Ge
         </section>
 
         <section className={styles.drawerSection}>
-          <h2 className={styles.drawerSectionTitle}>Colour psychology</h2>
+          <h2 className={styles.drawerSectionTitle}>Color psychology</h2>
           <p className={styles.psychologyArchetype}>{profile.archetype}</p>
           <div className={styles.psychologyTags}>
             {profile.emotionalTags.map((tag) => (

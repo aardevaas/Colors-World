@@ -25,7 +25,7 @@ interface TabNavProps {
  * values. The locked product decision is that each tab is its own world —
  * typography and atmosphere shift per tab — while the shell stays
  * *structurally* constant. A tab that wants its own type (as /builder does)
- * overrides `--tab-nav-font` and the colour hooks in its own scope; it does not
+ * overrides `--tab-nav-font` and the color hooks in its own scope; it does not
  * get to reinvent the markup.
  */
 export function TabNav({ current, children }: TabNavProps) {

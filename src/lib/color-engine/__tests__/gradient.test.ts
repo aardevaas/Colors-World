@@ -3,7 +3,7 @@ import { gradientCssString, sampleOklchGradient } from '../gradient';
 import { parseColor } from '../color';
 
 describe('sampleOklchGradient', () => {
-  test('passes exactly through the first and last control colours', () => {
+  test('passes exactly through the first and last control colors', () => {
     const red = parseColor('#ff0000');
     const blue = parseColor('#0000ff');
     const stops = sampleOklchGradient([red, blue], 5);
@@ -40,7 +40,7 @@ describe('sampleOklchGradient', () => {
     expect(stops[1]!.oklch.h).toBeLessThan(30);
   });
 
-  test('rejects fewer than 2 control colours', () => {
+  test('rejects fewer than 2 control colors', () => {
     expect(() => sampleOklchGradient([parseColor('#ff0000')], 5)).toThrow();
   });
 
@@ -50,7 +50,7 @@ describe('sampleOklchGradient', () => {
     ).toThrow();
   });
 
-  test('supports more than 2 control colours', () => {
+  test('supports more than 2 control colors', () => {
     const stops = sampleOklchGradient(
       [parseColor('#ff0000'), parseColor('#00ff00'), parseColor('#0000ff')],
       7

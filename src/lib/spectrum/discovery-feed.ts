@@ -50,7 +50,7 @@ function roundFunction(value: number, roundKey: number): number {
  * address. Bijective by construction (a Feistel network is invertible for
  * *any* round function, regardless of how that function itself behaves),
  * so every position up to 16,777,215 maps to a distinct swatch and the feed
- * never repeats a colour before it has shown all of them.
+ * never repeats a color before it has shown all of them.
  */
 export function shuffledIndex(position: number, seed: number): number {
   let left = (position >>> HALF_BITS) & HALF_MASK;

@@ -1,7 +1,7 @@
 /**
  * How much chroma each hue can actually reach.
  *
- * This is the engine's own argument, made computable. Every colour tool draws
+ * This is the engine's own argument, made computable. Every color tool draws
  * the hue wheel as a perfect circle, which quietly asserts that every hue is
  * equally saturable. It is not: the sRGB gamut is a lumpy solid in OKLCH, and
  * at a fixed lightness the achievable chroma swings by a factor of three
@@ -82,7 +82,7 @@ export function chromaCeilingProfile(
 /**
  * The ceiling at one hue, interpolated between samples.
  *
- * Rendering wants the profile; a specific colour wants its own hue. Reading
+ * Rendering wants the profile; a specific color wants its own hue. Reading
  * the nearest sample would make a spoke visibly miss the perimeter it is drawn
  * against, which is exactly the kind of small dishonesty that makes a chart
  * untrustworthy.

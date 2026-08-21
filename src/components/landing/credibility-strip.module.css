@@ -3,7 +3,7 @@
  *
  * Six saturated bands arrive above this and a dark footer follows it, so the
  * ground flips here rather than dimming. That is GF Smith's device for
- * separating sections, and it earns its place: after six colour arguments a
+ * separating sections, and it earns its place: after six color arguments a
  * white sheet says the arguing is over and these are the facts.
  *
  * Everything below is written against `--paper` and `--ink`, declared once at

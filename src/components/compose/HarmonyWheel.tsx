@@ -9,7 +9,7 @@ import styles from './harmony-wheel.module.css';
 /**
  * The hue wheel, drawn honestly.
  *
- * Every colour tool draws this as a perfect circle, which quietly asserts that
+ * Every color tool draws this as a perfect circle, which quietly asserts that
  * every hue is equally saturable. It is not. The perimeter here is the actual
  * chroma ceiling of the working gamut at the palette's brand lightness, so it
  * comes out visibly lopsided — at L=0.5 the reachable chroma swings 3.4x
@@ -57,7 +57,7 @@ export function HarmonyWheel({ seed, rule, lightness, gamut, onPickHue }: Harmon
         const reach = ceilingAt(profile, hue);
         return {
           hue,
-          // Each wedge is filled with the most saturated colour that hue can
+          // Each wedge is filled with the most saturated color that hue can
           // actually hold, so the ring is a sample of the gamut rather than a
           // decorative rainbow.
           hex: formatHex({ l: lightness, c: reach, h: hue }),

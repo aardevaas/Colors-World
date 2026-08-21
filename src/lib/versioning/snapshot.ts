@@ -10,7 +10,7 @@ import type { PaletteSnapshot } from './types';
  *
  * Uses each step's hex, not its `oklch()` css string, so two snapshots can be
  * compared with plain string equality in the merge algorithm rather than
- * needing to parse and re-normalise colour strings just to test for sameness.
+ * needing to parse and re-normalise color strings just to test for sameness.
  */
 export function snapshotFromScales(
   scales: readonly GeneratedScale[]

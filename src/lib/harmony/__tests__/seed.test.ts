@@ -32,7 +32,7 @@ describe('randomSeed', () => {
     }
   });
 
-  it('stays in the lightness band a brand colour can live in', () => {
+  it('stays in the lightness band a brand color can live in', () => {
     const random = seededRandom(2);
     for (let i = 0; i < 500; i++) {
       const seed = randomSeed(random);

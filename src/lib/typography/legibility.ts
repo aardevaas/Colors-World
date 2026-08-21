@@ -1,6 +1,6 @@
 /**
  * Optical legibility: does this text actually read, at this size and weight,
- * in this colour, on this background?
+ * in this color, on this background?
  *
  * Deliberately built on WCAG's own size/weight rules rather than inventing a
  * bespoke "legibility score". A made-up number would look authoritative and
@@ -10,7 +10,7 @@
  * against later.
  *
  * The genuinely additive part is the fix: when text fails, thickening it can be
- * the better remedy than recolouring it, because it preserves the palette. This
+ * the better remedy than recoloring it, because it preserves the palette. This
  * module can recommend either.
  */
 
@@ -73,7 +73,7 @@ export type LegibilityFix =
       readonly ratio: number;
     }
   | {
-      readonly status: 'recolour';
+      readonly status: 'recolor';
       readonly color: Oklch;
       readonly hex: string;
       readonly achievedRatio: number;
@@ -85,8 +85,8 @@ export type LegibilityFix =
  *
  * Thickening is preferred when it works, because it leaves the palette exactly
  * as the designer chose it — bumping to bold can cross the large-text threshold
- * and drop the requirement from 4.5:1 to 3:1 without touching a single colour.
- * Recolouring is the fallback, and admitting defeat is the last resort rather
+ * and drop the requirement from 4.5:1 to 3:1 without touching a single color.
+ * Recoloring is the fallback, and admitting defeat is the last resort rather
  * than returning something that still fails.
  */
 export function suggestLegibilityFix(
@@ -111,16 +111,16 @@ export function suggestLegibilityFix(
     }
   }
 
-  // Otherwise move the colour, holding hue and chroma.
-  const recoloured = autoFixContrast(text, background, { target: current.required });
-  if (recoloured.status === 'fixed') {
+  // Otherwise move the color, holding hue and chroma.
+  const recolored = autoFixContrast(text, background, { target: current.required });
+  if (recolored.status === 'fixed') {
     return {
-      status: 'recolour',
-      color: recoloured.color,
-      hex: recoloured.hex,
-      achievedRatio: recoloured.achievedRatio,
+      status: 'recolor',
+      color: recolored.color,
+      hex: recolored.hex,
+      achievedRatio: recolored.achievedRatio,
     };
   }
-  if (recoloured.status === 'already-passes') return { status: 'already-passes' };
-  return { status: 'unreachable', bestRatio: recoloured.bestRatio };
+  if (recolored.status === 'already-passes') return { status: 'already-passes' };
+  return { status: 'unreachable', bestRatio: recolored.bestRatio };
 }

@@ -1,11 +1,11 @@
 /**
- * Which colours stop being different when vision changes.
+ * Which colors stop being different when vision changes.
  *
- * The visualizer has simulated colour-blindness for a while, one type at a
+ * The visualizer has simulated color-blindness for a while, one type at a
  * time, behind a dropdown. That answers "what does this look like to a
  * deuteranope", which is interesting, and not the question a designer needs
- * answered. The useful question is **which two of my colours just became the
- * same colour** — and it cannot be answered by looking, because the whole
+ * answered. The useful question is **which two of my colors just became the
+ * same color** — and it cannot be answered by looking, because the whole
  * difficulty is that the person looking has normal vision.
  *
  * So this measures it. Every pair, simulated, compared in OKLab.
@@ -19,7 +19,7 @@
  *   retain 1.00 of that under every simulation. Perfect retention — and
  *   perfect retention of a difference that was already marginal is not a
  *   finding. If such a pair is too close, it was too close before anyone
- *   simulated anything, and reporting it here blames colour blindness for a
+ *   simulated anything, and reporting it here blames color blindness for a
  *   palette decision.
  * - A red and a green at ΔE 0.317 keep only 0.35 under deuteranopia. Same
  *   arithmetic, completely different meaning: this pair *was* distinct and
@@ -27,7 +27,7 @@
  *
  * A finding therefore needs both numbers: what the pair was worth, and what
  * survived. Only a pair that was distinct and is no longer counts as a
- * colour-blindness problem.
+ * color-blindness problem.
  *
  * Pure: no DOM, no React.
  */
@@ -36,7 +36,7 @@ import { CVD_TYPES, deltaEOk, simulateCvd, type CvdType } from '@/lib/color-engi
 import { SEMANTIC_ROLES, type RoleAssignment, type SemanticRole } from './semantic-roles';
 
 /**
- * Below this, two colours read as one.
+ * Below this, two colors read as one.
  *
  * Set near the just-noticeable difference for large flat areas rather than
  * chosen for convenience. The calibration point from measurement: a dark

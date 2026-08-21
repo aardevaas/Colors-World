@@ -347,9 +347,9 @@ a.teleportOption:hover {
   cursor: pointer;
 }
 
-/* ── Colour Genetics & Inspector drawer ──────────────────────
+/* ── Color Genetics & Inspector drawer ──────────────────────
  * Fixed to the right edge, over everything but the dock (dock z-index 60,
- * drawer 55) — the two can coexist: collecting a colour while inspecting
+ * drawer 55) — the two can coexist: collecting a color while inspecting
  * another is a real, expected flow.
  */
 

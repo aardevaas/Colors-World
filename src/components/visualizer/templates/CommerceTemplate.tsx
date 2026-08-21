@@ -3,9 +3,9 @@ import styles from './templates.module.css';
 const VARIANTS = ['primary', 'accent', 'border'] as const;
 
 /**
- * A product card — the template that shows what a palette does when a colour
+ * A product card — the template that shows what a palette does when a color
  * has to sell something. The image area is a primary→accent gradient rather
- * than a photo on purpose: it puts the two brand colours directly beside each
+ * than a photo on purpose: it puts the two brand colors directly beside each
  * other at full saturation, which is where clashing pairs become obvious.
  */
 export function CommerceTemplate() {
@@ -38,7 +38,7 @@ export function CommerceTemplate() {
               £249.00
             </div>
 
-            <div className={styles.variants} aria-label="Colour variants">
+            <div className={styles.variants} aria-label="Color variants">
               {VARIANTS.map((variant, index) => (
                 <span
                   key={variant}

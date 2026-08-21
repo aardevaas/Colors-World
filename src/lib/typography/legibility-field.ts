@@ -1,16 +1,16 @@
 /**
- * The Legibility Solver — a colour pair plotted against every way type can be
+ * The Legibility Solver — a color pair plotted against every way type can be
  * set in it.
  *
  * Every tool in this category answers "does this pair pass" with one number and
  * a red or green dot. That is the wrong shape of answer, because the question a
- * designer actually has is conditional: *can I keep this colour if I bump the
- * weight?* Contrast requirements are not a property of two colours; they are a
- * property of two colours **and** how the type is set.
+ * designer actually has is conditional: *can I keep this color if I bump the
+ * weight?* Contrast requirements are not a property of two colors; they are a
+ * property of two colors **and** how the type is set.
  *
  * So a failure stops being a red number and becomes a position on a field, with
  * the boundary drawn and the ways out visible. There are exactly three: set it
- * larger, set it heavier, or move the colour — and this module says which of
+ * larger, set it heavier, or move the color — and this module says which of
  * them are actually available for the pair in hand.
  *
  * ## Why the boundary is a step, not a curve
@@ -25,7 +25,7 @@
  * The consequence is worth stating plainly, and the field makes it obvious at a
  * glance: below 18.66px, no amount of weight changes anything. Thickening small
  * text is a common instinct and, as far as the standard is concerned, it does
- * nothing. Only colour helps there.
+ * nothing. Only color helps there.
  *
  * Pure: no DOM, no React.
  */
@@ -67,7 +67,7 @@ export type FieldVerdict =
   | 'passes-everywhere'
   /** Only in the large-text region — the L. */
   | 'passes-when-large'
-  /** No setting of type rescues this pair; only colour will. */
+  /** No setting of type rescues this pair; only color will. */
   | 'passes-nowhere';
 
 export interface LegibilityField {
@@ -77,7 +77,7 @@ export interface LegibilityField {
   readonly rows: readonly (readonly FieldCell[])[];
   /**
    * The contrast of the pair, which is the same in every cell — the field
-   * varies because the *requirement* moves, not because the colours do. That
+   * varies because the *requirement* moves, not because the colors do. That
    * is the whole point and is easy to lose sight of when looking at a grid.
    */
   readonly ratio: number;
@@ -141,8 +141,8 @@ export interface LegibilityExits {
   readonly grow: number | null;
   /** Lightest weight that passes at the current size. */
   readonly thicken: number | null;
-  /** Where the colour would have to move, from the existing fixer. */
-  readonly recolour: LegibilityFix;
+  /** Where the color would have to move, from the existing fixer. */
+  readonly recolor: LegibilityFix;
 }
 
 export function findExits(
@@ -165,6 +165,6 @@ export function findExits(
   return {
     grow,
     thicken,
-    recolour: suggestLegibilityFix(text, background, fontSizePx, fontWeight),
+    recolor: suggestLegibilityFix(text, background, fontSizePx, fontWeight),
   };
 }

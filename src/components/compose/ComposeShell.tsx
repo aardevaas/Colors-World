@@ -12,8 +12,8 @@ import styles from './compose-shell.module.css';
  *
  * Split out of the Builder because the two are different altitudes of work
  * rather than two halves of one task: Compose operates on the palette as a
- * *set* — the relationships between colours — and the Builder operates on one
- * colour at a time, deepening it into a ramp. Exploring and refining are also
+ * *set* — the relationships between colors — and the Builder operates on one
+ * color at a time, deepening it into a ramp. Exploring and refining are also
  * different modes, and putting a roll button next to a curve handle asks a
  * person to be in both at once.
  *
@@ -36,11 +36,11 @@ export function ComposeShell({ accountSlot }: ComposeShellProps) {
       <TabNav current="compose">{accountSlot}</TabNav>
 
       <header className={styles.intro}>
-        <h2 className={styles.title}>Start from one colour, get a whole system.</h2>
+        <h2 className={styles.title}>Start from one color, get a whole system.</h2>
         <p className={styles.lede}>
           A harmony is three vivid mid-tones — lovely as a swatch strip, unusable as an
           interface. What comes out of here is a ground to sit on, a panel above it, text
-          that reads on both, and a brand colour with an accent.
+          that reads on both, and a brand color with an accent.
         </p>
       </header>
 
@@ -58,7 +58,7 @@ export function ComposeShell({ accountSlot }: ComposeShellProps) {
                 See it carry an interface
               </SystemLink>
               <SystemLink href="/scales" className={styles.secondaryHandoff}>
-                Deepen each colour into a scale
+                Deepen each color into a scale
               </SystemLink>
               <SystemLink href="/typography" className={styles.secondaryHandoff}>
                 Set type in it
@@ -67,7 +67,7 @@ export function ComposeShell({ accountSlot }: ComposeShellProps) {
           </>
         ) : (
           <p className={styles.handoffCopy}>
-            Nothing applied yet. Roll a palette above, or start from a colour you already
+            Nothing applied yet. Roll a palette above, or start from a color you already
             like in{' '}
             <SystemLink href="/library" className={styles.inlineLink}>
               Library

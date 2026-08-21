@@ -2,7 +2,7 @@ import type { Oklch } from '@/lib/color-engine';
 import { HUE_FAMILIES, hueFamilyName } from './hue-family';
 
 /**
- * The offline fallback for the Library's Colour Psychology Profile — a
+ * The offline fallback for the Library's Color Psychology Profile — a
  * procedural OKLCH -> archetype/tag mapping, not a lookup table or an LLM
  * call. This has to exist regardless of Gemini: 16.7M generated swatches
  * can't each get a real API call (cost, latency, rate limits), so this
@@ -43,7 +43,7 @@ const HUE_PROFILES: Record<string, HueProfile> = {
     archetype: 'The Alarm',
     emotionalTags: ['urgent', 'passionate', 'appetite-stimulating', 'commanding attention'],
     culturalNotes:
-      'Across most cultures red reads as the most physiologically urgent hue — used for stop signs, sales tags, and alarms because it is genuinely the hardest colour to look away from. It also carries opposite associations (luck and celebration in East Asian traditions, danger and prohibition in Western signage), so cultural context changes the read more than most hues.',
+      'Across most cultures red reads as the most physiologically urgent hue — used for stop signs, sales tags, and alarms because it is genuinely the hardest color to look away from. It also carries opposite associations (luck and celebration in East Asian traditions, danger and prohibition in Western signage), so cultural context changes the read more than most hues.',
     physiological:
       'Longest visible wavelength (~625-740nm), which scatters least in the atmosphere — the reason it stays visible at distance and low light long after other hues fade. Its long wavelength means it is perceived at the outer edge of foveal cone sensitivity, one reason it reads as advancing/close rather than receding.',
   },
@@ -59,7 +59,7 @@ const HUE_PROFILES: Record<string, HueProfile> = {
     archetype: 'The Hearth',
     emotionalTags: ['cozy', 'nostalgic', 'golden-hour', 'grounded'],
     culturalNotes:
-      'Amber sits close to the colour of firelight and late-day sun, which is most of why it reads as warm and domestic rather than energetic the way a purer orange does — the association is with a specific quality of light, not just a hue position.',
+      'Amber sits close to the color of firelight and late-day sun, which is most of why it reads as warm and domestic rather than energetic the way a purer orange does — the association is with a specific quality of light, not just a hue position.',
     physiological:
       'Close to the peak wavelength incandescent light sources emit, which is part of why interiors lit that way read as "warm" independent of the objects in them — the light source itself is amber-shifted.',
   },
@@ -99,7 +99,7 @@ const HUE_PROFILES: Record<string, HueProfile> = {
     archetype: 'The Anchor',
     emotionalTags: ['trustworthy', 'calm', 'corporate', 'distant'],
     culturalNotes:
-      'The most consistently "trusted" hue in cross-cultural branding studies, and the most common corporate/institutional colour worldwide — partly cultural convention reinforcing itself over a century of use, partly because it reads as the least appetite-associated hue (very few naturally blue foods).',
+      'The most consistently "trusted" hue in cross-cultural branding studies, and the most common corporate/institutional color worldwide — partly cultural convention reinforcing itself over a century of use, partly because it reads as the least appetite-associated hue (very few naturally blue foods).',
     physiological:
       'Short wavelength (~450-495nm), higher photon energy than the rest of the visible spectrum, and the wavelength most implicated in circadian light-sensitivity research — noted here as a documented area of study, not a claim about this specific swatch.',
   },
@@ -125,13 +125,13 @@ const HUE_PROFILES: Record<string, HueProfile> = {
     culturalNotes:
       'Among the most recently mainstreamed hues in branding — synthetic magenta dye is a 19th-century invention, so it carries far less historical/cultural baggage than most of this list, which is part of why it reads as "modern" almost by default.',
     physiological:
-      'Also non-spectral (see purples) — magenta is the eye/brain\'s own construction when red and blue wavelengths are both present with green absent, not a single-wavelength colour at all.',
+      'Also non-spectral (see purples) — magenta is the eye/brain\'s own construction when red and blue wavelengths are both present with green absent, not a single-wavelength color at all.',
   },
   pinks: {
     archetype: 'The Softener',
     emotionalTags: ['gentle', 'approachable', 'playful', 'tender'],
     culturalNotes:
-      'A high-lightness, lower-chroma relative of red that inherits red\'s attention-getting quality without its urgency — the gender-coding common in some cultures is a 20th-century marketing artifact, not a cross-cultural universal, and has flipped at least once (pink was marketed as the "strong" boys\' colour in parts of the early 1900s West).',
+      'A high-lightness, lower-chroma relative of red that inherits red\'s attention-getting quality without its urgency — the gender-coding common in some cultures is a 20th-century marketing artifact, not a cross-cultural universal, and has flipped at least once (pink was marketed as the "strong" boys\' color in parts of the early 1900s West).',
     physiological:
       'Same long-wavelength base as red, perceived as "softened" primarily because of reduced chroma and increased lightness relative to the eye\'s highest-sensitivity range, not a different wavelength mechanism.',
   },

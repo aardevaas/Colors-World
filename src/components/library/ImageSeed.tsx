@@ -13,8 +13,8 @@ import styles from './image-seed.module.css';
  * exactly one place: dropping an image onto the Studio canvas, which is the
  * last room in the workflow and the one nobody opens first. Here it sits where
  * a person actually starts, and it produces a System rather than a card —
- * meaning the colours pulled out of a photograph immediately become the
- * palette, the roles and the type colours everywhere else.
+ * meaning the colors pulled out of a photograph immediately become the
+ * palette, the roles and the type colors everywhere else.
  *
  * The whole page is the drop target, not a small dashed rectangle. Aiming a
  * dragged file at a specific box is a needless test of motor control when the
@@ -58,7 +58,7 @@ export function ImageSeed() {
       try {
         const hexes = await extractPaletteFromImageFile(file, MAX_COLORS);
         if (hexes.length === 0) {
-          setStatus({ kind: 'failed', message: 'No colours could be read from that image.' });
+          setStatus({ kind: 'failed', message: 'No colors could be read from that image.' });
           return;
         }
         setPalette(hexes.map((hex) => ({ hex, oklch: parseColor(hex) })));

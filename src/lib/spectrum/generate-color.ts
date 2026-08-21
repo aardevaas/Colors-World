@@ -1,8 +1,8 @@
 import { formatHex, maxChroma, type Oklch } from '@/lib/color-engine';
 
 /**
- * The full 8-bit-per-channel colour space (256³ = 16,777,216 — "16.7 million
- * colours") as pure arithmetic, not stored rows. Every one of those colours
+ * The full 8-bit-per-channel color space (256³ = 16,777,216 — "16.7 million
+ * colors") as pure arithmetic, not stored rows. Every one of those colors
  * is 100% derivable from its own coordinates; storing them would just be
  * paying disk space and query time for numbers a formula already knows.
  *
@@ -10,14 +10,14 @@ import { formatHex, maxChroma, type Oklch } from '@/lib/color-engine';
  * packed into a single 24-bit index, the same way RGB packs three 8-bit
  * channels into one 24-bit integer. `indexToSwatch` is O(1): no lookup
  * table, no database, just arithmetic plus the existing (tested) gamut
- * math to keep every generated colour a real, displayable sRGB value.
+ * math to keep every generated color a real, displayable sRGB value.
  *
  * Axis order defines what scrolling *feels like*, and was chosen
- * deliberately for a design/marketing audience rather than a colour
+ * deliberately for a design/marketing audience rather than a color
  * professional one:
  *   - **lightness is the outer (slowest-changing) axis** — scrolling moves
  *     through broad light → dark bands, which reads as "mood" the way
- *     someone picking brand colours actually thinks ("something light for
+ *     someone picking brand colors actually thinks ("something light for
  *     the background," "something dark for the footer") — not a raw hue
  *     wheel.
  *   - **hue is the middle axis** — within a lightness band, a full rainbow

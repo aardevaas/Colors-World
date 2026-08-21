@@ -136,7 +136,7 @@ interface ProximityReadout {
   readonly deltaE: number;
 }
 
-/** The one colour a card "is", for proximity comparison — notes have none. */
+/** The one color a card "is", for proximity comparison — notes have none. */
 function representativeHex(card: BoardCard): string | null {
   if (card.kind === 'palette') return card.swatches[0] ?? null;
   if (card.kind === 'gradient') return card.colors[0] ?? null;
@@ -274,8 +274,8 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
   }
 
   /**
-   * The signature "proximity" touch: while a colour-bearing card is being
-   * dragged, find the nearest other colour-bearing card and — once they're
+   * The signature "proximity" touch: while a color-bearing card is being
+   * dragged, find the nearest other color-bearing card and — once they're
    * close enough to plausibly sit side by side — surface how they actually
    * relate, not just that they're near each other.
    */
@@ -964,7 +964,7 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
                             type="button"
                             className={styles.pin}
                             style={{ background: hex }}
-                            aria-label={`Extracted colour ${hex}`}
+                            aria-label={`Extracted color ${hex}`}
                             onClick={(event) => {
                               event.stopPropagation();
                               setOpenPin(isOpen ? null : { cardId: card.id, index });

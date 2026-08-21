@@ -21,13 +21,13 @@ describe("the 'print' pseudo-gamut", () => {
     expect(Math.abs(justBelow - atZero)).toBeLessThan(0.01);
   });
 
-  test('a colour already inside the print boundary is not clamped', () => {
+  test('a color already inside the print boundary is not clamped', () => {
     const dull = { l: 0.6, c: 0.02, h: 260 };
     expect(isInGamut(dull, 'print')).toBe(true);
     expect(mapToGamut(dull, 'print').clamped).toBe(false);
   });
 
-  test('a vivid colour outside the print boundary clamps, preserving lightness and hue', () => {
+  test('a vivid color outside the print boundary clamps, preserving lightness and hue', () => {
     const vivid = { l: 0.6, c: 0.3, h: 260 };
     expect(isInGamut(vivid, 'print')).toBe(false);
 

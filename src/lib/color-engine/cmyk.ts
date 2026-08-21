@@ -16,7 +16,7 @@ import { mapToGamut } from './gamut';
 export function toCmyk(color: Oklch): Cmyk {
   // Gamut-map to sRGB first so an out-of-gamut OKLCH value (which would
   // otherwise produce negative or >1 channel intermediate values) yields the
-  // same displayable colour CMYK is being computed *for*.
+  // same displayable color CMYK is being computed *for*.
   const { r, g, b } = toRgb(mapToGamut(color, 'srgb').oklch);
   const rf = r / 255;
   const gf = g / 255;

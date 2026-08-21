@@ -10,7 +10,7 @@ export interface GradientStop {
 }
 
 /**
- * Samples an OKLCH-interpolated gradient through 2+ control colours.
+ * Samples an OKLCH-interpolated gradient through 2+ control colors.
  *
  * Interpolating in sRGB/hex (what `linear-gradient(red, blue)` does natively)
  * desaturates through the middle — red to blue crosses a muddy grey rather
@@ -23,7 +23,7 @@ export function sampleOklchGradient(
   steps: number
 ): GradientStop[] {
   if (colors.length < 2) {
-    throw new Error('A gradient needs at least 2 colours.');
+    throw new Error('A gradient needs at least 2 colors.');
   }
   if (!Number.isInteger(steps) || steps < 2) {
     throw new Error(`A gradient needs at least 2 steps, received ${steps}`);

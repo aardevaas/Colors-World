@@ -96,7 +96,7 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
       try {
         addColor(anchor.color, parseColor(anchor.color));
       } catch {
-        // A malformed persisted anchor colour shouldn't block the rest of
+        // A malformed persisted anchor color shouldn't block the rest of
         // the hydrate — that scale just won't also appear in the System.
       }
     }
@@ -105,7 +105,7 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSpecs]);
 
-  // The System is the single source of truth for *which* colours are in
+  // The System is the single source of truth for *which* colors are in
   // play — /builder never adds or removes a scale on its own, it only
   // customizes the ones the System already has. Per-scale
   // curves/intensity/name persist in the reducer (see builderReducer's
@@ -251,8 +251,8 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
 
       {state.scales.length === 0 ? (
         <p className={styles.emptyState}>
-          Every colour in your System becomes a scale here, and the first one is the
-          anchor. Make a palette in Compose, or collect colours in Library.
+          Every color in your System becomes a scale here, and the first one is the
+          anchor. Make a palette in Compose, or collect colors in Library.
         </p>
       ) : (
         <div className={styles.scaleList}>

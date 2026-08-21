@@ -18,7 +18,7 @@ import { maxChroma } from './gamut';
 const DEFAULT_STEPS = 10;
 /** Exported so callers building a ScaleSpec from scratch (e.g. /builder's
  *  dock-ingestion, picking a sensible default anchor step for a newly
- *  collected colour) can place a step against the same default ramp
+ *  collected color) can place a step against the same default ramp
  *  generateScale itself falls back to, without duplicating these numbers. */
 export const DEFAULT_LIGHTNESS: readonly [number, number] = [0.971, 0.241];
 const DEFAULT_CHROMA_INTENSITY = 1;
@@ -165,9 +165,9 @@ function buildSaturationCurve(
 /**
  * Shapes how hueTorsion's rotation is distributed across the scale. Default
  * is today's linear ramp, zeroed at the anchor's own progress so the pinned
- * colour sits at zero rotation; a custom curve replaces that shape entirely.
+ * color sits at zero rotation; a custom curve replaces that shape entirely.
  * The anchor step's hue is irrelevant either way — it gets overwritten by
- * the exact pinned colour regardless of what this function returns for it.
+ * the exact pinned color regardless of what this function returns for it.
  */
 function buildTorsionShape(
   torsionOrigin: number,
@@ -198,7 +198,7 @@ export function generateScale(spec: ScaleSpec): GeneratedScale {
   const saturationAt = buildSaturationCurve(anchors, gamut, steps, spec.chromaCurve);
 
   // Torsion is measured *relative to the primary anchor* so that the pinned
-  // colour sits at zero rotation. Anchoring at zero keeps the forced-exact
+  // color sits at zero rotation. Anchoring at zero keeps the forced-exact
   // anchor continuous with its neighbours instead of creating a visible kink.
   const lastIndex = steps - 1;
   const torsionOrigin = anchors[0]!.step / lastIndex;

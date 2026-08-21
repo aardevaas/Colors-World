@@ -3,7 +3,7 @@ import type { Oklch } from '@/lib/color-engine';
 /**
  * Natural-language "vibe" search — turns a free-text prompt ("cyberpunk
  * Tokyo alleyway at night") into a target region of OKLCH space to search
- * against, rather than a single exact colour (nobody means one exact hex
+ * against, rather than a single exact color (nobody means one exact hex
  * when they type a mood).
  *
  * Kept pure and dependency-free on purpose: the actual Gemini network call
@@ -30,9 +30,9 @@ function clamp(value: number, min: number, max: number): number {
 
 export function buildVibePrompt(query: string): string {
   return [
-    'You are a colour-space assistant for a design tool. A user typed a',
+    'You are a color-space assistant for a design tool. A user typed a',
     'free-text description of a mood, scene, or vibe, and you must translate',
-    'it into target OKLCH colour coordinates.',
+    'it into target OKLCH color coordinates.',
     '',
     `User input: "${query.trim()}"`,
     '',
@@ -44,7 +44,7 @@ export function buildVibePrompt(query: string): string {
     '"lightness" is OKLCH lightness (0 = black, 1 = white) that best fits the mood.',
     '"chroma" is OKLCH chroma/saturation (0 = grey, ~0.37 = maximally vivid) that fits the intensity of the vibe.',
     '"hueSpread" is how many degrees either side of "hue" still fit the vibe — a narrow, specific vibe should be small (10-20), a broad one large (40-60).',
-    '"rationale" is a single short sentence explaining the colour choice, written for the end user.',
+    '"rationale" is a single short sentence explaining the color choice, written for the end user.',
   ].join('\n');
 }
 
@@ -204,7 +204,7 @@ export function offlineVibeFallback(query: string): VibeSearchTarget {
       hueSpread: 90,
       source: 'offline-fallback',
       rationale:
-        "No recognised colour/mood keywords in that phrase, so this shows a broad neutral range rather than guessing a specific hue.",
+        "No recognised color/mood keywords in that phrase, so this shows a broad neutral range rather than guessing a specific hue.",
     };
   }
 
@@ -233,7 +233,7 @@ export function offlineVibeFallback(query: string): VibeSearchTarget {
     chromaRange: [clamp(chroma - 0.08, 0, 0.4), clamp(chroma + 0.08, 0, 0.4)],
     hueSpread: hues.length > 0 ? 30 : 90,
     source: 'offline-fallback',
-    rationale: `Matched ${matches.length} colour/mood ${matches.length === 1 ? 'word' : 'words'} in that phrase using the offline fallback engine (Gemini unavailable or not configured).`,
+    rationale: `Matched ${matches.length} color/mood ${matches.length === 1 ? 'word' : 'words'} in that phrase using the offline fallback engine (Gemini unavailable or not configured).`,
   };
 }
 

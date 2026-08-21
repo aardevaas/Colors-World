@@ -73,7 +73,7 @@ describe('solvePalette — the problem it exists for', () => {
 });
 
 describe('solvePalette — what it refuses to touch', () => {
-  it('never moves the brand colours', () => {
+  it('never moves the brand colors', () => {
     // Silently relighting someone's brand to win a contrast argument is help
     // nobody asked for. Only neutrals are the solver's to move.
     const result = solvePalette(VIOLET, { rule: 'triad', chroma: 'proportional' });
@@ -85,7 +85,7 @@ describe('solvePalette — what it refuses to touch', () => {
     expect(brandOf(result.palette.colors)).toEqual(brandOf(reference.colors));
   });
 
-  it('keeps every colour inside the gamut while it searches', () => {
+  it('keeps every color inside the gamut while it searches', () => {
     for (const seed of SEEDS) {
       for (const color of solvePalette(seed).palette.colors) {
         expect(isInGamut(color.oklch, 'srgb')).toBe(true);
@@ -93,7 +93,7 @@ describe('solvePalette — what it refuses to touch', () => {
     }
   });
 
-  it('still returns the number of colours asked for', () => {
+  it('still returns the number of colors asked for', () => {
     for (const count of [3, 4, 5, 6, 7, 8]) {
       expect(solvePalette(VIOLET, { count }).palette.colors).toHaveLength(count);
     }
@@ -149,7 +149,7 @@ describe('solvePalette — failing usefully', () => {
     );
   });
 
-  it('does not spin forever on a target between two brand colours', () => {
+  it('does not spin forever on a target between two brand colors', () => {
     // Neither side is a neutral, so there is nothing the solver may move.
     const brandOnly: ContrastTarget[] = [
       { foreground: 'primary', background: 'accent', min: 21, label: 'Brand against brand' },

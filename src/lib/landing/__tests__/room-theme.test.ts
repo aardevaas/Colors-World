@@ -9,7 +9,7 @@ import {
 } from '../room-theme';
 
 /**
- * Every hue, built exactly the way the shipping palette builds a room colour.
+ * Every hue, built exactly the way the shipping palette builds a room color.
  *
  * A flat `c: 0.12` was used here first and it put roughly a third of the hues
  * outside sRGB — the fixture failed the gamut assertion, not the solver. Taking
@@ -30,13 +30,13 @@ describe('solveForeground', () => {
     }
   });
 
-  it('keeps the background hue, so the pair reads as one colour', () => {
+  it('keeps the background hue, so the pair reads as one color', () => {
     for (const bg of EVERY_HUE) {
       expect(solveForeground(bg, TEXT_MIN_RATIO).h).toBe(bg.h);
     }
   });
 
-  it('returns a colour inside sRGB', () => {
+  it('returns a color inside sRGB', () => {
     for (const bg of EVERY_HUE) {
       expect(isInGamut(solveForeground(bg, TEXT_MIN_RATIO), 'srgb')).toBe(true);
     }
@@ -109,7 +109,7 @@ describe('roomTheme', () => {
   });
 
   it('keeps every ink on one side of the band', () => {
-    // A band must speak one colour at two volumes. Solved freely, a magenta
+    // A band must speak one color at two volumes. Solved freely, a magenta
     // ground came back with near-black body text and a near-white display
     // tone — both legible, together incoherent.
     for (const bg of EVERY_HUE) {

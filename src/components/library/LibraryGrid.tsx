@@ -13,7 +13,7 @@ import styles from './library.module.css';
 /**
  * Bigger than the old Spectrum browser's 56px flat swatch tiles — this card
  * carries a hex label, a 10-step family stepper, and a hover action row, so
- * it needs real room rather than being a pure colour chip.
+ * it needs real room rather than being a pure color chip.
  *
  * CELL_MIN_WIDTH only decides how many columns fit (`floor(containerWidth /
  * CELL_MIN_WIDTH)`) — the actual rendered column width is

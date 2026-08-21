@@ -1,9 +1,9 @@
 /**
  * The System — the single document this product edits.
  *
- * Everything a person builds here is one object: the colours they collected,
- * which colour plays which role, how type is set, and whether the whole thing
- * reads light or dark. Before this existed the app kept a colour tray in one
+ * Everything a person builds here is one object: the colors they collected,
+ * which color plays which role, how type is set, and whether the whole thing
+ * reads light or dark. Before this existed the app kept a color tray in one
  * place, role overrides in a component's `useState`, and type settings in
  * another component's `useState`, which is why five capable tabs behaved like
  * five unrelated products — nothing they each knew about survived a navigation
@@ -17,7 +17,7 @@
 import type { ControlPoint, Gamut, Oklch } from '@/lib/color-engine';
 import type { SemanticRole } from '@/lib/roles/semantic-roles';
 
-/** A colour held in the System's palette. */
+/** A color held in the System's palette. */
 export interface SystemColor {
   readonly hex: string;
   readonly oklch: Oklch;
@@ -45,10 +45,10 @@ export interface TypeSettings {
 }
 
 /**
- * What a person chose about one colour's scale, and nothing else.
+ * What a person chose about one color's scale, and nothing else.
  *
  * Deliberately not the Builder's runtime entry, which also carries the anchor
- * colour, its OKLCH, the anchor step and whether the name was customised --
+ * color, its OKLCH, the anchor step and whether the name was customised --
  * every one of those is derivable from the palette and the step count, and
  * storing a derived value is how two sources of truth start disagreeing. Only
  * the decisions are here, and each is optional because a scale nobody has
@@ -67,9 +67,9 @@ export interface ScaleSettings {
 /**
  * The scale half of the System.
  *
- * `byHex` rather than by position: a palette can be reordered or have a colour
+ * `byHex` rather than by position: a palette can be reordered or have a color
  * removed from the middle, and settings keyed by index would silently attach
- * themselves to a different colour. The URL still writes indices, because the
+ * themselves to a different color. The URL still writes indices, because the
  * palette is right there beside it and six characters per reference is not
  * worth paying twice.
  */
@@ -81,7 +81,7 @@ export interface ScaleSystem {
 
 export interface System {
   readonly palette: readonly SystemColor[];
-  /** The colour scales are built from. Null when the palette is empty. */
+  /** The color scales are built from. Null when the palette is empty. */
   readonly anchorHex: string | null;
   /** Manual role assignments, by hex. Absent roles are derived. */
   readonly roleOverrides: Readonly<Partial<Record<SemanticRole, string>>>;

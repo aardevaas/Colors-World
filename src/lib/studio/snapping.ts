@@ -6,7 +6,7 @@
  *
  * Two distinct behaviours, checked in priority order:
  *
- * 1. Editorial palette docking — a colour-bearing card (color/palette/
+ * 1. Editorial palette docking — a color-bearing card (color/palette/
  *    gradient) dragged near an IMAGE card slots into an aligned bar along
  *    that image's nearest edge. This is the signature interaction, so it
  *    takes priority over generic bento snapping when both are in range.
@@ -47,7 +47,7 @@ export interface SnapResult {
   readonly snapped: boolean;
   readonly snapKind: SnapKind;
   readonly guides: readonly AlignmentGuide[];
-  /** The image a colour card docked to, when snapKind is 'image-dock'. */
+  /** The image a color card docked to, when snapKind is 'image-dock'. */
   readonly dockedToId: string | null;
 }
 
@@ -87,7 +87,7 @@ function nearestEdge(dragged: Rect, target: Rect): Edge {
   return ny > 0 ? 'bottom' : 'top';
 }
 
-/** How many other colour-bearing cards are already docked to this edge of
+/** How many other color-bearing cards are already docked to this edge of
  *  this image, so a newly-docked card lines up after them rather than on
  *  top of them. Recognised by position, not a stored relationship — the
  *  outward-facing coordinate matches the dock formula within a small
@@ -278,7 +278,7 @@ const NO_SNAP: SnapResult = {
  * on the board, and the camera zoom (used to convert the authored
  * screen-space thresholds into world units for this comparison). Image
  * docking is checked first — it's the more specific, more visually
- * distinctive behaviour, so it should win when a colour card is dragged
+ * distinctive behaviour, so it should win when a color card is dragged
  * near both an image and some unrelated card's edge at once.
  */
 export function findSnap(

@@ -164,7 +164,7 @@ export function LibraryShell() {
             ? feedState.vibeLabel
             : feedState.mode === 'vibe' && feedState.vibeStatus === 'error'
               ? 'No close matches for that vibe — try different words, or shuffle for a fresh set.'
-              : `Browsing the full 16.7M-colour space, generated on demand — press space (or the shuffle button) for a new draw.`}
+              : `Browsing the full 16.7M-color space, generated on demand — press space (or the shuffle button) for a new draw.`}
         </p>
       </form>
 

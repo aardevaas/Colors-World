@@ -7,7 +7,7 @@ const toRgb = converter('rgb');
 const toOklchColor = converter('oklch');
 
 /**
- * Colour vision deficiency simulation using the Machado, Oliveira & Fernandes
+ * Color vision deficiency simulation using the Machado, Oliveira & Fernandes
  * (2009) physiologically-based model, at full severity (dichromacy).
  *
  * These matrices operate on *linear* RGB. Applying them to gamma-encoded values
@@ -41,7 +41,7 @@ const CVD_MATRICES: Record<Exclude<CvdType, 'achromatopsia'>, Matrix3> = {
   ],
 };
 
-/** Luminance weights for achromatopsia (total colour blindness). */
+/** Luminance weights for achromatopsia (total color blindness). */
 const ACHROMATIC_WEIGHTS = { r: 0.2126, g: 0.7152, b: 0.0722 } as const;
 
 const SRGB_LINEAR_THRESHOLD = 0.04045;

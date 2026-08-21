@@ -1,10 +1,10 @@
 /**
- * Core types for the PRISM colour engine.
+ * Core types for the PRISM color engine.
  *
  * Canonical storage is OKLCH. Every other representation (hex, sRGB, P3, CMYK)
  * is a *projection* derived on demand — never a second source of truth. This is
  * deliberate: hex is lossy above sRGB, and round-tripping through it silently
- * destroys wide-gamut colour.
+ * destroys wide-gamut color.
  */
 
 import type { ControlPoint } from './interpolate';
@@ -21,12 +21,12 @@ export interface Oklch {
  * Gamuts we can target. 'print' is a pseudo-gamut — not an RGB space at all,
  * but an approximate CMYK press boundary — so the same gamut-mapping
  * machinery that keeps a scale inside sRGB can also honestly show how much a
- * vivid colour dulls under ink. See gamut.ts for the caveat on accuracy.
+ * vivid color dulls under ink. See gamut.ts for the caveat on accuracy.
  */
 export type Gamut = 'srgb' | 'p3' | 'rec2020' | 'print';
 
 /**
- * Subtractive colour as printers see it. Each channel is a percentage, 0–100.
+ * Subtractive color as printers see it. Each channel is a percentage, 0–100.
  * Derived on demand from OKLCH via the naive device-independent formula — see
  * cmyk.ts for why this is deliberately not press-accurate.
  */
@@ -44,7 +44,7 @@ export type Provenance = 'seed' | 'curated' | 'user' | 'measured';
 export interface ScaleAnchor {
   /** Zero-based index of the step this anchor pins. */
   readonly step: number;
-  /** Any CSS colour string — the exact value this step must resolve to. */
+  /** Any CSS color string — the exact value this step must resolve to. */
   readonly color: string;
 }
 
@@ -82,7 +82,7 @@ export interface ScaleSpec {
    * All three are optional and independently overridable; omitting one
    * falls back to today's anchor+range-derived behaviour exactly, so every
    * scale generated before this field existed keeps producing byte-identical
-   * output. An anchor's own step still resolves to its exact pinned colour
+   * output. An anchor's own step still resolves to its exact pinned color
    * regardless of any curve — these only shape the steps in between.
    */
   /** y: lightness, 0–1. Replaces the anchor+range-derived lightness ramp. */

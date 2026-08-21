@@ -11,7 +11,7 @@
  * clipping is in play. Search, then *verify the achieved ratio*, is the honest
  * approach — see the `unreachable` outcome, which exists because some
  * hue/chroma combinations genuinely cannot reach a target against a given
- * background at any lightness, and silently returning a still-failing colour
+ * background at any lightness, and silently returning a still-failing color
  * would be worse than admitting it.
  */
 
@@ -72,7 +72,7 @@ function searchDirection(
 }
 
 /**
- * Moves one colour of a pair until it meets `target`, preferring the smaller
+ * Moves one color of a pair until it meets `target`, preferring the smaller
  * lightness change of the two possible directions so the result stays as close
  * to the designer's original choice as possible.
  */
@@ -110,7 +110,7 @@ export function autoFixContrast(
   const chosen = candidates[0]!;
 
   // Verify rather than assume. Gamut clipping on the way to sRGB can mean the
-  // rendered colour is not quite the one the search converged on.
+  // rendered color is not quite the one the search converged on.
   const achievedRatio = adjustBackground
     ? contrastRatio(text, chosen)
     : contrastRatio(chosen, background);

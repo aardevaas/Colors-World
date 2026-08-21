@@ -5,11 +5,11 @@ const A = { l: 0.4, c: 0.1, h: 250 };
 const B = { l: 0.8, c: 0.2, h: 20 };
 
 describe('blendOklch', () => {
-  test('t=0 returns the first colour exactly', () => {
+  test('t=0 returns the first color exactly', () => {
     expect(blendOklch(A, B, 0)).toEqual(A);
   });
 
-  test('t=1 returns the second colour exactly', () => {
+  test('t=1 returns the second color exactly', () => {
     expect(blendOklch(A, B, 1)).toEqual(B);
   });
 

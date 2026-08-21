@@ -36,12 +36,12 @@ describe('compareAcrossGamuts — shape', () => {
 
   it('renders each step inside the gamut it claims', () => {
     // Tolerance rather than a strict predicate, and deliberately so. An
-    // anchor colour is pinned rather than generated, so one whose chroma sits
+    // anchor color is pinned rather than generated, so one whose chroma sits
     // exactly on the gamut hull round-trips through OKLCH landing a hair
     // outside it: measured at 1.65e-5 over the sRGB ceiling for #00C8D7,
     // roughly a hundredth of what 8-bit hex can even represent, and the
     // emitted hex is identical either way. Asserting strict containment would
-    // be asserting the absence of floating-point error, not a colour fact.
+    // be asserting the absence of floating-point error, not a color fact.
     const EPSILON = 1e-4;
     for (const step of compareAcrossGamuts(ordinary('#00C8D7', 1.6)).steps) {
       for (const rendering of step.renderings) {
@@ -83,7 +83,7 @@ describe('compareAcrossGamuts — what narrowing costs', () => {
     expect(worst).toBeGreaterThan(0.05);
   });
 
-  it('leaves a colour sRGB covers well alone', () => {
+  it('leaves a color sRGB covers well alone', () => {
     // Not everything suffers. A ramp already inside sRGB has nothing to lose,
     // and reporting otherwise would make the panel meaningless.
     const comparison = compareAcrossGamuts({
@@ -155,7 +155,7 @@ describe('compareAcrossGamuts — the collapse, which is the real damage', () =>
 describe('the guarantee this whole comparison exists to check', () => {
   it('no scale the tool can currently build loses a step on sRGB', () => {
     // Swept across every combination the Scales room can actually produce --
-    // and with the anchor step the UI *derives* from the colour, not a
+    // and with the anchor step the UI *derives* from the color, not a
     // hand-picked middle, which is the detail that made an earlier sweep
     // overstate reachability. Zero of 1,728 configurations collapse.
     //

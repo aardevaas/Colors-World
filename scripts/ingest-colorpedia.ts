@@ -13,7 +13,7 @@
  * checked live before committing to this rewrite).
  *
  * OKLCH is computed from the dataset's HEX column via this project's own
- * colour engine rather than trusted from the dataset's own Hue/Saturation/
+ * color engine rather than trusted from the dataset's own Hue/Saturation/
  * Lightness columns — those are almost certainly HSL, and canonical storage
  * everywhere else in this app is OKLCH.
  *

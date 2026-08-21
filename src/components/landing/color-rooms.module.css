@@ -4,7 +4,7 @@
  * The three layers of their system, in order:
  *
  *   1. A PAIR arrives on the band — `--room-bg` and `--room-fg` plus their
- *      hover variants. Inline, because these colours are generated per visit
+ *      hover variants. Inline, because these colors are generated per visit
  *      and cannot live in a stylesheet.
  *   2. `.room` maps that pair onto SEMANTIC tokens: --ground, --ink,
  *      --ink-quiet. This is the only place the two vocabularies meet.
@@ -12,7 +12,7 @@
  *
  * The payoff is `.room:hover`: re-point the semantics at the hover pair and the
  * ground, the display type, the rule, the numeral and the arrow all turn
- * together, because none of them named a colour in the first place.
+ * together, because none of them named a color in the first place.
  *
  * Radius is 0 throughout. GF Smith has no rounded corner anywhere on the site
  * and it is not an oversight — paper is guillotined, and a radius here would
@@ -73,7 +73,7 @@
   overflow: hidden;
   background: var(--ground);
   color: var(--ink);
-  /* Both are pair-driven, so the whole band turns as one on hover. Colour is
+  /* Both are pair-driven, so the whole band turns as one on hover. Color is
      safe to transition here: every state was solved against its own ground. */
   transition:
     background-color 420ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -293,7 +293,7 @@
 
 /* studio — grain. The one pattern that cannot read the ink: an SVG filter takes
    no custom properties, so it is neutral noise over a blend mode instead, which
-   works on any colour. Jitters in discrete steps rather than drifting, because
+   works on any color. Jitters in discrete steps rather than drifting, because
    film grain that slides looks like a moving photograph of grain. */
 .patGrain {
   --pattern-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");

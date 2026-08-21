@@ -7,7 +7,7 @@ import styles from './templates.module.css';
  * where the contrast overlay earns its keep.
  *
  * The glow uses the primary role at low opacity: it is the one place a brand
- * colour appears as atmosphere rather than as an element, and a palette whose
+ * color appears as atmosphere rather than as an element, and a palette whose
  * primary is too close to its background loses it entirely here.
  */
 export function EditorialTemplate() {
@@ -26,7 +26,7 @@ export function EditorialTemplate() {
         </div>
 
         <h1 className={styles.headline} data-audit-fg="text" data-audit-bg="background">
-          Colour is a place, not a list.
+          Color is a place, not a list.
         </h1>
 
         <p className={styles.subcopy} data-audit-fg="text" data-audit-bg="background">

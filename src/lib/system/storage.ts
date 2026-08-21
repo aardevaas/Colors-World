@@ -9,7 +9,7 @@
  *      point of following it;
  *   2. this browser's last System — they came back to the bare site and should
  *      find their work where they left it;
- *   3. the old Harmonic Dock — they collected colours before the System
+ *   3. the old Harmonic Dock — they collected colors before the System
  *      existed, and losing that collection on upgrade would be unforgivable.
  *
  * Every reader is defensive: stored JSON can be corrupt, from a future version,
@@ -51,7 +51,7 @@ export function deserializeSystem(raw: string | null): System | null {
 
 /**
  * Converts a pre-System Harmonic Dock into a System, so nobody loses the
- * colours they had collected when this ships.
+ * colors they had collected when this ships.
  */
 export function migrateLegacyDock(raw: string | null): System | null {
   if (raw === null || raw.trim() === '') return null;

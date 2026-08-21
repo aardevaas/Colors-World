@@ -2,7 +2,7 @@ import type { MergeConflict, MergeResult, PaletteSnapshot } from './types';
 
 /**
  * Three-way merge of two snapshots against their common ancestor, one token
- * at a time. Standard VCS semantics, applied to colour tokens instead of
+ * at a time. Standard VCS semantics, applied to color tokens instead of
  * lines of text:
  *
  * - Neither side changed a token → keep the base value.

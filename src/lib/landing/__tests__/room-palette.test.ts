@@ -11,8 +11,8 @@ import {
 
 const SEEDS = [0, 37, 90, 180, 239.5, 300, 359.9];
 
-describe('roomPalette — one colour per room', () => {
-  it('always returns exactly one colour for every room, in nav order', () => {
+describe('roomPalette — one color per room', () => {
+  it('always returns exactly one color for every room, in nav order', () => {
     for (const seed of SEEDS) {
       const palette = roomPalette(seed);
       expect(palette.map((entry) => entry.room)).toEqual([...ROOM_IDS]);
@@ -33,7 +33,7 @@ describe('roomPalette — one colour per room', () => {
   });
 });
 
-describe('roomPalette — six rooms have to be six colours', () => {
+describe('roomPalette — six rooms have to be six colors', () => {
   it('keeps every pair visibly apart', () => {
     // Six streams of paint that a visitor cannot tell apart is five rooms
     // wearing a disguise. This is the property the whole layout depends on.
@@ -73,7 +73,7 @@ describe('roomPalette — six rooms have to be six colours', () => {
 });
 
 describe('roomPalette — the gamut ceiling is the point', () => {
-  it('renders every colour inside sRGB', () => {
+  it('renders every color inside sRGB', () => {
     for (const seed of SEEDS) {
       for (const entry of roomPalette(seed)) {
         expect(isInGamut(entry.oklch, 'srgb')).toBe(true);

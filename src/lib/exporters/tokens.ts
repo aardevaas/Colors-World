@@ -73,7 +73,7 @@ export function toCssCustomProperties(
 }
 
 /**
- * Emits a Tailwind v4 `@theme` block — v4 configures colours in CSS, not JS.
+ * Emits a Tailwind v4 `@theme` block — v4 configures colors in CSS, not JS.
  *
  * Token identity (`--color-{name}-{step}`) stays index-based; the Tailwind
  * 50-950 convention is layered on as a trailing comment per declaration

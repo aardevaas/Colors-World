@@ -44,7 +44,7 @@ function isRole(value: string | undefined): value is SemanticRole {
  * placed by hand, so they stay correct when a template reflows. The role pair
  * for each element comes from the `data-audit-fg`/`data-audit-bg` attributes
  * the templates declare, not from reading computed styles — once transparency,
- * gradients and stacking are involved, the colour a designer *meant* is not
+ * gradients and stacking are involved, the color a designer *meant* is not
  * reliably recoverable from rendered pixels.
  *
  * Failures are loud, passes are quiet. Showing 25 equally-prominent badges

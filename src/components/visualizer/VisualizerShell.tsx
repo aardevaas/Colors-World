@@ -60,9 +60,9 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
   const overrides = system.roleOverrides;
   const isLight = system.mode === 'light';
 
-  // CVD is applied to the resolved role colours rather than as an SVG filter
+  // CVD is applied to the resolved role colors rather than as an SVG filter
   // over the mockup: the filter approach also mangles the inspector's own
-  // readouts, and simulating the *colours* means the contrast numbers shown
+  // readouts, and simulating the *colors* means the contrast numbers shown
   // are the ones a person with that vision actually experiences.
   const shownRoles = useMemo(() => {
     if (cvd === 'none') return roles;
@@ -78,12 +78,12 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
   // Every ordered pair, with the requirement each one actually carries. The
   // five pairs this used to check were the five that fitted in a sidebar, not
   // the five that matter: text on a filled button was never among them, and on
-  // a three-colour palette that is the worst failure in the whole system.
+  // a three-color palette that is the worst failure in the whole system.
   const matrix = useMemo(() => buildRoleContrastMatrix(roles), [roles]);
 
   // Simulating one vision type at a time answers "what does this look like to
   // a deuteranope", which nobody with normal vision can act on. This answers
-  // the question they can: which two of these colours just became one.
+  // the question they can: which two of these colors just became one.
   const vision = useMemo(() => buildCvdReport(roles), [roles]);
 
   const template = templateById(templateId);
@@ -233,7 +233,7 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
           <h2 className={styles.inspectorTitle}>Roles</h2>
           {palette.length === 0 && (
             <p className={styles.hint}>
-              Collect colours in the Harmonic Dock and they map onto these roles
+              Collect colors in the Harmonic Dock and they map onto these roles
               automatically. Until then this is a neutral fallback set.
             </p>
           )}
@@ -261,7 +261,7 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
 
           {assigningRole !== null && (
             <div className={styles.assignTray}>
-              <span className={styles.hint}>Pick a colour for {assigningRole}</span>
+              <span className={styles.hint}>Pick a color for {assigningRole}</span>
               <div className={styles.assignSwatches}>
                 {palette.length === 0 && <span className={styles.hint}>Dock is empty.</span>}
                 {palette.map((color) => (
@@ -313,7 +313,7 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
           </ul>
 
           <h2 className={styles.inspectorTitle}>
-            Colour vision
+            Color vision
             <span className={styles.titleCount}>
               {vision.safe ? '4 types clear' : 'conflicts found'}
             </span>

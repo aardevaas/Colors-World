@@ -296,7 +296,7 @@
 }
 
 /* ── Ambient radiance glow ────────────────────────────────────
-   A soft wash of a card's own colour behind it — reads as the card
+   A soft wash of a card's own color behind it — reads as the card
    radiating its hue onto the board rather than just sitting flat on it.
    Pure CSS (radial-gradient + blur), capped size regardless of card
    dimensions, opacity driven by --glow-opacity (fades out on zoom-out —
@@ -463,7 +463,7 @@
 }
 
 /* ── Proximity readout ───────────────────────────────────────
-   The signature touch: drag two colour-bearing cards close together and
+   The signature touch: drag two color-bearing cards close together and
    their relationship — not just their proximity — surfaces automatically. */
 
 .proximityBadge {
@@ -482,7 +482,7 @@
   box-shadow: 0 8px 20px -6px oklch(0% 0 0 / 0.5);
 }
 
-/* ── Individual colour cards ──────────────────────────────── */
+/* ── Individual color cards ──────────────────────────────── */
 
 .colorBody {
   display: flex;
@@ -497,11 +497,11 @@
   flex-shrink: 0;
 }
 
-/* The colour card stacks swatch → name → ColorValues inside a flex column.
+/* The color card stacks swatch → name → ColorValues inside a flex column.
    ColorValues is tall enough to overflow the default card, and without an
    explicit flex-shrink:0 the single-line name row is the thing flex chooses
-   to collapse — so the colour's own name gets crushed under the HEX readout.
-   Caught in a product screenshot; it affects every pinned colour card. */
+   to collapse — so the color's own name gets crushed under the HEX readout.
+   Caught in a product screenshot; it affects every pinned color card. */
 .colorBody > .paletteName {
   flex-shrink: 0;
 }
@@ -604,8 +604,8 @@
   background: var(--surface-recessed, oklch(20% 0 0));
 }
 
-/* ── Extracted-colour pins ────────────────────────────────────
-   One pin per dominant colour the k-means extraction found — click one to
+/* ── Extracted-color pins ────────────────────────────────────
+   One pin per dominant color the k-means extraction found — click one to
    promote it to its own card or send it to the Harmonic Dock. */
 
 .pinRow {

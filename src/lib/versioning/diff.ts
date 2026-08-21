@@ -2,7 +2,7 @@ import { deltaEOk, parseColor, shortestHueDelta } from '@/lib/color-engine';
 import type { PaletteSnapshot, TokenDelta } from './types';
 
 // Re-exported for existing consumers — deltaEOk/shortestHueDelta live in the
-// colour engine now (they're perceptual-distance primitives, not versioning
+// color engine now (they're perceptual-distance primitives, not versioning
 // concerns), but this module's public surface stays the same.
 export { deltaEOk, shortestHueDelta };
 

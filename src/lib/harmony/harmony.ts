@@ -1,29 +1,29 @@
 /**
  * Palette generation — the primitive this product was missing.
  *
- * Until now the engine could deepen one colour into a scale
- * (`generateScale`) but had nothing that turned one colour into a *set*.
+ * Until now the engine could deepen one color into a scale
+ * (`generateScale`) but had nothing that turned one color into a *set*.
  * That is the loop everyone arrives wanting, and its absence is why a
  * collector called the Harmonic Dock never had any harmony in it.
  *
  * ## Why this is not the same feature Coolors and Adobe ship
  *
- * Classical harmony is defined by hue angles, which is trivial in any colour
+ * Classical harmony is defined by hue angles, which is trivial in any color
  * space. The hard part is that a hue rotation only *looks* harmonious if the
- * colours it produces carry equal visual weight — and in HSL they do not. HSL
+ * colors it produces carry equal visual weight — and in HSL they do not. HSL
  * lightness is not perceptual: a yellow and a blue at the same HSL lightness
  * read as completely different brightnesses, so an HSL triad always needs
  * fixing by hand afterwards.
  *
  * OKLCH fixes the perception half for free. But it introduces a problem HSL
- * never has to face, because OKLCH can describe colours a screen cannot show.
+ * never has to face, because OKLCH can describe colors a screen cannot show.
  * The sRGB gamut is not a cylinder in OKLCH — the achievable chroma varies
  * enormously with hue. Measured on this engine at L=0.55 it ranges from 0.093
  * to 0.294, a **3.1x spread**; a triad rooted at a vivid violet (c=0.21) is
  * simply unreachable at both of its other hues.
  *
  * So "hold lightness and chroma constant while rotating hue" — the naive
- * reading of the OKLCH advantage — produces out-of-gamut colours, and clipping
+ * reading of the OKLCH advantage — produces out-of-gamut colors, and clipping
  * them shifts lightness *and* hue, destroying exactly the evenness the harmony
  * was for. Everything below exists to get that right, and it is the part no
  * HSL tool can copy, because HSL has no notion of a per-hue ceiling at all.
@@ -65,14 +65,14 @@ export const HARMONY_RULES: readonly HarmonyRule[] = [
  * ceiling at every hue. There is no single right answer, so the choice is the
  * caller's and each is honest about what it trades.
  *
- * - `equal` — every colour shares one lightness and one chroma, so they carry
+ * - `equal` — every color shares one lightness and one chroma, so they carry
  *   genuinely equal visual weight. Costs vividness: the shared chroma can be
  *   no higher than the weakest hue's ceiling.
- * - `proportional` — every colour sits at the same fraction of *its own*
- *   ceiling. Keeps vividness and stays even in a looser sense; the colours are
+ * - `proportional` — every color sits at the same fraction of *its own*
+ *   ceiling. Keeps vividness and stays even in a looser sense; the colors are
  *   equally saturated for what their hue can do.
  * - `preserve` — keep the seed's chroma and gamut-map whatever cannot reach
- *   it. Most vivid, least even; useful when the seed is a fixed brand colour.
+ *   it. Most vivid, least even; useful when the seed is a fixed brand color.
  */
 export type ChromaStrategy = 'equal' | 'proportional' | 'preserve';
 
@@ -93,7 +93,7 @@ export interface HarmonyColor {
 export interface Harmony {
   readonly rule: HarmonyRule;
   readonly colors: readonly HarmonyColor[];
-  /** The one chroma every colour shares under `equal`; null otherwise. */
+  /** The one chroma every color shares under `equal`; null otherwise. */
   readonly sharedChroma: number | null;
   /**
    * Under `equal`, the hue whose gamut ceiling pulled the shared chroma below
@@ -121,7 +121,7 @@ const OFFSETS: Readonly<Record<HarmonyRule, readonly number[]>> = {
 /**
  * The hue angles a rule produces, in degrees, seed first.
  *
- * Separated from colour generation because the angles are the part a person
+ * Separated from color generation because the angles are the part a person
  * reasons about ("give me a split complement") and the part an interface draws
  * on a wheel, neither of which needs a gamut.
  */
@@ -156,7 +156,7 @@ export function generateHarmony(
     // `equal` and `proportional` derive chroma from the ceiling and are in
     // gamut by construction; `preserve` deliberately is not, so it is mapped.
     // Mapping the others too costs one cheap check and means no strategy can
-    // ever leak an unshowable colour if the ceiling maths is ever wrong.
+    // ever leak an unshowable color if the ceiling maths is ever wrong.
     const safe = isInGamut(candidate, gamut) ? candidate : mapToGamut(candidate, gamut).oklch;
     return { oklch: safe, hex: formatHex(safe), hueOffset: offsets[index]! };
   });

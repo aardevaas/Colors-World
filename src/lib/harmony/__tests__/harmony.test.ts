@@ -42,10 +42,10 @@ describe('harmonyHues', () => {
 describe('generateHarmony — gamut safety', () => {
   // The whole claim rests on this. Measured on this engine: at L=0.55 the
   // achievable chroma ranges from 0.093 to 0.294 across hue, a 3.1x spread.
-  // A harmony that ignores that produces colours the display cannot show,
+  // A harmony that ignores that produces colors the display cannot show,
   // and clipping them shifts lightness and hue — destroying the evenness
   // the harmony existed to provide.
-  it('never returns a colour outside the requested gamut', () => {
+  it('never returns a color outside the requested gamut', () => {
     for (const rule of HARMONY_RULES) {
       for (const strategy of ['equal', 'proportional', 'preserve'] as const) {
         for (const seed of [VIOLET, TAN, parseColor('#19D368'), parseColor('#FF0000')]) {
@@ -58,7 +58,7 @@ describe('generateHarmony — gamut safety', () => {
     }
   });
 
-  it('emits a hex for every colour', () => {
+  it('emits a hex for every color', () => {
     for (const color of generateHarmony(VIOLET, 'triad').colors) {
       expect(color.hex).toMatch(/^#[0-9a-f]{6}$/);
     }
@@ -66,7 +66,7 @@ describe('generateHarmony — gamut safety', () => {
 });
 
 describe('generateHarmony — equal weight', () => {
-  it('gives every colour the same lightness and chroma', () => {
+  it('gives every color the same lightness and chroma', () => {
     const harmony = generateHarmony(VIOLET, 'triad', { chroma: 'equal' });
     const [first, ...rest] = harmony.colors;
     for (const color of rest) {
@@ -84,7 +84,7 @@ describe('generateHarmony — equal weight', () => {
     expect(harmony.limitedByHue).not.toBeNull();
   });
 
-  it('caps at the seed rather than inflating a muted colour to the ceiling', () => {
+  it('caps at the seed rather than inflating a muted color to the ceiling', () => {
     const quiet: Oklch = { l: 0.6, c: 0.02, h: 285 };
     const harmony = generateHarmony(quiet, 'triad', { chroma: 'equal' });
     expect(harmony.sharedChroma!).toBeLessThanOrEqual(0.02 + 1e-9);
@@ -96,14 +96,14 @@ describe('generateHarmony — equal weight', () => {
     expect(harmony.sharedChroma!).toBeCloseTo(0.03, 10);
   });
 
-  it('keeps the seed hue exactly, so the brand colour survives', () => {
+  it('keeps the seed hue exactly, so the brand color survives', () => {
     const harmony = generateHarmony(VIOLET, 'triad', { chroma: 'equal' });
     expect(harmony.colors[0]!.oklch.h).toBeCloseTo(VIOLET.h, 10);
   });
 });
 
 describe('generateHarmony — proportional chroma', () => {
-  it('keeps each colour equally saturated relative to its own ceiling', () => {
+  it('keeps each color equally saturated relative to its own ceiling', () => {
     // The other honest answer to an uneven gamut: rather than muting every
     // hue to the weakest, let each be as saturated as that hue can be, in
     // the same proportion. Impossible in HSL, which has no notion of a
@@ -128,7 +128,7 @@ describe('generateHarmony — proportional chroma', () => {
 });
 
 describe('generateHarmony — determinism and shape', () => {
-  it('returns one colour per hue in the rule', () => {
+  it('returns one color per hue in the rule', () => {
     expect(generateHarmony(VIOLET, 'monochromatic').colors).toHaveLength(1);
     expect(generateHarmony(VIOLET, 'complementary').colors).toHaveLength(2);
     expect(generateHarmony(VIOLET, 'triad').colors).toHaveLength(3);
@@ -136,7 +136,7 @@ describe('generateHarmony — determinism and shape', () => {
     expect(generateHarmony(VIOLET, 'tetrad').colors).toHaveLength(4);
   });
 
-  it('records each colour offset from the seed', () => {
+  it('records each color offset from the seed', () => {
     const offsets = generateHarmony(VIOLET, 'triad').colors.map((c) => c.hueOffset);
     expect(offsets).toEqual([0, 120, 240]);
   });
@@ -145,7 +145,7 @@ describe('generateHarmony — determinism and shape', () => {
     expect(generateHarmony(VIOLET, 'triad')).toEqual(generateHarmony(VIOLET, 'triad'));
   });
 
-  it('never returns duplicate colours', () => {
+  it('never returns duplicate colors', () => {
     for (const rule of HARMONY_RULES) {
       const hexes = generateHarmony(VIOLET, rule).colors.map((c) => c.hex);
       expect(new Set(hexes).size).toBe(hexes.length);
@@ -173,7 +173,7 @@ describe('generateHarmony — determinism and shape', () => {
 describe('generateHarmony — the claim against HSL', () => {
   it('holds perceptual lightness constant where HSL would not', () => {
     // The concrete difference. Rotating hue in HSL at fixed S and L gives
-    // colours of wildly different perceived lightness -- an HSL triad from
+    // colors of wildly different perceived lightness -- an HSL triad from
     // a mid blue lands a yellow that reads far brighter than its siblings.
     // Ordering by OKLCH lightness is only meaningful because it does not.
     const harmony = generateHarmony({ l: 0.55, c: 0.12, h: 250 }, 'triad', { chroma: 'equal' });

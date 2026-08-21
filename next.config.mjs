@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     // culori is import-heavy; letting Next tree-shake it keeps the client
-    // bundle inside the microsite budget rather than shipping every colour space.
+    // bundle inside the microsite budget rather than shipping every color space.
     optimizePackageImports: ['culori'],
   },
   async headers() {

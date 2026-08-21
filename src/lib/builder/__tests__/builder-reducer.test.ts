@@ -20,12 +20,12 @@ function synced(items: readonly DockSourceItem[], primaryHex: string | null): Bu
 }
 
 describe('defaultAnchorStepFor', () => {
-  it('places a light colour near step 0', () => {
+  it('places a light color near step 0', () => {
     const step = defaultAnchorStepFor({ l: 0.95, c: 0.05, h: 200 }, 10);
     expect(step).toBeLessThan(2);
   });
 
-  it('places a dark colour near the last step', () => {
+  it('places a dark color near the last step', () => {
     const step = defaultAnchorStepFor({ l: 0.25, c: 0.1, h: 200 }, 10);
     expect(step).toBeGreaterThan(7);
   });
@@ -78,7 +78,7 @@ describe('builderReducer — syncFromDock', () => {
     expect(green.nameIsCustom).toBe(true);
   });
 
-  it('removes entries for colours no longer in the dock', () => {
+  it('removes entries for colors no longer in the dock', () => {
     const withThree = synced([BLUE, GREEN, PURPLE], BLUE.hex);
     const withoutPurple = builderReducer(withThree, {
       type: 'syncFromDock',

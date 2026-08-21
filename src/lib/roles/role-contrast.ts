@@ -60,7 +60,7 @@ const FILLS: readonly SemanticRole[] = ['primary', 'accent'];
  * it would just manufacture failures.
  *
  * The direction matters: text on a surface is a requirement, and the same two
- * colours the other way round is the same measurement but not a separate rule,
+ * colors the other way round is the same measurement but not a separate rule,
  * so only the meaningful direction carries the requirement.
  */
 export function requirementFor(

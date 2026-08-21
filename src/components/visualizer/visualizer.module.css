@@ -1,7 +1,7 @@
 /* /visualizer's own world: obsidian ground, glassmorphic chrome, mono for every
    numeric readout. The mockup on the stage is deliberately the only saturated
    thing on screen — the surrounding instrument stays quiet so a palette is
-   judged against neutral, not against the tool's own colours. */
+   judged against neutral, not against the tool's own colors. */
 
 .shell {
   min-height: 100dvh;

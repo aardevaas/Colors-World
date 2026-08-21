@@ -5,7 +5,7 @@ describe('tab manifest', () => {
   it('is ordered as the work is actually done', () => {
     // The count was never the invariant -- the sequence is. A person reading
     // the nav should be able to infer the workflow without being told it:
-    // find a colour, make a palette from it, deepen each colour into a scale,
+    // find a color, make a palette from it, deepen each color into a scale,
     // prove it on real UI and real type, then assemble. Reordering these is a
     // product decision and should have to come through this test.
     expect(TABS.map((t) => t.id)).toEqual([
@@ -20,7 +20,7 @@ describe('tab manifest', () => {
 
   it('puts making a palette before refining one', () => {
     // The split that created Compose: generating a palette and deepening a
-    // colour are different altitudes, and the generator used to be a strip in
+    // color are different altitudes, and the generator used to be a strip in
     // the margin of the room named after the refining.
     const ids = TABS.map((t) => t.id);
     expect(ids.indexOf('compose')).toBeLessThan(ids.indexOf('scales'));

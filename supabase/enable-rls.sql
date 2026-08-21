@@ -185,7 +185,7 @@ create policy board_items_all on board_items
   with check (is_project_member(project_id));
 
 -- colors: shared reference data, not project-scoped — every signed-in
--- member of this ~10-person install can browse the whole 100K-colour
+-- member of this ~10-person install can browse the whole 100K-color
 -- library. Writes stay service-role-only (ingestion scripts), so there is
 -- no insert/update/delete policy here at all — RLS defaults to denying
 -- those outright for the anon-key/authenticated role.

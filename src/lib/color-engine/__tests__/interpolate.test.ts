@@ -79,7 +79,7 @@ describe('monotoneInterpolator', () => {
 });
 
 describe('monotoneHueInterpolator', () => {
-  test('takes the short way around the colour wheel', () => {
+  test('takes the short way around the color wheel', () => {
     // 350° -> 10° should pass through 0°, not sweep down through 180°.
     const interpolate = monotoneHueInterpolator([
       { x: 0, y: 350 },

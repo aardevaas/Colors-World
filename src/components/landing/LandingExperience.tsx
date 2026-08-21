@@ -7,7 +7,7 @@ import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { RESTING_INTENSITY, rainIntensityAt, visibleDrops } from '@/lib/landing/rain';
 import { HeroHud } from './HeroHud';
 import { PaintRain } from './PaintRain';
-import { ColourRooms } from './ColourRooms';
+import { ColorRooms } from './ColorRooms';
 import styles from './landing.module.css';
 
 /**
@@ -17,10 +17,10 @@ import styles from './landing.module.css';
  * stack it needed. In its place is a fullscreen shader that pours the product's
  * name as wet paint and lets the visitor push it around — the hue is read off
  * the direction the surface faces, so moving the pointer is what produces the
- * colour rather than merely revealing it.
+ * color rather than merely revealing it.
  *
  * One seed hue is drawn per visit and travels from here into everything
- * downstream, so the spectrum in the hero and the colours the six rooms are
+ * downstream, so the spectrum in the hero and the colors the six rooms are
  * painted in are the same system rather than two unrelated palettes.
  */
 
@@ -46,7 +46,7 @@ const SECTION_HEIGHT_VH = 100;
 
 
 /** Stable on the server, replaced on mount. Randomising during render would
- *  hand the server and the client different colours and break hydration. */
+ *  hand the server and the client different colors and break hydration. */
 const INITIAL_SEED_HUE = 262;
 
 export function LandingExperience({ credibility, footer }: LandingExperienceProps) {
@@ -137,7 +137,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
           <HeroHud ref={hudRef} />
         </div>
       </section>
-      <ColourRooms rooms={rooms} />
+      <ColorRooms rooms={rooms} />
       {credibility}
       {footer}
     </>

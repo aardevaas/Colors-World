@@ -1,6 +1,6 @@
 /*
  * Cinematic, moody, restrained. The stage is a near-black void so that the
- * only saturated light on screen is emitted by the colours themselves —
+ * only saturated light on screen is emitted by the colors themselves —
  * every UI element here is deliberately low-contrast glass so it never
  * competes with the particle field.
  */
@@ -51,7 +51,7 @@
 }
 
 /* Holds the stage black while three.js streams in, so there is no flash of
-   a differently-coloured box before the field appears. */
+   a differently-colored box before the field appears. */
 .canvasFallback {
   position: absolute;
   inset: 0;
@@ -253,7 +253,7 @@
  * desaturated at rest, where it lands on the same soft grey as the rest of
  * the line. Hovering saturates it in rather than swapping one paint for
  * another: toggling `background-clip` on hover instead would hand off from
- * flat colour to gradient in a single frame, which reads as a flicker no
+ * flat color to gradient in a single frame, which reads as a flicker no
  * matter how the rest is eased.
  */
 .builtByName {
@@ -279,7 +279,7 @@
   animation: spectrumDrift 2.2s linear infinite;
 }
 
-/* Forced-colours strips background images, which would leave text painted
+/* Forced-colors strips background images, which would leave text painted
    with `color: transparent` simply invisible. */
 @media (forced-colors: active) {
   .builtByName {
@@ -424,12 +424,12 @@
   .scrollCueLine,
   .builtBy:hover .builtByName,
   .builtBy:focus-visible .builtByName {
-    /* The spectrum still saturates in on hover — that's a colour change, not
+    /* The spectrum still saturates in on hover — that's a color change, not
        motion — it just stops drifting. */
     animation: none;
   }
 
-  /* Rotation specifically (unlike the flat colour/opacity cues elsewhere on
+  /* Rotation specifically (unlike the flat color/opacity cues elsewhere on
      this page) is a known vestibular trigger, so the 3D tilt on the plate
      and primary CTA is dropped entirely here rather than just slowed —
      the lift/border/background hover feedback still applies without it. */

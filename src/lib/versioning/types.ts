@@ -3,7 +3,7 @@
  *
  * The unit of history is a `PaletteSnapshot`: a flat map from token name
  * (e.g. "brand-5", matching the exporters' `${scaleName}-${step}` convention)
- * to a CSS colour string. Flat and string-keyed rather than a nested scale
+ * to a CSS color string. Flat and string-keyed rather than a nested scale
  * structure deliberately — it is the same shape the CSS/Tailwind/Figma
  * exporters already emit, so a snapshot round-trips through those formats for
  * free, and diffing/merging never has to reason about nested scale identity.

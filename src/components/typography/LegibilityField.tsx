@@ -44,7 +44,7 @@ export function LegibilityField({
   const verdictCopy = {
     'passes-everywhere': 'Carries body text at any size and weight.',
     'passes-when-large': 'Carries large text only — the shaded region.',
-    'passes-nowhere': 'No way of setting type rescues this pair. Only colour will.',
+    'passes-nowhere': 'No way of setting type rescues this pair. Only color will.',
   }[field.verdict];
 
   return (
@@ -132,16 +132,16 @@ export function LegibilityField({
             )}
           </li>
           <li className={styles.exitOn}>
-            {exits.recolour.status === 'already-passes' && 'Colour — nothing to change'}
-            {exits.recolour.status === 'recolour' && (
+            {exits.recolor.status === 'already-passes' && 'Color — nothing to change'}
+            {exits.recolor.status === 'recolor' && (
               <>
-                Colour — <span className={styles.mono}>{exits.recolour.hex}</span>
+                Color — <span className={styles.mono}>{exits.recolor.hex}</span>
               </>
             )}
-            {exits.recolour.status === 'thicken' &&
-              `Colour — unchanged; weight ${exits.recolour.weight} is enough`}
-            {exits.recolour.status === 'unreachable' &&
-              `Colour — unreachable at any lightness, best ${exits.recolour.bestRatio.toFixed(2)}:1`}
+            {exits.recolor.status === 'thicken' &&
+              `Color — unchanged; weight ${exits.recolor.weight} is enough`}
+            {exits.recolor.status === 'unreachable' &&
+              `Color — unreachable at any lightness, best ${exits.recolor.bestRatio.toFixed(2)}:1`}
           </li>
         </ul>
         {exits.thicken === null && exits.grow !== null && (

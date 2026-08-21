@@ -18,7 +18,7 @@ interface ColorValuesProps {
 }
 
 /**
- * Every colour, everywhere, in every space a downstream workflow actually
+ * Every color, everywhere, in every space a downstream workflow actually
  * needs — HEX for handoff, RGB for legacy CSS, OKLCH for the modern wide-gamut
  * case, CMYK for print — each one copyable with a single click. Warnings sit
  * underneath rather than blocking anything: this is quiet infrastructure, not

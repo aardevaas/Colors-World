@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { auditGamutWarning } from '../warnings';
 
 describe('auditGamutWarning', () => {
-  test('an in-gamut colour reports no clamp and zero distance', () => {
+  test('an in-gamut color reports no clamp and zero distance', () => {
     const softBlue = { l: 0.6, c: 0.05, h: 260 };
     const warning = auditGamutWarning(softBlue, 'srgb');
     expect(warning.clamped).toBe(false);
@@ -10,7 +10,7 @@ describe('auditGamutWarning', () => {
     expect(warning.deltaEOk).toBe(0);
   });
 
-  test('a vivid out-of-sRGB-gamut colour reports the clamp and a positive distance', () => {
+  test('a vivid out-of-sRGB-gamut color reports the clamp and a positive distance', () => {
     const vivid = { l: 0.6, c: 0.35, h: 260 };
     const warning = auditGamutWarning(vivid, 'srgb');
     expect(warning.clamped).toBe(true);
@@ -18,7 +18,7 @@ describe('auditGamutWarning', () => {
     expect(warning.deltaEOk).toBeGreaterThan(0);
   });
 
-  test('the same colour clamps harder against print than against sRGB', () => {
+  test('the same color clamps harder against print than against sRGB', () => {
     const vividBlue = { l: 0.6, c: 0.2, h: 260 };
     const srgbWarning = auditGamutWarning(vividBlue, 'srgb');
     const printWarning = auditGamutWarning(vividBlue, 'print');

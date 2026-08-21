@@ -12,10 +12,10 @@ import styles from './system-bar.module.css';
  * The System Bar — the document, made visible on every route.
  *
  * This replaces the Harmonic Dock, and the change is not cosmetic. The dock
- * was a tray: it held colours and rendered nothing at all until you had
+ * was a tray: it held colors and rendered nothing at all until you had
  * collected one, which meant the single mechanism tying five tabs together was
  * invisible precisely when a new visitor most needed to see it. The bar shows
- * the whole System — the palette, what each colour is currently doing, the
+ * the whole System — the palette, what each color is currently doing, the
  * polarity, and a link that carries all of it — and it shows an invitation
  * when the System is empty rather than hiding.
  *
@@ -77,8 +77,8 @@ export function SystemBar() {
         data-drag-over={dragOver}
         aria-label={
           palette.length === 0
-            ? 'Open the System — no colours collected yet'
-            : `Open the System — ${palette.length} colour${palette.length === 1 ? '' : 's'}`
+            ? 'Open the System — no colors collected yet'
+            : `Open the System — ${palette.length} color${palette.length === 1 ? '' : 's'}`
         }
       >
         <span className={styles.stack} aria-hidden="true">
@@ -149,11 +149,11 @@ export function SystemBar() {
 
       {palette.length === 0 ? (
         <p className={styles.empty}>
-          Every tab reads from here. Collect a colour in{' '}
+          Every tab reads from here. Collect a color in{' '}
           <SystemLink href="/library" className={styles.inlineLink}>
             Library
           </SystemLink>{' '}
-          and it becomes your palette, your roles and your type colours at once.
+          and it becomes your palette, your roles and your type colors at once.
         </p>
       ) : (
         <>

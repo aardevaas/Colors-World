@@ -9,7 +9,7 @@ import type { VibeSearchTarget } from './vibe-search';
  * VibeSearchTarget is deliberately a *region* — a lightness range, a chroma
  * range, and a hue spread around a seed hue (see vibe-search.ts's own
  * docstring: "a target region of OKLCH space to search against, rather than
- * a single exact colour") — not one exact point. An earlier version of this
+ * a single exact color") — not one exact point. An earlier version of this
  * function searched via a shrinking-radius ring scan around the target's
  * single seed point, ranked by deltaE. That produced visibly bad results in
  * practice: because generate-color.ts's index space is lightness-major/

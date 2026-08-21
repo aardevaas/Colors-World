@@ -2,7 +2,7 @@
  * Where a generated palette starts.
  *
  * A uniformly random OKLCH triple is a bad seed: most of that space is either
- * out of gamut, too dark to be a brand colour, or so desaturated it produces a
+ * out of gamut, too dark to be a brand color, or so desaturated it produces a
  * palette of greys. Rolling one is the single most-pressed control in a
  * generator, so what it returns is a product decision, not a call to
  * `Math.random`.
@@ -10,7 +10,7 @@
  * This is the "curation on top of the maths" the blueprint flagged as the real
  * risk: the harmony engine buys defensible evenness, not beauty, and the seed
  * is where taste gets to intervene. Lightness is held to the band where a
- * colour can act as a brand — dark enough to carry white text at some point on
+ * color can act as a brand — dark enough to carry white text at some point on
  * its scale, light enough not to read as a near-black — and chroma is
  * expressed as a fraction of what the hue can actually reach, so a roll never
  * produces the muddy result that a fixed chroma gives at hues with a low
@@ -23,7 +23,7 @@
 import { maxChroma, type Gamut, type Oklch } from '@/lib/color-engine';
 
 /**
- * Lightness band a seed is drawn from. Below this a colour reads as a near
+ * Lightness band a seed is drawn from. Below this a color reads as a near
  * neutral rather than a brand; above it there is too little room left to build
  * a scale upward.
  */
@@ -32,7 +32,7 @@ export const SEED_LIGHTNESS = { min: 0.5, max: 0.72 } as const;
 /**
  * Chroma as a fraction of the hue's own ceiling. The floor is what keeps a
  * roll from returning something indistinguishable from grey; the ceiling backs
- * off the very edge of the gamut, where colours are vivid but brittle — any
+ * off the very edge of the gamut, where colors are vivid but brittle — any
  * scale built from them clips immediately.
  */
 export const SEED_SATURATION = { min: 0.55, max: 0.95 } as const;

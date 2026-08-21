@@ -85,7 +85,7 @@ describe('parseGeminiVibeResponse', () => {
 });
 
 describe('offlineVibeFallback', () => {
-  it('matches a single colour keyword', () => {
+  it('matches a single color keyword', () => {
     // Deliberately just the one keyword — "warm and matcha-like" would also
     // match "warm" and pull the circular mean toward it, which isn't what
     // this test is isolating.

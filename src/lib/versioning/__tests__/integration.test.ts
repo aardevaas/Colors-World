@@ -23,7 +23,7 @@ describe('end-to-end: branch, diverge, merge', () => {
     const baseSnapshot = snapshotFromScales([baseScale]);
 
     // Both branches nudge the same single swatch by hand — a designer picking
-    // a slightly different shade for step 5 in the colour picker — rather than
+    // a slightly different shade for step 5 in the color picker — rather than
     // regenerating the whole scale, which would recompute every step and stop
     // this from being a "same token" conflict at all.
     const oursSnapshot = { ...baseSnapshot, 'brand-5': '#2563eb' };

@@ -32,7 +32,7 @@ describe('contrastRatio (WCAG 2.x)', () => {
     expect(contrastRatio(BLACK, WHITE)).toBeCloseTo(21, 4);
   });
 
-  test('a colour against itself is 1:1', () => {
+  test('a color against itself is 1:1', () => {
     expect(contrastRatio(WHITE, WHITE)).toBeCloseTo(1, 10);
   });
 
@@ -69,7 +69,7 @@ describe('apcaContrast', () => {
     );
   });
 
-  test('returns zero for identical colours', () => {
+  test('returns zero for identical colors', () => {
     expect(apcaContrast(WHITE, WHITE)).toBe(0);
   });
 });
@@ -90,7 +90,7 @@ describe('auditContrast', () => {
     expect(report.nonText).toBe(true);
   });
 
-  test('near-identical colours fail everything', () => {
+  test('near-identical colors fail everything', () => {
     const report = auditContrast(parseColor('#fefefe'), WHITE);
     expect(report.normalText.aa).toBe(false);
     expect(report.largeText.aa).toBe(false);

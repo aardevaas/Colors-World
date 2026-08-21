@@ -4,7 +4,7 @@ import { contrastRatio, parseColor } from '@/lib/color-engine';
 /**
  * The credibility strip's palette, guarded.
  *
- * Every colour in the six rooms is solved at runtime and proved by
+ * Every color in the six rooms is solved at runtime and proved by
  * `room-theme.test.ts`. The strip is the exception on this page: its paper and
  * ink are hand-picked constants in `credibility-strip.module.css`, so nothing
  * would stop a later tweak from quietly dropping a note below AA — on the one

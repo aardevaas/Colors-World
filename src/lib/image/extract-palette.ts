@@ -1,5 +1,5 @@
 /**
- * Dominant-colour extraction via k-means clustered in OKLab space.
+ * Dominant-color extraction via k-means clustered in OKLab space.
  *
  * Deliberately takes plain {r,g,b} samples rather than ImageData/Canvas —
  * this stays framework- and DOM-agnostic (testable in Node, reusable if the
@@ -7,12 +7,12 @@
  * sampled from an actual image.
  *
  * Clustering happens in OKLab (Cartesian, perceptually-uniform), not raw
- * sRGB. Euclidean distance in sRGB does not track how different two colours
+ * sRGB. Euclidean distance in sRGB does not track how different two colors
  * actually look — e.g. it can merge a saturated orange with a muddy brown
  * that sRGB happens to place nearby, while splitting perceptually-similar
  * blues that sRGB spreads apart. OKLab's Euclidean distance is built to
  * approximate perceived difference, so the same k-means loop over OKLab
- * centroids yields dominant colours that actually look distinct from each
+ * centroids yields dominant colors that actually look distinct from each
  * other. Cartesian OKLab (l, a, b) is used rather than polar OKLCH so hue
  * wraparound (0°/360°) never distorts the distance metric.
  */
@@ -56,7 +56,7 @@ function clamp01(value: number): number {
 }
 
 /**
- * Returns up to `clusterCount` dominant colours, ordered by how many sampled
+ * Returns up to `clusterCount` dominant colors, ordered by how many sampled
  * pixels each one represents (most dominant first).
  *
  * Centroids seed by farthest-point selection rather than at random, so the
@@ -64,11 +64,11 @@ function clamp01(value: number): number {
  * results.
  *
  * They used to be spaced evenly through the pixel array, which spaces them by
- * position in the *image* rather than position in colour space. Two seeds
- * then land on the same colour while a genuinely distinct one gets no seed at
+ * position in the *image* rather than position in color space. Two seeds
+ * then land on the same color while a genuinely distinct one gets no seed at
  * all, and its pixels are absorbed into whichever cluster happens to be
  * nearest — dragging that centroid to a blend of the two. Measured on a
- * four-colour test image, green and near-white were reliably returned as a
+ * four-color test image, green and near-white were reliably returned as a
  * single pale green, at every size and layout tried.
  */
 export function extractDominantColors(
@@ -85,7 +85,7 @@ export function extractDominantColors(
   const centroids = seedFarthestFirst(oklabPixels, k);
 
   // Farthest-point seeding stops early when the image has fewer distinct
-  // colours than clusters were asked for, so the working count comes from the
+  // colors than clusters were asked for, so the working count comes from the
   // seeds actually placed rather than from the request.
   const clusters = centroids.length;
 
@@ -121,7 +121,7 @@ export function extractDominantColors(
 }
 
 /**
- * Picks starting centroids that are as far apart in colour as the image
+ * Picks starting centroids that are as far apart in color as the image
  * allows: the first pixel, then repeatedly whichever pixel is farthest from
  * every centroid chosen so far.
  *
@@ -149,7 +149,7 @@ function seedFarthestFirst(pixels: readonly OklabSample[], k: number): OklabSamp
       }
     }
     // Every remaining pixel already sits on a centroid: the image has fewer
-    // distinct colours than clusters asked for, and more seeds would only
+    // distinct colors than clusters asked for, and more seeds would only
     // produce duplicates.
     if (farthestDistance <= 0) break;
 

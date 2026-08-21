@@ -1,6 +1,6 @@
 # PRISM — Architecture Proposal
 
-_Working name. A private colour-intelligence platform: perceptual engine, knowledge graph, infinite canvas, token studio._
+_Working name. A private color-intelligence platform: perceptual engine, knowledge graph, infinite canvas, token studio._
 
 ---
 
@@ -11,9 +11,9 @@ I inspected all three before designing anything. Two of them are not quite what 
 | Source | What it really is | License | What we take |
 |---|---|---|---|
 | **Open Color** (`yeun/open-color`) | 13 hand-picked hues × 10 steps (0–9). Hand-tuned, not generated. Ships `.ase`, `.aco`, `.sketchpalette`, `.gpl`, `.clr`, Figma, VS Code snippets. | **MIT** | The *discipline*: fixed hue set, 0–9 scale, harmony across hues. We reimplement the idea algorithmically rather than copying values. |
-| **opencolors.org** | A different project entirely — 16.7M-colour globe, brand registry, WCAG/CVD tooling. | Unstated | The **registry concept** and the CVD/contrast tooling. Not the globe. |
+| **opencolors.org** | A different project entirely — 16.7M-color globe, brand registry, WCAG/CVD tooling. | Unstated | The **registry concept** and the CVD/contrast tooling. Not the globe. |
 | **Color-Pedia** (`boltuix/color-pedia`) | **100,000 rows** (card says ~50K), 17 columns: Name, HEX, Category, Description, Emotion, Personality, Mood, Symbolism, Use Case, Keywords, R/G/B, H/S/L, Contrast Level. Parquet, 14.8 MB. | **MIT** | The entire semantic layer — ingested as **seed** provenance, never presented as verified fact. |
-| **colour-datasets** | `pip install colour-datasets`, 16 Zenodo datasets: Munsell spectral, illuminants, ColorChecker, corresponding-colour experiments, camera sensitivities. | **BSD-3-Clause** | Spectral ground truth for print/textile accuracy. **No emotion or culture data whatsoever.** |
+| **color-datasets** | `pip install color-datasets`, 16 Zenodo datasets: Munsell spectral, illuminants, ColorChecker, corresponding-color experiments, camera sensitivities. | **BSD-3-Clause** | Spectral ground truth for print/textile accuracy. **No emotion or culture data whatsoever.** |
 
 **On Color-Pedia's honesty.** It is tagged `eco-ai` with no citations and reads as LLM-generated in bulk. It is a superb *starting corpus* and a poor *authority*. Every row lands with `provenance: 'seed'`; you promote rows to `'curated'` as you verify them. The UI must show that distinction, or the platform quietly launders generated text into expert claims.
 
@@ -22,7 +22,7 @@ I inspected all three before designing anything. Two of them are not quite what 
 The design response is architectural, not moralising:
 
 - Pantone support ships as a **local reference pack** you load yourself — a file you point the app at, resolved at runtime into your local database. Nothing Pantone-derived lives in the repo, in git, or in any deployment.
-- The app's own Pantone-nearest-match runs off the **spectral data from `colour-datasets`** plus community-compiled approximations, and is labelled *approximate — not colour-certified*.
+- The app's own Pantone-nearest-match runs off the **spectral data from `color-datasets`** plus community-compiled approximations, and is labelled *approximate — not color-certified*.
 - If you ever need certified print-exact matching for a production garment run, that is a Pantone Connect licence. A business decision, not an engineering blocker.
 
 You get the workflow. The repo stays clean.
@@ -34,24 +34,24 @@ You get the workflow. The repo stays clean.
 | Layer | Choice | Why |
 |---|---|---|
 | App | **Next.js 15 (App Router) + React 19 + TypeScript** | Vercel-native, server routes for the Ollama proxy and ingestion. |
-| Colour maths (runtime) | **culori** | Tree-shakeable, OKLCH-native, implements CSS Color 4 gamut mapping. Small enough for the bundle budget. |
-| Colour science (build time) | **Python `colour-science` + `colour-datasets`** | Spectral work, CMYK profiles, Pantone approximation. Runs **offline as a build step** that emits static JSON — full scientific rigour, zero Python at runtime. |
-| Storage | **Supabase Postgres** + `pgvector` | Relational for the version DAG, JSONB for snapshots, vectors for semantic colour search. |
+| Color maths (runtime) | **culori** | Tree-shakeable, OKLCH-native, implements CSS Color 4 gamut mapping. Small enough for the bundle budget. |
+| Color science (build time) | **Python `color-science` + `color-datasets`** | Spectral work, CMYK profiles, Pantone approximation. Runs **offline as a build step** that emits static JSON — full scientific rigour, zero Python at runtime. |
+| Storage | **Supabase Postgres** + `pgvector` | Relational for the version DAG, JSONB for snapshots, vectors for semantic color search. |
 | Auth | **None (v1)** | Single user. Adding auth later is additive; building it now is pure overhead. |
 | AI | **Local Ollama**, provider-swappable | $0. Verified running on `:11434`. |
 | Canvas | **DOM + CSS transforms**, virtualised | See §5 — this is a deliberate and slightly contrarian call. |
 
 ### Why the science layer is a build step, not a service
 
-`colour-datasets` is Python; the app is TypeScript. Rather than run Python on Vercel or port spectral maths to JS, a script ingests the Zenodo datasets once and emits a compact lookup table. Rigour where it matters, no runtime dependency, no cold starts.
+`color-datasets` is Python; the app is TypeScript. Rather than run Python on Vercel or port spectral maths to JS, a script ingests the Zenodo datasets once and emits a compact lookup table. Rigour where it matters, no runtime dependency, no cold starts.
 
 ---
 
-## 3. The colour model
+## 3. The color model
 
 **Canonical storage is OKLCH. Everything else is a projection.**
 
-Hex is lossy above sRGB. Storing hex as the source of truth silently destroys wide-gamut colour the first time anything round-trips. So `Oklch` is the only stored form; hex, sRGB, P3, CMYK and Pantone are all derived on demand.
+Hex is lossy above sRGB. Storing hex as the source of truth silently destroys wide-gamut color the first time anything round-trips. So `Oklch` is the only stored form; hex, sRGB, P3, CMYK and Pantone are all derived on demand.
 
 ### Scale generation — the part that took the most thought
 
@@ -70,7 +70,7 @@ yellow #f5d90a  → step 0 chroma 0.0619   ← 4.9× more
 
 That asymmetry is real — sRGB holds far more yellow than blue near white — and a hue-agnostic curve cannot express it. Riding the gamut boundary proportionally makes the ramp hue-adaptive for free, and means a generated step never needs rescuing by the gamut mapper afterwards.
 
-**Anchors are absolute.** A pinned step returns your exact colour, byte for byte. That is the "algorithm-with-override" contract, and it is enforced by test.
+**Anchors are absolute.** A pinned step returns your exact color, byte for byte. That is the "algorithm-with-override" contract, and it is enforced by test.
 
 **Hue torsion** is centred on the primary anchor, so rotating the ends never creates a kink at the pinned step.
 
@@ -99,7 +99,7 @@ palette_branch  (id, palette_id, name, head_version_id)
 - Merging finds the **lowest common ancestor** of two heads, then does a three-way merge per token. A conflict is: both branches changed the same token, differently, relative to the base.
 - **Snapshots, not deltas.** Palettes are kilobytes. Delta storage is premature optimisation; snapshots make history reads trivial and time-travel free.
 
-**Where this beats git.** A text VCS can only tell you `#3b82f6` became `#4b7fe8`. A colour-aware diff decomposes the change into ΔL / ΔC / ΔH plus a perceptual ΔE-OK magnitude, so the diff reads *"3.2 ΔE — almost entirely a hue shift toward warm"*. Conflict resolution shows base / ours / theirs as swatches with a blend slider, instead of `<<<<<<<` markers. This is the feature most worth building well; nothing else on the market does it.
+**Where this beats git.** A text VCS can only tell you `#3b82f6` became `#4b7fe8`. A color-aware diff decomposes the change into ΔL / ΔC / ΔH plus a perceptual ΔE-OK magnitude, so the diff reads *"3.2 ΔE — almost entirely a hue shift toward warm"*. Conflict resolution shows base / ours / theirs as swatches with a blend slider, instead of `<<<<<<<` markers. This is the feature most worth building well; nothing else on the market does it.
 
 ---
 
@@ -109,9 +109,9 @@ The obvious choices are tldraw (heavy, licence key for commercial use), Konva, o
 
 **I recommend DOM + CSS transforms with virtualised rendering, and upgrading to WebGL only if we hit a wall.**
 
-The reason is specific to a *colour* tool: **CSS `oklch()` renders in Display P3 natively on capable screens, while a 2D canvas is sRGB unless you explicitly configure `colorSpace: 'display-p3'`.** For a tool whose entire premise is colour fidelity, rendering through the DOM is *more accurate*, not merely simpler. It also keeps motion on `transform`/`opacity` — compositor-friendly by construction.
+The reason is specific to a *color* tool: **CSS `oklch()` renders in Display P3 natively on capable screens, while a 2D canvas is sRGB unless you explicitly configure `colorSpace: 'display-p3'`.** For a tool whose entire premise is color fidelity, rendering through the DOM is *more accurate*, not merely simpler. It also keeps motion on `transform`/`opacity` — compositor-friendly by construction.
 
-If the canvas ever exceeds ~2,000 simultaneous nodes, we revisit with PixiJS and explicit colour-space management. Not before.
+If the canvas ever exceeds ~2,000 simultaneous nodes, we revisit with PixiJS and explicit color-space management. Not before.
 
 ---
 
@@ -122,11 +122,11 @@ kg_node (id, type, label, provenance, confidence, embedding vector)
 kg_edge (id, source_id, target_id, relation, weight, provenance, citation)
 ```
 
-Node types: `Colour`, `Emotion`, `Culture`, `ArtMovement`, `Material`, `Sensory`, `UseCase`.
+Node types: `Color`, `Emotion`, `Culture`, `ArtMovement`, `Material`, `Sensory`, `UseCase`.
 
 Color-Pedia's 100K rows explode into nodes and edges on ingest. Emotion/Mood/Symbolism/Personality/UseCase/Keywords each become typed edges — that is roughly 600K edges from the seed alone.
 
-Explanations are **read from data, not generated** — your call, and the right one. Zero AI cost, zero hallucination, instant. Embeddings (via Ollama's `nomic-embed-text`, local and free) are computed **once at ingest**, enabling "find colours that feel like this" as a vector query with no model call at read time.
+Explanations are **read from data, not generated** — your call, and the right one. Zero AI cost, zero hallucination, instant. Embeddings (via Ollama's `nomic-embed-text`, local and free) are computed **once at ingest**, enabling "find colors that feel like this" as a vector query with no model call at read time.
 
 ---
 
@@ -165,7 +165,7 @@ The `tokens.ts` exporters were generated by `local-qwen3-coder:30b` through dele
 
 ### Known rough edge
 
-Anchoring a very light colour (like `#f5d90a`, L=88) at step 5 compresses steps 0–4 into a narrow lightness band. The maths is correct and the anchor is honoured exactly, but the ergonomic answer is to anchor light hues at step 2–3. **Fix:** suggest an anchor step automatically from the anchor's lightness.
+Anchoring a very light color (like `#f5d90a`, L=88) at step 5 compresses steps 0–4 into a narrow lightness band. The maths is correct and the anchor is honoured exactly, but the ergonomic answer is to anchor light hues at step 2–3. **Fix:** suggest an anchor step automatically from the anchor's lightness.
 
 ---
 
@@ -187,7 +187,7 @@ Infinite DOM canvas, spatial arrangement, mixing, comparison.
 Ollama prompt→palette, vision model for image→palette, explanations from the graph.
 
 **Phase 6 — Print**
-`colour-datasets` build pipeline, CMYK, Pantone approximation via local reference pack.
+`color-datasets` build pipeline, CMYK, Pantone approximation via local reference pack.
 
 ---
 
@@ -333,7 +333,7 @@ session.
 as a **flat, full-text-searchable table**, not the generic `kg_node`/`kg_edge`
 graph the original proposal sketched — nothing in the app yet needs
 cross-entity traversal, and a flat table with a Postgres `tsvector` delivers
-the actual user value ("type a word, find matching colours with their tags")
+the actual user value ("type a word, find matching colors with their tags")
 with a fraction of the schema and query complexity. Graduate to the graph
 model if a real feature (RAG grounding, a graph browser) ever needs it.
 
@@ -359,16 +359,16 @@ and zero gaps across three separate runs.
 **A genuine data-quality bug in the source, found by using the app, not by
 inspecting the dataset:** browsing the library surfaced a row named `Def2ca`
 — its own hex value typo'd into the name field — whose description claims
-"pale pink" for a colour that's actually pale green (`#def2ca`, OKLCH hue
+"pale pink" for a color that's actually pale green (`#def2ca`, OKLCH hue
 129°). This is exactly what the `provenance: 'seed'` / "unverified seed data"
 badge exists for, now proven true on real data rather than staying a
 theoretical caveat.
 
 **Verified live in the browser:** search for "autumn" returns exactly the
-colours you'd hope for (chestnuts, siennas, colours literally tagged "Warmth,
+colors you'd hope for (chestnuts, siennas, colors literally tagged "Warmth,
 Comfort, Nostalgia") — real semantic value, not just plumbing. The detail
-page reuses `auditContrast` from the colour engine directly, so a seed-data
-colour gets the exact same WCAG/APCA readout as anything generated in Scale
+page reuses `auditContrast` from the color engine directly, so a seed-data
+color gets the exact same WCAG/APCA readout as anything generated in Scale
 Lab — one engine, no duplicated logic. A 3-word query returning zero results
 is expected `websearch_to_tsquery` AND-semantics (every stem must co-occur in
 one row), not a bug — flagged as a future tuning decision (strict-but-precise

@@ -4,7 +4,7 @@
  * tab is its own typographic world; only the persistent shell (dock, nav,
  * account status) stays constant across them. Unbounded for headers,
  * Plus Jakarta Sans for UI text (both loaded page-locally — see
- * app/builder/page.tsx), Geist Mono for every colour code and contrast
+ * app/builder/page.tsx), Geist Mono for every color code and contrast
  * score (reused from the root's --font-dock-mono, not reloaded here).
  */
 

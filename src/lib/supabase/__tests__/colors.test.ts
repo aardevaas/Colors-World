@@ -84,7 +84,7 @@ describe('searchColors', () => {
     expect(results.map((r) => r.name)).toEqual(['Deep Maroon']);
   });
 
-  test('an empty query returns colours instead of nothing', async () => {
+  test('an empty query returns colors instead of nothing', async () => {
     const client = createFakeSupabaseClient();
     await insertColorsBatch([GOLDEN, MAROON], client);
     const results = await searchColors('', 10, client);

@@ -21,7 +21,7 @@ const LIGHTNESS_LED = deriveRoles([
   color('#F2F2F5'),
 ]);
 
-/** Two roles set to nearly the same colour: a palette problem that must not
+/** Two roles set to nearly the same color: a palette problem that must not
  *  be reported as a vision one. */
 const TOO_CLOSE = deriveRoles([
   color('#0B0B0C'),
@@ -73,7 +73,7 @@ describe('buildCvdReport — shape', () => {
 });
 
 describe('buildCvdReport — what counts as a finding', () => {
-  it('does not blame colour blindness for a pair that was never distinct', () => {
+  it('does not blame color blindness for a pair that was never distinct', () => {
     // A pair that was already indistinguishable retains its non-difference
     // perfectly under every simulation. Reporting that four times over as a
     // vision problem would bury the real ones and blame the wrong cause.
@@ -108,7 +108,7 @@ describe('buildCvdReport — what counts as a finding', () => {
   });
 
   it('calls a lightness-separated palette safe', () => {
-    // The finding worth being able to state: separate by lightness and colour
+    // The finding worth being able to state: separate by lightness and color
     // blindness stops being a threat. A tool that flagged something here
     // would be crying wolf.
     expect(buildCvdReport(LIGHTNESS_LED).safe).toBe(true);
@@ -161,7 +161,7 @@ describe('buildCvdReport — ordering', () => {
 });
 
 describe('buildCvdReport — degenerate palettes', () => {
-  it('survives a palette where every role is the same colour', () => {
+  it('survives a palette where every role is the same color', () => {
     const flat = deriveRoles([color('#808080')], {
       background: color('#808080'),
       surface: color('#808080'),

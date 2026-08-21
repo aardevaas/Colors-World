@@ -29,7 +29,7 @@ const CHROME = join(
   'chrome-headless-shell-mac-arm64/chrome-headless-shell'
 );
 
-/** A few real colours so /builder renders actual scales instead of its empty state. */
+/** A few real colors so /builder renders actual scales instead of its empty state. */
 const DOCK_SEED = {
   items: [
     { hex: '#5A3F73', oklch: { l: 0.41, c: 0.077, h: 305.6 }, addedAt: 1 },

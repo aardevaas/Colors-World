@@ -20,14 +20,14 @@ import styles from './palette-composer.module.css';
  * Compose — where a palette gets made.
  *
  * This is the half of the product that never existed. Everything downstream
- * assumed you had already arrived with colours; nothing anywhere turned one
- * colour into a set, which is the loop every competitor opens with and the
+ * assumed you had already arrived with colors; nothing anywhere turned one
+ * color into a set, which is the loop every competitor opens with and the
  * reason a collector named the Harmonic Dock had no harmony in it.
  *
  * The interaction is the one Coolors proved: roll, lock what you like, roll
  * again. What differs is underneath — the roll is constrained to seeds worth
  * building from, and the harmony is reconciled against the gamut so a locked
- * colour never shifts under you.
+ * color never shifts under you.
  *
  * The draft is deliberately *not* the System. Rolling is exploration and
  * should not rewrite the URL, push history, or repaint the other four tabs on
@@ -76,8 +76,8 @@ export function PaletteComposer() {
       const generated = enforce
         ? solveInto(nextSeed, rule, strategy, count, setUnmet)
         : rollInto(nextSeed, rule, strategy, count, setUnmet);
-      // Locked colours hold their slot; the rest are replaced. Matching by
-      // position rather than by colour is what makes a lock feel like a lock —
+      // Locked colors hold their slot; the rest are replaced. Matching by
+      // position rather than by color is what makes a lock feel like a lock —
       // the swatch under your cursor does not move when you roll.
       const merged = generated.colors.map((color, index) => {
         const held = previous[index];
@@ -191,7 +191,7 @@ export function PaletteComposer() {
         </label>
 
         <label className={styles.field}>
-          <span className={styles.fieldLabel}>Colours</span>
+          <span className={styles.fieldLabel}>Colors</span>
           <select
             className={styles.select}
             value={count}
@@ -374,7 +374,7 @@ function samePalette(
 }
 
 /**
- * Merging a locked colour back in can collide with one the new harmony
+ * Merging a locked color back in can collide with one the new harmony
  * produced. A repeated hex would give two slots the same identity, and the
  * second would be unlockable because the key already exists.
  */
