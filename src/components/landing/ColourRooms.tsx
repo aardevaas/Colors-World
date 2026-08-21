@@ -40,10 +40,14 @@ import styles from './colour-rooms.module.css';
  * Their 42 pairs are hand-picked against physical swatches, which is available
  * to you when your colours shipped in 2011 and never change. Ours are generated
  * from a seed on every visit, so no one can check them. They are solved instead
- * — see `room-theme.ts` — and the achieved ratio is printed on the band. A
- * colour tool that showed an unverified pair on its own front page would be
- * arguing against itself; showing the number is cheaper and more honest than
- * asking to be trusted.
+ * — see `room-theme.ts` — against a 4.5:1 floor that holds for every hue and
+ * every hover state.
+ *
+ * The bands used to print the ratio each pair achieved, as the page showing its
+ * working. It was cut: a bare "4.57:1" beside a room name is a number a visitor
+ * has no way to read, and the guarantee is worth more as something that is
+ * simply true than as something announced. The solver and its tests are
+ * unchanged.
  */
 
 interface ColourRoomsProps {
@@ -92,6 +96,21 @@ const ROOM_PATTERN: Record<TabId, string | undefined> = {
   studio: styles.patGrain,
 };
 
+/**
+ * The room count as a word.
+ *
+ * The heading reads better spelled out, and the count still comes from the
+ * manifest rather than the copy. Falls back to the digits for any number the
+ * list does not cover — a seventh room should read oddly for a moment, not
+ * crash or silently say six.
+ */
+function spellCount(count: number): string {
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+  const word = words[count];
+  if (word === undefined) return String(count);
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
 export function ColourRooms({ rooms }: ColourRoomsProps) {
   const listRef = useRef<HTMLOListElement>(null);
 
@@ -111,11 +130,15 @@ export function ColourRooms({ rooms }: ColourRoomsProps) {
   return (
     <section className={styles.section} aria-labelledby="rooms-heading">
       <header className={styles.header}>
-        <p className={styles.eyebrow}>The rooms</p>
-        {/* Counted from the manifest rather than written down: this said
-            "Five tools" for a while after a sixth room shipped. */}
+        {/* Two lines, set as two blocks rather than one string with a <br>, so
+            the break is a layout decision the stylesheet can undo at narrow
+            widths rather than a character baked into the copy.
+
+            The count is still read from the manifest rather than written down —
+            this said "Five tools" for a while after a sixth room shipped. */}
         <h2 className={styles.heading} id="rooms-heading">
-          {TABS.length} rooms. One system running through all of them.
+          <span className={styles.headingLine}>{spellCount(TABS.length)} rooms.</span>
+          <span className={styles.headingLine}>One system</span>
         </h2>
       </header>
 
@@ -192,13 +215,6 @@ export function ColourRooms({ rooms }: ColourRoomsProps) {
                 </div>
 
                 <p className={styles.line}>{ROOM_LINE[tab.id]}</p>
-
-                <span className={styles.receipt}>
-                  {/* The page showing its working. This pair was solved to
-                      clear 4.5:1 and this is what it actually reached. */}
-                  <span className={styles.ratio}>{theme.ratio.toFixed(2)}:1</span>
-                  <span className={styles.receiptNote}>solved, not chosen</span>
-                </span>
 
                 <span className={styles.arrow} aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" focusable="false">

@@ -36,25 +36,22 @@
   text-align: center;
 }
 
-.eyebrow {
-  margin: 0 0 var(--space-tight);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: oklch(72% 0.02 265);
-}
-
 .heading {
   margin: 0;
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-display), system-ui, sans-serif;
   font-size: clamp(1.75rem, 3.6vw, 3rem);
   font-weight: 600;
-  line-height: 1.04;
+  /* Two short lines set as a pair want tighter leading than one wrapping
+     sentence did. */
+  line-height: 1;
   letter-spacing: -0.03em;
-  text-wrap: balance;
   color: oklch(98% 0.002 265);
+}
+
+.headingLine {
+  display: block;
 }
 
 /* ---------------------------------------------------------------- the bands */
@@ -98,8 +95,8 @@
   /* Numeral and arrow are fixed rails; the type takes what is left. */
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas:
-    'index name  arrow'
-    'index line  arrow';
+    'index name arrow'
+    'index line arrow';
   align-items: end;
   column-gap: clamp(1rem, 3vw, 3rem);
   /* Width-relative, not vh. The rhythm being spaced here is horizontal type,
@@ -426,14 +423,16 @@
    * clipped rather than visibly broken only because the page hides horizontal
    * overflow, which is the worst way for this to fail.
    *
-   * 13.2cqw is that 7.19em ratio (100/7.19 = 13.9) with headroom, so the
-   * widest label fits its column at every width by construction rather than by
-   * a coefficient tuned against today's six names.
+   * 13.2cqw was that 7.19em ratio (100/7.19 = 13.9) with headroom, so the widest
+   * label fit its column at every width by construction rather than by a
+   * coefficient tuned against today's six names.
    *
-   * Ceiling at 264px — GF Smith's own display clamp, which is far past
-   * comfortable and is the reason their pages read as posters.
+   * Every term is now 75% of that on request — 9.9cqw against a 198px ceiling,
+   * down from 13.2cqw and 264px. Scaling the whole clamp rather than only the
+   * cap keeps the fit guarantee intact at every width instead of only the
+   * widest ones.
    */
-  font-size: clamp(1.75rem, 13.2cqw, 16.5rem);
+  font-size: clamp(1.3125rem, 9.9cqw, 12.375rem);
   font-weight: 800;
   /* Below 1. At this size the leading is what makes it architecture rather
      than a headline. */
@@ -548,29 +547,6 @@
   color: var(--ink);
 }
 
-/* --------------------------------------------------------------- the receipt */
-
-/* Hidden until there is room for it — see the width query below, which is
-   also where it gets a row of its own. */
-.receipt {
-  display: none;
-  gap: 0.5rem;
-  align-items: baseline;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  color: var(--ink-quiet);
-  white-space: nowrap;
-}
-
-.ratio {
-  font-weight: 500;
-}
-
-.receiptNote {
-  opacity: 0.8;
-}
-
 /* ----------------------------------------------------------------- the arrow */
 
 .arrow {
@@ -670,12 +646,11 @@
     calc(var(--reveal-delay, 0ms) + var(--content-delay, 0ms) + 260ms) both;
 }
 
-/* The numeral, the name, the line, the receipt, the arrow — in reading order. */
+/* The numeral, the name, the line, the arrow — in reading order. */
 .isRevealing .link > *:nth-child(1) { --content-delay: 0ms; }
 .isRevealing .link > *:nth-child(2) { --content-delay: 90ms; }
 .isRevealing .link > *:nth-child(3) { --content-delay: 170ms; }
 .isRevealing .link > *:nth-child(4) { --content-delay: 240ms; }
-.isRevealing .link > *:nth-child(5) { --content-delay: 300ms; }
 
 @keyframes content-pop {
   to {
@@ -685,20 +660,6 @@
 }
 
 /* ------------------------------------------------------------------ at width */
-
-@media (min-width: 60rem) {
-  .link {
-    grid-template-areas:
-      'index name    arrow'
-      'index line    arrow'
-      'index receipt arrow';
-  }
-
-  .receipt {
-    grid-area: receipt;
-    display: inline-flex;
-  }
-}
 
 /*
  * Below this the band cannot be a poster, and the arrow is the thing to give

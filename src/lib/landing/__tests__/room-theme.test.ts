@@ -124,7 +124,9 @@ describe('roomTheme', () => {
   it('speaks the quiet tone more quietly than the loud one', () => {
     for (const bg of EVERY_HUE) {
       const theme = roomTheme(bg);
-      expect(contrastRatio(theme.fgQuiet, bg)).toBeLessThanOrEqual(theme.ratio);
+      expect(contrastRatio(theme.fgQuiet, bg)).toBeLessThanOrEqual(
+        contrastRatio(theme.fg, bg)
+      );
     }
   });
 
@@ -133,13 +135,6 @@ describe('roomTheme', () => {
       const theme = roomTheme(bg);
       expect(isInGamut(theme.bg, 'srgb')).toBe(true);
       expect(isInGamut(theme.bgHover, 'srgb')).toBe(true);
-    }
-  });
-
-  it('reports the ratio it actually achieved', () => {
-    for (const bg of EVERY_HUE.slice(0, 36)) {
-      const theme = roomTheme(bg);
-      expect(theme.ratio).toBeCloseTo(contrastRatio(theme.fg, theme.bg), 10);
     }
   });
 

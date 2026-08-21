@@ -23,6 +23,13 @@
  * of hand-picked pairs is precisely that the rest state was checked and the
  * hover state was not.
  *
+ * The theme deliberately does NOT report the ratio it achieved. It did, so the
+ * bands could print it, and that was cut — a bare "4.57:1" beside a room name
+ * is a number a visitor has no way to read. The guarantee is worth more as
+ * something that is simply true than as something announced, and the tests
+ * below assert it directly against `contrastRatio` rather than trusting a
+ * number this file reports about itself.
+ *
  * ## Why the foreground is tinted rather than white
  *
  * `bestTextColor` answers the everyday question, black text or white text. That
@@ -105,9 +112,6 @@ export interface RoomTheme {
   readonly bgHover: Oklch;
   /** Re-solved against `bgHover`, not carried over from rest. */
   readonly fgHover: Oklch;
-  /** What `fg` actually achieved against `bg`. Surfaced so the page can show
-   *  its own working rather than asking to be trusted. */
-  readonly ratio: number;
 }
 
 /** Solves the full pair for one room colour. */
@@ -130,7 +134,6 @@ export function roomTheme(bg: Oklch): RoomTheme {
     fgQuiet: solveForeground(bg, QUIET_MIN_RATIO, ceilings, side),
     bgHover,
     fgHover: solveForeground(bgHover, TEXT_MIN_RATIO, ceilings, side),
-    ratio: contrastRatio(fg, bg),
   };
 }
 
@@ -240,8 +243,10 @@ function shiftAwayFrom(color: Oklch, from: Oklch, amount: number): Oklch {
  * Whichever extreme reads better, returned even when neither clears the target.
  *
  * A caller handed an impossible background gets the most legible answer that
- * exists rather than an exception — and `RoomTheme.ratio` reports what was
- * actually achieved, so the shortfall is visible rather than swallowed.
+ * exists rather than an exception. Unreachable for the room palette, whose
+ * grounds all sit at a mid lightness where an achromatic extreme clears
+ * comfortably; a caller outside that range can compare with `contrastRatio`
+ * itself if it needs to know.
  */
 function achromaticFallback(bg: Oklch): Oklch {
   const white: Oklch = { l: 1, c: 0, h: bg.h };
