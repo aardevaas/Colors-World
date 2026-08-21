@@ -1,0 +1,33 @@
+/*
+ * Per-letter glow. `--glow` is written from a rAF loop in GlowTitle and drives
+ * everything here, so the whole effect is one custom property per glyph.
+ */
+
+.word {
+  /* Keeps a word intact when the line wraps — glyph spans alone would let the
+     browser break mid-word. */
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.glyph {
+  display: inline-block;
+  /* Two shadows: a tight bright core and a wide coloured bloom. One alone
+     reads as a blur rather than as light coming off the letter. */
+  text-shadow:
+    0 0 calc(var(--glow, 0.16) * 14px) oklch(100% 0 0 / calc(var(--glow, 0.16) * 0.85)),
+    0 0 calc(var(--glow, 0.16) * 54px) oklch(78% 0.16 265 / calc(var(--glow, 0.16) * 0.6));
+  /* Lifts very slightly as it lights, which is what makes it feel touched
+     rather than merely brighter. */
+  transform: translateY(calc(var(--glow, 0.16) * -1.5px));
+  /* No transition: the loop already eases by moving a small amount per frame,
+     and a transition on top of a per-frame write only adds lag. */
+  will-change: text-shadow;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glyph {
+    text-shadow: 0 0 18px oklch(100% 0 0 / 0.25);
+    transform: none;
+  }
+}

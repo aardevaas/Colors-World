@@ -68,12 +68,19 @@ export function buildDrops(count: number = MAX_DROPS): readonly Drop[] {
       // Spread across the full width with jitter, rather than evenly spaced —
       // even spacing at these counts reads immediately as a row of dots.
       left: (hash(i, 1) * 96 + 2) % 100,
-      duration: 7.5 + depth * 9,
-      delay: -hash(i, 2) * 16,
+      // A wide spread is what stops the field reading as a loop. Every drop
+      // repeats on its own cycle forever, so if the durations sit close
+      // together they resynchronise and you see the same rain over and over.
+      // 6-26s means neighbouring drops drift apart and effectively never
+      // realign within a visit.
+      duration: 6 + depth * 12 + hash(i, 6) * 8,
+      // Spread across a window longer than the longest fall, so the field is
+      // already scattered through its cycle on the first frame.
+      delay: -hash(i, 2) * 30,
       size,
       roomIndex: Math.floor(hash(i, 3) * ROOM_IDS.length) % ROOM_IDS.length,
       depth,
-      sway: (hash(i, 4) - 0.5) * 26,
+      sway: (hash(i, 4) - 0.5) * 44,
     });
   }
 
@@ -118,8 +125,10 @@ export const RESTING_INTENSITY = 0.34;
 
 export function rainIntensityAt(progress: number): number {
   const p = Number.isFinite(progress) ? Math.max(0, progress) : 0;
-  // Full by the time two viewports have passed, which is roughly where the
-  // first cards are painting themselves.
-  const climb = Math.min(1, p / 2);
+  // Climbs over four viewports rather than two. The earlier ramp reached full
+  // rain almost as soon as the hero had gone, so the whole transition was over
+  // before the reader had finished making it — the rain should still be
+  // building well into the descent.
+  const climb = Math.min(1, p / 4);
   return Math.min(1, RESTING_INTENSITY + (1 - RESTING_INTENSITY) * climb * climb);
 }

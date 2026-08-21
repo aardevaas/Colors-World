@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { GitHubIcon } from '@/components/icons/GitHubIcon';
+import { GlowTitle } from './GlowTitle';
 import { LiquidButton } from './LiquidButton';
 import { PrismButton } from './PrismButton';
 import styles from './landing.module.css';
 
 interface HeroHudProps {
-  readonly motionEnabled: boolean;
-  readonly onToggleMotion: () => void;
   /** Carries the scroll-driven fade — see LandingExperience for why it's a
    *  CSS variable on this node rather than React state. */
   readonly ref?: React.Ref<HTMLDivElement>;
@@ -35,35 +34,10 @@ function handleTiltPointerLeave(event: React.PointerEvent<HTMLElement>) {
   event.currentTarget.style.setProperty('--tilt-y', '0deg');
 }
 
-export function HeroHud({
-  motionEnabled,
-  onToggleMotion,
-  ref,
-}: HeroHudProps) {
+export function HeroHud({ ref }: HeroHudProps) {
   return (
     <>
       <div className={styles.hud} ref={ref}>
-        <header className={styles.hudTop}>
-          <span className={styles.wordmark}>Colors World</span>
-          <div className={styles.hudControls}>
-            <button
-              type="button"
-              onClick={onToggleMotion}
-              className={styles.hudToggle}
-              aria-pressed={motionEnabled}
-            >
-              motion: {motionEnabled ? 'on' : 'off'}
-            </button>
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.hudLink}
-            >
-              GitHub
-            </a>
-          </div>
-        </header>
 
         {/* The skip link in app/page.tsx targets this. It has to carry an id
             *and* be focusable: `#main` did not exist anywhere in the document
@@ -77,10 +51,11 @@ export function HeroHud({
         <main id="main" tabIndex={-1} className={styles.copy}>
           <p className={styles.eyebrow}>Open-source · Free forever</p>
           <h1 className={styles.headline}>
-            Every colour.
+            <GlowTitle>Every colour.</GlowTitle>
             <br />
-            All <span className={styles.headlineAccent}>16.7 million</span> of
-            them.
+            <GlowTitle>All </GlowTitle>
+            <span className={styles.headlineAccent}>16.7 million</span>
+            <GlowTitle> of them.</GlowTitle>
           </h1>
           <p className={styles.sub}>
             The free, open-source studio for colour, palettes, branding, and

@@ -130,21 +130,41 @@ describe('rainIntensityAt — the scroll ramp', () => {
 
   it('never rains less as you scroll further', () => {
     let previous = -1;
-    for (let p = 0; p <= 4; p += 0.1) {
+    for (let p = 0; p <= 8; p += 0.1) {
       const now = rainIntensityAt(p);
       expect(now).toBeGreaterThanOrEqual(previous);
       previous = now;
     }
   });
 
-  it('reaches full by the time the rooms are painting', () => {
-    expect(rainIntensityAt(2)).toBeCloseTo(1, 5);
-    expect(visibleDrops(rainIntensityAt(2))).toBe(MAX_DROPS);
+  it('is still building a viewport in, rather than already done', () => {
+    // The complaint the longer ramp answers: the rain used to arrive fully
+    // formed almost as soon as the hero left.
+    expect(rainIntensityAt(1)).toBeLessThan(0.6);
+  });
+
+  it('reaches full by the time the rooms are well under way', () => {
+    expect(rainIntensityAt(4)).toBeCloseTo(1, 5);
+    expect(visibleDrops(rainIntensityAt(4))).toBe(MAX_DROPS);
   });
 
   it('clamps rather than overshooting', () => {
     expect(rainIntensityAt(50)).toBe(1);
     expect(rainIntensityAt(-3)).toBeCloseTo(RESTING_INTENSITY, 5);
     expect(rainIntensityAt(Number.NaN)).toBeCloseTo(RESTING_INTENSITY, 5);
+  });
+});
+
+describe('buildDrops — the field must not read as a loop', () => {
+  it('spreads fall durations widely', () => {
+    // Drops repeat forever on their own cycles. Bunched durations resynchronise
+    // and you see the same rain again; a wide spread never realigns in a visit.
+    const durations = buildDrops().map((d) => d.duration);
+    expect(Math.max(...durations) - Math.min(...durations)).toBeGreaterThan(12);
+  });
+
+  it('starts every drop at a different point in its fall', () => {
+    const delays = buildDrops().map((d) => Math.round(d.delay * 10) / 10);
+    expect(new Set(delays).size).toBeGreaterThan(MAX_DROPS * 0.85);
   });
 });

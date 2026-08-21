@@ -131,11 +131,10 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
             the page shows the odd drop rather than weather. */}
         <PaintRain count={rainCount} rooms={rooms} reducedMotion={!motionEnabled} />
         <div className={styles.pinned}>
-          <HeroHud
-            ref={hudRef}
-            motionEnabled={motionEnabled}
-            onToggleMotion={() => setMotionEnabled((previous) => !previous)}
-          />
+          {/* No props but the ref. The motion toggle lived in the top bar that
+              has been removed, so motion now follows the OS preference alone —
+              which is what `motionEnabled` is initialised from. */}
+          <HeroHud ref={hudRef} />
         </div>
       </section>
       <FeatureCards rooms={rooms} />

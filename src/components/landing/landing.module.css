@@ -65,60 +65,9 @@
   inset: 0;
   z-index: 2;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr auto;
   /* The field behind stays interactive; only real controls catch the cursor. */
   pointer-events: none;
-}
-
-.hudTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-base);
-  padding: var(--space-wide) var(--space-vast);
-}
-
-.wordmark {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.8125rem;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: oklch(97% 0.004 265 / 0.9);
-}
-
-.hudControls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-tight);
-  pointer-events: auto;
-}
-
-.hudToggle,
-.hudLink {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
-  color: oklch(97% 0.004 265 / 0.72);
-  text-decoration: none;
-  cursor: pointer;
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid oklch(100% 0 0 / 0.12);
-  background: oklch(100% 0 0 / 0.04);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition:
-    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    color 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    background 160ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.hudToggle:hover,
-.hudLink:hover {
-  color: oklch(99% 0 0);
-  border-color: oklch(100% 0 0 / 0.28);
-  background: oklch(100% 0 0 / 0.08);
 }
 
 /* ---------- centre copy ---------- */
@@ -144,8 +93,8 @@
 .eyebrow {
   margin: 0;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.22em;
+  font-size: 0.875rem;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: oklch(80% 0.015 265 / 0.85);
 }
@@ -154,9 +103,11 @@
   margin: 0;
   font-family: var(--font-display), system-ui, sans-serif;
   font-weight: 800;
-  /* Tuned so "All 16.7 million of them." holds one line at laptop widths —
-     any larger and it breaks into three ragged lines and loses its shape. */
-  font-size: clamp(2.1rem, 0.9rem + 3.9vw, 5.25rem);
+  /* Bigger now that the top bar is gone and the hero has the whole viewport,
+     but still bounded by the same constraint as before: "All 16.7 million of
+     them." has to hold ONE line. At 5.2vw it broke into three ragged lines and
+     lost its shape, which is the exact failure the previous note warned about. */
+  font-size: clamp(2.2rem, 0.9rem + 4.2vw, 6rem);
   line-height: 1.02;
   letter-spacing: -0.03em;
   text-wrap: balance;
@@ -191,7 +142,7 @@
   margin: 0;
   max-width: 36rem;
   font-family: var(--font-body), system-ui, sans-serif;
-  font-size: clamp(0.95rem, 0.88rem + 0.35vw, 1.15rem);
+  font-size: clamp(1.05rem, 0.95rem + 0.55vw, 1.45rem);
   line-height: 1.55;
   color: oklch(82% 0.008 265 / 0.82);
 }
@@ -362,9 +313,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-base);
+  /* The plate above and the scroll cue below both had more air around them
+     than these two buttons had between them, which made the pair read as one
+     wide object rather than as two choices. */
+  gap: clamp(1.25rem, 2.5vw, 2.75rem);
   flex-wrap: wrap;
-  margin-top: var(--space-tight);
+  margin-top: clamp(2.5rem, 6vh, 5rem);
   /* Goes to `none` once faded, so there's never an invisible button sitting
      over the globe catching clicks meant for a particle. */
   pointer-events: var(--copy-pointer, auto);
