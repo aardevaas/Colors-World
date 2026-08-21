@@ -1,12 +1,15 @@
 'use client';
 
 import { GitHubIcon } from '@/components/icons/GitHubIcon';
+import type { RoomColor } from '@/lib/landing/room-palette';
 import { GlowTitle } from './GlowTitle';
 import { LiquidButton } from './LiquidButton';
 import { PrismButton } from './PrismButton';
 import styles from './landing.module.css';
 
 interface HeroHudProps {
+  /** The generated six — handed to the liquid pill for the blobs inside it. */
+  readonly rooms: readonly RoomColor[];
   /** Carries the scroll-driven fade — see LandingExperience for why it's a
    *  CSS variable on this node rather than React state. */
   readonly ref?: React.Ref<HTMLDivElement>;
@@ -36,7 +39,7 @@ function handleTiltPointerLeave(event: React.PointerEvent<HTMLElement>) {
   event.currentTarget.style.setProperty('--tilt-y', '0deg');
 }
 
-export function HeroHud({ ref }: HeroHudProps) {
+export function HeroHud({ ref, rooms }: HeroHudProps) {
   return (
     <>
       <div className={styles.hud} ref={ref}>
@@ -127,7 +130,7 @@ export function HeroHud({ ref }: HeroHudProps) {
                 had to invert it to survive a near-white fill. */}
             <PrismButton href="/library">Explore Every Color</PrismButton>
             {/* The liquid pill, after "Button 01.mp4". */}
-            <LiquidButton href={REPO_URL} external>
+            <LiquidButton href={REPO_URL} external rooms={rooms}>
               <GitHubIcon />
               Star on GitHub
             </LiquidButton>

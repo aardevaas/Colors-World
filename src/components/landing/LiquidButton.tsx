@@ -1,6 +1,8 @@
 'use client';
 
 import { useRef, type ReactNode } from 'react';
+import type { RoomColor } from '@/lib/landing/room-palette';
+import { LiquidField } from './LiquidField';
 import { usePointerTilt } from '@/lib/landing/use-pointer-tilt';
 import styles from './liquid-button.module.css';
 
@@ -34,24 +36,27 @@ interface LiquidButtonProps {
   readonly children: ReactNode;
   /** External links get the usual rel guard. */
   readonly external?: boolean;
+  /** The generated six, for the blobs suspended inside the pill. */
+  readonly rooms: readonly RoomColor[];
   readonly className?: string;
 }
 
 /**
- * The pill ships EMPTY.
+ * The pill carries its own liquid.
  *
- * It used to carry 22 hand-placed blobs drifting inside it — a deterministic
- * field, because generating them at random differed between server and client
- * and tripped hydration. They are gone, and what fills the pill now is the
- * rain: this button is marked `data-rain-surface="absorb"`, so every drop that
- * lands on it is taken in and stays, drifting around inside. See PaintRain.
+ * It once held 22 hand-placed blobs, then nothing at all while the rain filled
+ * it, and both were wrong. The blobs were a decoration arguing the button was
+ * liquid; the empty pill meant the button a visitor first sees is a bare
+ * capsule, when the reference is packed from its first frame.
  *
- * That is a better version of the same idea. The blobs were a decoration that
- * argued the button was liquid; the drops are the page's own weather actually
- * collecting in it, and no two visits fill it the same way.
+ * It now ships full, on its OWN canvas (see LiquidField) rather than on the
+ * page-wide rain canvas — which sits above the whole document and so painted
+ * the blobs over this button's label instead of under it. Rain still feeds it:
+ * the button is `data-rain-surface="absorb"`, and every drop that lands is
+ * handed over as one more blob carrying its colour.
  */
 
-export function LiquidButton({ href, children, external = false, className }: LiquidButtonProps) {
+export function LiquidButton({ href, children, external = false, className, rooms }: LiquidButtonProps) {
   const rootRef = useRef<HTMLAnchorElement>(null);
   // Shared with PrismButton so both CTAs move identically — see
   // use-pointer-tilt.ts for why that behaviour was lifted out of here.
@@ -74,6 +79,9 @@ export function LiquidButton({ href, children, external = false, className }: Li
       <span className={styles.tilt}>
         <span className={styles.underside} aria-hidden="true" />
         <span className={styles.face}>
+          {/* Beneath the gloss and the label, which is the whole point of it
+              living here rather than on the page-wide rain canvas. */}
+          <LiquidField rooms={rooms} />
           <span className={styles.gloss} aria-hidden="true" />
           <span className={styles.label}>{children}</span>
         </span>

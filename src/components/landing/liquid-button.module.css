@@ -95,6 +95,22 @@
 /* ------------------------------------------------------------- the liquid */
 
 /*
+ * The pill's own canvas, holding the blobs suspended in it.
+ *
+ * Beneath the gloss and the label, which is the entire reason it exists: drawn
+ * on the page-wide rain canvas these sat ABOVE the button's text, because that
+ * canvas is above the whole document. In the reference the label is on top of
+ * the liquid.
+ */
+.liquid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/*
  * There is no blob field here any more.
  *
  * The pill carried 22 hand-placed blobs with a shared spectrum animation and a

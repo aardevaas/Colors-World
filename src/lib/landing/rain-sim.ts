@@ -74,10 +74,8 @@ export interface Surface {
 }
 
 export interface PoolColumn {
-  /** Height of paint above the floor, px. */
+  /** Depth of paint above the floor, px. */
   h: number;
-  /** Vertical velocity of the surface, px/s. Waves live here. */
-  v: number;
   /** Accumulated colour, 0-255. */
   r: number;
   g: number;
@@ -103,6 +101,20 @@ export interface World {
   readonly pool: PoolColumn[];
   /** Impacts currently spreading. Short-lived; culled every step. */
   readonly splashes: Splash[];
+  /**
+   * Horizontal flow at each boundary BETWEEN columns, px/s — so there is one
+   * more of these than there are columns, and `flow[i]` is the velocity across
+   * the face to the left of `pool[i]`.
+   *
+   * Staggering velocity against depth like this is what makes the scheme below
+   * behave: depth lives at cell centres and the thing that moves it lives at
+   * the faces, so a gradient in one directly drives the other with no averaging
+   * step to smear it out.
+   */
+  readonly flow: Float64Array;
+  /** Scratch for one step's face fluxes. Held on the world rather than
+   *  allocated per frame — see the note on mutation at the top of this file. */
+  readonly flux: Float64Array;
   /** Viewport width the pool columns are spread across. */
   width: number;
   height: number;
@@ -142,14 +154,23 @@ export const SWAY_SPEED = 26;
 /** Columns the pool surface is sampled at. Enough for a wave to read as a
  *  curve, few enough that the whole field is a rounding error per frame. */
 export const POOL_COLUMNS = 120;
-/** How hard a column is pulled toward its neighbours. Governs wave speed. */
-export const WAVE_TENSION = 26;
-/** Per-second velocity retention. Below 1 or the pool never settles. */
-export const WAVE_DAMPING = 0.86;
-/** How much height a column shares with its neighbours per second. */
-export const WAVE_SPREAD = 5.5;
-/** Downward kick a landing drop gives the surface, px/s per px of drop. */
-export const SPLASH = 2.6;
+
+/**
+ * Gravity for the shallow-water solver, px/s².
+ *
+ * Not the same number as the one the drops fall under, and it should not be:
+ * this one sets how fast waves travel across the pool, which is `sqrt(g·h)`.
+ * Tuned by eye for water at this scale — real gravity here makes a 100px-deep
+ * pool propagate at nearly 400px/s, which crosses the page in three seconds and
+ * reads as a ripple tank rather than as paint.
+ */
+export const WAVE_GRAVITY = 340;
+
+/** Per-second retention on the flow. Paint is viscous; water would be ~0.99. */
+export const VISCOSITY = 0.62;
+
+/** Retention on depth differences, which is what finally flattens the pool. */
+export const SURFACE_TENSION = 0.55;
 /** Ceiling on pool depth, px, so the page cannot be drowned.
  *  Kept below the footer's first line of text: the paint is meant to rise at
  *  the foot of the page, not to swallow what is written there. */
@@ -158,11 +179,20 @@ export const MAX_POOL = 165;
 /* ------------------------------------------------------------------- world */
 
 export function createPool(): PoolColumn[] {
-  return Array.from({ length: POOL_COLUMNS }, () => ({ h: 0, v: 0, r: 0, g: 0, b: 0 }));
+  return Array.from({ length: POOL_COLUMNS }, () => ({ h: 0, r: 0, g: 0, b: 0 }));
 }
 
 export function createWorld(width: number, height: number): World {
-  return { drops: [], pool: createPool(), splashes: [], width, height, floor: height };
+  return {
+    drops: [],
+    pool: createPool(),
+    splashes: [],
+    flow: new Float64Array(POOL_COLUMNS + 1),
+    flux: new Float64Array(POOL_COLUMNS + 1),
+    width,
+    height,
+    floor: height,
+  };
 }
 
 /* -------------------------------------------------------------------- step */
@@ -393,6 +423,26 @@ function stepAbsorbed(
 }
 
 /**
+ * Just the suspended-blob behaviour: drift, walls, and separation.
+ *
+ * Exported so the liquid pill can run its own field with its own canvas without
+ * carrying a rain world it has no use for — it has no falling drops, no floor
+ * and no pool, only the blobs inside it. Same physics either way, so the two
+ * cannot drift apart.
+ */
+export function stepSuspended(
+  drops: readonly SimDrop[],
+  dt: number,
+  surfaces: readonly Surface[],
+  time: number
+): void {
+  for (const drop of drops) {
+    if (drop.phase === 'absorbed') stepAbsorbed(drop, dt, surfaces, time);
+  }
+  separate(drops, surfaces);
+}
+
+/**
  * Keeps absorbed drops off one another.
  *
  * Oscillators alone still let two drops occupy the same spot by coincidence,
@@ -475,8 +525,16 @@ function addToPool(
   const volume = (Math.PI * (drop.size / 2) ** 2) / Math.max(1, columnWidth);
 
   const wasEmpty = column.h < 0.05;
+  /*
+   * Adding volume IS the disturbance.
+   *
+   * The spring model needed an explicit downward kick to make a wave, which is
+   * backwards: a drop landing does not push the surface down, it puts more
+   * paint there. Under shallow water that raised column immediately has a slope
+   * against its neighbours, the slope drives flow, and the ring spreads on its
+   * own — which is why this line went away rather than being retuned.
+   */
   column.h = Math.min(MAX_POOL, column.h + volume);
-  column.v += SPLASH * drop.size;
 
   const rgb = colors[drop.color % Math.max(1, colors.length)] ?? [124, 92, 255];
 
@@ -514,45 +572,111 @@ function addToPool(
 }
 
 /**
- * One step of a spring-coupled height field — the cheapest thing that behaves
- * like liquid rather than like a bar chart.
+ * One step of the 1D shallow-water equations.
  *
- * Each column is pulled toward the average of its neighbours, which propagates
- * a disturbance sideways as a travelling wave, and damped so the surface
- * eventually flattens. A splash is a downward kick to one column; the waves
- * that follow are this integration, not an animation of one.
+ * This replaced a spring-coupled height field — each column pulled toward the
+ * average of its neighbours — which is a perfectly good way to make a wobbling
+ * line and not a way to make liquid. A membrane and a fluid differ in ways that
+ * are immediately visible: a membrane's waves travel at one speed everywhere,
+ * it has no notion of moving material, and clamping its height silently
+ * destroys volume. Paint does none of those things.
+ *
+ * What is solved here is mass and momentum:
+ *
+ *     ∂h/∂t + ∂(hu)/∂x = 0        depth changes by what flows in and out
+ *     ∂u/∂t + g·∂h/∂x  = 0        flow accelerates down the surface slope
+ *
+ * on a staggered grid — depth at cell centres, flow at the faces between them.
+ * Three consequences you can see. Waves travel at `sqrt(g·h)`, so a deep pool
+ * carries them faster than a shallow one and a swell slows and steepens as it
+ * runs into the shallows. Volume is conserved by construction, because every
+ * unit that leaves one cell arrives in its neighbour rather than being averaged
+ * away. And paint genuinely flows sideways under its own weight instead of
+ * being diffused there by a separate levelling pass.
+ *
+ * The flux is upwind — each face carries the depth of whichever cell the flow
+ * is coming FROM. Using the average of the two is the textbook mistake here: it
+ * is unconditionally unstable and the surface tears itself apart within a
+ * second.
  */
 export function stepPool(world: World, dt: number): void {
   const pool = world.pool;
+  const flow = world.flow;
   const last = pool.length - 1;
+  const dx = Math.max(1, world.width / POOL_COLUMNS);
 
-  for (let i = 0; i <= last; i += 1) {
-    const column = pool[i];
-    if (column === undefined) continue;
-    const left = pool[i === 0 ? 0 : i - 1] ?? column;
-    const right = pool[i === last ? last : i + 1] ?? column;
+  // Substepped to hold the CFL condition: a wave must not cross a whole cell in
+  // one step, and a deep pool plus a long frame can otherwise do exactly that.
+  const fastest = Math.sqrt(WAVE_GRAVITY * MAX_POOL);
+  const steps = Math.max(1, Math.ceil((fastest * dt) / (dx * 0.5)));
+  const h = dt / steps;
+  const flux = world.flux;
 
-    const pull = (left.h + right.h) / 2 - column.h;
-    column.v += pull * WAVE_TENSION * dt;
-    column.v *= Math.pow(WAVE_DAMPING, dt * 60);
+  for (let n = 0; n < steps; n += 1) {
+    // Momentum: flow accelerates down the surface slope.
+    for (let i = 1; i <= last; i += 1) {
+      const left = pool[i - 1];
+      const right = pool[i];
+      if (left === undefined || right === undefined) continue;
+      const slope = (right.h - left.h) / dx;
+      flow[i] = ((flow[i] ?? 0) - WAVE_GRAVITY * slope * h) * Math.pow(VISCOSITY, h);
+    }
+    // Walls: nothing flows through the ends of the page.
+    flow[0] = 0;
+    flow[last + 1] = 0;
+
+    /*
+     * Mass, in two passes: work out every face's flux, then apply them.
+     *
+     * Doing it in one pass and clamping any cell that went negative is what the
+     * first version did, and clamping DESTROYS PAINT — the run lost 15% of its
+     * volume to it. A face is shared between two cells, so the limit has to be
+     * decided per face before anything moves: each face may carry at most what
+     * the cell it draws from can actually spare, which keeps depth non-negative
+     * without any clamp and conserves volume exactly, because every unit
+     * removed from one cell is added to its neighbour.
+     */
+    for (let i = 1; i <= last; i += 1) {
+      const u = flow[i] ?? 0;
+      const donor = u > 0 ? pool[i - 1] : pool[i];
+      if (donor === undefined) {
+        flux[i] = 0;
+        continue;
+      }
+      // Halved: a cell has two faces and either may be drawing from it.
+      const spare = (donor.h * dx) / Math.max(1e-6, h) / 2;
+      const carried = u * donor.h;
+      flux[i] = Math.sign(carried) * Math.min(Math.abs(carried), spare);
+    }
+    flux[0] = 0;
+    flux[last + 1] = 0;
+
+    for (let i = 0; i <= last; i += 1) {
+      const column = pool[i];
+      if (column === undefined) continue;
+      column.h = Math.max(0, column.h - (((flux[i + 1] ?? 0) - (flux[i] ?? 0)) / dx) * h);
+    }
   }
 
-  for (let i = 0; i <= last; i += 1) {
-    const column = pool[i];
-    if (column === undefined) continue;
-    column.h = Math.max(0, Math.min(MAX_POOL, column.h + column.v * dt));
-  }
-
-  // Levelling: paint flows sideways as well as sloshing, or the pool keeps the
-  // silhouette of wherever it happened to rain hardest.
-  const spread = Math.min(0.5, WAVE_SPREAD * dt);
-  const heights = pool.map((c) => c.h);
-  for (let i = 0; i <= last; i += 1) {
-    const column = pool[i];
-    if (column === undefined) continue;
-    const left = heights[i === 0 ? 0 : i - 1] ?? column.h;
-    const right = heights[i === last ? last : i + 1] ?? column.h;
-    column.h += ((left + right) / 2 - column.h) * spread;
+  /*
+   * A little surface tension, applied as an EXCHANGE rather than as a pull
+   * toward a local mean.
+   *
+   * Shallow water alone is frictionless at the surface and keeps a fine chop
+   * forever; paint does not. But the obvious way to damp it — nudging each
+   * column toward the average of its neighbours — is not conservative: every
+   * column is adjusted against values that are themselves being adjusted, and
+   * the total drifts. Moving a fixed fraction of the difference ACROSS each
+   * face takes exactly as much from one side as it gives the other.
+   */
+  const exchange = Math.min(0.25, SURFACE_TENSION * dt);
+  for (let i = 0; i < last; i += 1) {
+    const left = pool[i];
+    const right = pool[i + 1];
+    if (left === undefined || right === undefined) continue;
+    const move = (left.h - right.h) * exchange * 0.5;
+    left.h -= move;
+    right.h += move;
   }
 }
 

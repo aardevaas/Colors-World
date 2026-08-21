@@ -51,24 +51,6 @@ interface PaintRainProps {
   readonly reducedMotion?: boolean;
 }
 
-/** Beyond this the absorbing button is full and starts shedding like the rest.
- *  Without a cap the whole field eventually ends up inside one pill. */
-const ABSORB_CAPACITY = 96;
-
-/**
- * Blobs the absorbing pill already holds when the page loads.
- *
- * The pill shipped empty and filled from the rain, and it was wrong: measured
- * against the reference, Button 01 is PACKED — sixty-odd overlapping capsules
- * covering the whole face — and it is packed in the first frame. Waiting forty
- * seconds of weather to approach that meant the button a visitor actually sees
- * is an empty cream pill.
- *
- * So it starts full and the rain adds to it. Seeded from the field's own index
- * rather than `Math.random`, so it is identical on server and client.
- */
-const RESIDENT_BLOBS = 64;
-
 /** Longest frame the simulation will accept, seconds. A backgrounded tab hands
  *  back a delta of several seconds, and every drop would teleport through every
  *  surface in one step. */
@@ -114,6 +96,7 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
     }));
     world.drops.push(...drops);
 
+    const surfaceNodes: HTMLElement[] = [];
     let dpr = 1;
     const resize = () => {
       dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -135,9 +118,8 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
       const dt = Math.min(MAX_STEP, (now - last) / 1000);
       last = now;
 
-      const surfaces = readSurfaces(world.drops);
+      const surfaces = readSurfaces(surfaceNodes);
       const palette = roomsRef.current.map(toRgb);
-      seedResidents(world.drops, surfaces);
 
       // The floor is the foot of the DOCUMENT, not of the viewport: paint
       // gathers where the page ends, so it is only ever seen from the footer.
@@ -145,6 +127,7 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
 
       recycle(world.drops, countRef.current);
       step(world, dt, surfaces, palette, now / 1000);
+      handOverAbsorbed(world.drops, surfaceNodes);
       draw(context, world, surfaces, palette, dpr, countRef.current);
     };
     frame = requestAnimationFrame(tick);
@@ -169,10 +152,10 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
  * component opts in where it is written instead of this file keeping a list of
  * selectors that drifts the moment anything is renamed.
  */
-function readSurfaces(drops: readonly SimDrop[]): Surface[] {
+function readSurfaces(nodesOut: HTMLElement[]): Surface[] {
   const nodes = document.querySelectorAll<HTMLElement>('[data-rain-surface]');
   const surfaces: Surface[] = [];
-  let index = 0;
+  nodesOut.length = 0;
 
   for (const node of nodes) {
     const rect = node.getBoundingClientRect();
@@ -189,22 +172,42 @@ function readSurfaces(drops: readonly SimDrop[]): Surface[] {
      */
     if (effectiveOpacity(node) < 0.5) continue;
 
-    const wantsToAbsorb = node.dataset.rainSurface === 'absorb';
-    const held = wantsToAbsorb
-      ? drops.reduce((n, d) => (d.phase === 'absorbed' && d.host === index ? n + 1 : n), 0)
-      : 0;
-
+    nodesOut.push(node);
     surfaces.push({
       left: rect.left,
       top: rect.top,
       right: rect.right,
       bottom: rect.bottom,
-      // A full button sheds like any other, rather than swallowing the field.
-      absorbs: wantsToAbsorb && held < ABSORB_CAPACITY,
+      absorbs: node.dataset.rainSurface === 'absorb',
     });
-    index += 1;
   }
   return surfaces;
+}
+
+/**
+ * Hands a landed drop to the button that caught it, and lets the drop go.
+ *
+ * The rain no longer draws anything inside the absorbing button — that button
+ * has its own canvas beneath its own label now (see LiquidField), which is the
+ * only way the label can sit on top of the blobs the way the reference has it.
+ * So a drop absorbed here is announced and then released back to the field,
+ * rather than being kept and drawn.
+ */
+function handOverAbsorbed(drops: SimDrop[], nodes: readonly HTMLElement[]): void {
+  for (const drop of drops) {
+    if (drop.phase !== 'absorbed') continue;
+    const node = nodes[drop.host];
+    if (node !== undefined) {
+      const rect = node.getBoundingClientRect();
+      node.dispatchEvent(
+        new CustomEvent('rain:absorb', {
+          detail: { color: drop.color, x: drop.x - rect.left },
+        })
+      );
+    }
+    // Straight back into circulation, so the field never thins out.
+    drop.phase = 'pooled';
+  }
 }
 
 /**
@@ -225,50 +228,6 @@ function effectiveOpacity(node: HTMLElement): number {
   return opacity;
 }
 
-/**
- * Fills the absorbing surface the first time one is seen.
- *
- * Deferred to the first frame with a live surface rather than done at mount,
- * because until the pill has been laid out there is no rectangle to fill.
- */
-let seeded = false;
-function seedResidents(drops: SimDrop[], surfaces: readonly Surface[]): void {
-  if (seeded) return;
-  const host = surfaces.findIndex((surface) => surface.absorbs);
-  if (host === -1) return;
-  const surface = surfaces[host];
-  if (surface === undefined) return;
-  seeded = true;
-
-  const width = surface.right - surface.left;
-  const height = surface.bottom - surface.top;
-
-  for (let i = 0; i < RESIDENT_BLOBS; i += 1) {
-    // Two low-discrepancy sequences — an even scatter with no visible lattice,
-    // which is what the reference's packing looks like.
-    const u = (i * 0.7548776662466927) % 1;
-    const v = (i * 0.5698402909980532) % 1;
-    const depth = (i * 0.3819660112501051) % 1;
-    const size = height * (0.3 + depth * 0.34);
-
-    drops.push({
-      x: surface.left + u * width,
-      y: surface.top + v * height,
-      vx: (v - 0.5) * 18,
-      vy: (u - 0.5) * 18,
-      size,
-      color: i % 6,
-      depth,
-      phase: 'absorbed',
-      host,
-      restLeft: 0,
-      runoff: 1,
-      seed: (i * 2.399963) % (Math.PI * 2),
-      terminal: 120,
-      squash: 0,
-    });
-  }
-}
 
 /** Puts pooled drops back at the top, keeping `target` of them in the air. */
 function recycle(drops: SimDrop[], target: number): void {
@@ -319,21 +278,10 @@ function draw(
   drawSplashes(context, world);
 
   for (const drop of world.drops) {
-    if (drop.phase === 'pooled') continue;
-    const rgb = palette[drop.color % Math.max(1, palette.length)] ?? [124, 92, 255];
-
-    if (drop.phase === 'absorbed') {
-      const surface = surfaces[drop.host];
-      if (surface === undefined) continue;
-      // Clipped to its host, so a drop inside a pill never draws outside it.
-      context.save();
-      roundedRect(context, surface, (surface.bottom - surface.top) / 2);
-      context.clip();
-      drawDrop(context, drop, rgb, true);
-      context.restore();
-      continue;
-    }
-    drawDrop(context, drop, rgb, false);
+    // Absorbed drops belong to the button that caught them and are drawn on its
+    // own canvas; pooled ones have become paint.
+    if (drop.phase === 'pooled' || drop.phase === 'absorbed') continue;
+    drawDrop(context, drop, palette[drop.color % Math.max(1, palette.length)] ?? [124, 92, 255]);
   }
   context.globalAlpha = 1;
 }
@@ -342,8 +290,7 @@ function draw(
 function drawDrop(
   context: CanvasRenderingContext2D,
   drop: SimDrop,
-  rgb: readonly [number, number, number],
-  suspended: boolean
+  rgb: readonly [number, number, number]
 ): void {
   const r = drop.size / 2;
   const [red, green, blue] = rgb;
@@ -357,62 +304,10 @@ function drawDrop(
     context.scale(1 + drop.squash * 0.45, 1 - drop.squash * 0.4);
   }
 
-  if (suspended) {
-    /*
-     * Inside a button it is a blob suspended in liquid, not a falling drop —
-     * nothing in there is pulling it into a teardrop.
-     *
-     * Drawn with a soft edge scaled by depth, which is the thing the reference
-     * gets its sense of volume from: the blobs further back in the liquid are
-     * blurred, the ones near the surface are sharp, and it reads as depth of
-     * field rather than as a pattern of flat dots. A canvas `filter: blur()`
-     * per drop would cost a full-surface repaint each time, so the softness is
-     * in the gradient instead.
-     */
-    // Softest blobs still hold a core, or the field reads as fog rather than
-    // as things suspended at different depths.
-    // Softest blobs still hold a core, or the field reads as fog rather than
-    // as things suspended at different depths.
-    const softness = 0.14 + drop.depth * 0.4;
-    /*
-     * Pastel, not saturated — and that is the reference, not a compromise.
-     *
-     * Button 01's blobs are pale coral suspended in a cream capsule, nowhere
-     * near full strength, which is exactly why the dark label on top of them
-     * stays perfectly readable. Ours were drawn at full chroma and the button's
-     * own text disappeared into them: the rain canvas sits above the whole
-     * page, so these draw OVER the label rather than under it as they do in
-     * the reference.
-     *
-     * Mixing each blob most of the way to the pill's cream fixes both at once —
-     * it is closer to the reference AND it puts the contrast back.
-     */
-    const tint = (channel: number) => Math.round(channel + (252 - channel) * 0.55);
-    const [tr, tg, tb] = [tint(red), tint(green), tint(blue)];
-
-    const blob = context.createRadialGradient(0, 0, 0, 0, 0, r);
-    blob.addColorStop(0, `rgb(${tr} ${tg} ${tb})`);
-    blob.addColorStop(Math.max(0.05, 1 - softness), `rgb(${tr} ${tg} ${tb})`);
-    blob.addColorStop(1, `rgba(${tr} ${tg} ${tb} / 0)`);
-    context.globalAlpha *= 0.42 + (1 - drop.depth) * 0.3;
-    // Taller than wide, as in the reference: the blobs there are stretched
-    // capsules standing on end, not circles, and that is most of why the field
-    // reads as something suspended in liquid rather than as bubbles.
-    context.scale(0.78, 1.32);
-    context.beginPath();
-    context.arc(0, 0, r, 0, Math.PI * 2);
-    context.fillStyle = blob;
-    context.fill();
-    context.restore();
-    return;
-  }
-
   context.beginPath();
-  {
-    context.moveTo(0, -r * 1.5);
-    context.bezierCurveTo(r * 0.92, -r * 0.28, r, r * 0.34, 0, r);
-    context.bezierCurveTo(-r, r * 0.34, -r * 0.92, -r * 0.28, 0, -r * 1.5);
-  }
+  context.moveTo(0, -r * 1.5);
+  context.bezierCurveTo(r * 0.92, -r * 0.28, r, r * 0.34, 0, r);
+  context.bezierCurveTo(-r, r * 0.34, -r * 0.92, -r * 0.28, 0, -r * 1.5);
 
   const body = context.createLinearGradient(0, -r, 0, r);
   body.addColorStop(0, `rgb(${lighten(red)} ${lighten(green)} ${lighten(blue)})`);
@@ -528,21 +423,6 @@ function drawSplashes(
   }
 }
 
-function roundedRect(
-  context: CanvasRenderingContext2D,
-  surface: Surface,
-  radius: number
-): void {
-  const { left, top, right, bottom } = surface;
-  const r = Math.min(radius, (right - left) / 2, (bottom - top) / 2);
-  context.beginPath();
-  context.moveTo(left + r, top);
-  context.arcTo(right, top, right, bottom, r);
-  context.arcTo(right, bottom, left, bottom, r);
-  context.arcTo(left, bottom, left, top, r);
-  context.arcTo(left, top, right, top, r);
-  context.closePath();
-}
 
 function toRgb(room: RoomColor): [number, number, number] {
   const hex = room.hex.replace('#', '');

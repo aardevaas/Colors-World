@@ -134,7 +134,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
           {/* No props but the ref. The motion toggle lived in the top bar that
               has been removed, so motion now follows the OS preference alone —
               which is what `motionEnabled` is initialised from. */}
-          <HeroHud ref={hudRef} />
+          <HeroHud ref={hudRef} rooms={rooms} />
         </div>
       </section>
       <ColorRooms rooms={rooms} />
