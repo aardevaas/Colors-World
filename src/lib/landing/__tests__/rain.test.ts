@@ -168,3 +168,22 @@ describe('buildDrops — the field must not read as a loop', () => {
     expect(new Set(delays).size).toBeGreaterThan(MAX_DROPS * 0.85);
   });
 });
+
+describe('buildDrops — the field must cover the full width at any intensity', () => {
+  it('spreads even a handful of drops across the screen', () => {
+    // Drops are revealed in index order, so a low intensity shows a prefix of
+    // the field. Hashed positions clumped: the left of the screen was nearly
+    // empty while the right carried most of the rain.
+    const drops = buildDrops();
+    for (const prefix of [6, 12, 24, MAX_DROPS]) {
+      const lefts = drops.slice(0, prefix).map((d) => d.left);
+      expect(Math.min(...lefts)).toBeLessThan(20);
+      expect(Math.max(...lefts)).toBeGreaterThan(80);
+
+      // And no empty half.
+      const leftHalf = lefts.filter((l) => l < 50).length;
+      expect(leftHalf).toBeGreaterThan(prefix * 0.3);
+      expect(leftHalf).toBeLessThan(prefix * 0.7);
+    }
+  });
+});

@@ -65,9 +65,15 @@ export function buildDrops(count: number = MAX_DROPS): readonly Drop[] {
     const size = 7 + (1 - depth) * 15;
 
     drops.push({
-      // Spread across the full width with jitter, rather than evenly spaced —
-      // even spacing at these counts reads immediately as a row of dots.
-      left: (hash(i, 1) * 96 + 2) % 100,
+      // Golden-ratio (low-discrepancy) placement, not a hash.
+      //
+      // A hash is uniform only in the limit. Drops are revealed in index order,
+      // so at low intensity you see a *prefix* of the field — and a hashed
+      // prefix clumps: the left of the screen was nearly empty while the right
+      // had most of the rain. This sequence has the property that every prefix
+      // is already spread across the full width, so six drops cover the screen
+      // as evenly as fifty do. The small hashed jitter keeps it off a grid.
+      left: (((i * 0.618033988749895) % 1) * 94 + hash(i, 1) * 5 + 0.5) % 100,
       // A wide spread is what stops the field reading as a loop. Every drop
       // repeats on its own cycle forever, so if the durations sit close
       // together they resynchronise and you see the same rain over and over.

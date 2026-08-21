@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { usePointerTilt } from '@/lib/landing/use-pointer-tilt';
 import styles from './liquid-button.module.css';
 
 /**
@@ -78,80 +79,12 @@ const BLOBS: readonly Blob[] = [
   { top: 44, left: 19, size: 17, blur: 8, hueShift: 84, alpha: 0.44, duration: 14.0, delay: -0.7 },
 ];
 
-/** How far the pill turns toward the pointer, in degrees. */
-const MAX_TILT_DEG = 26;
-/** Distance in pixels over which the pointer still influences the tilt. */
-const INFLUENCE_PX = 620;
-/** Per-second convergence for the eased follow. */
-const TILT_LAMBDA = 5.5;
 
 export function LiquidButton({ href, children, external = false, className }: LiquidButtonProps) {
   const rootRef = useRef<HTMLAnchorElement>(null);
-  const pointerRef = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (root === null) return;
-
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
-
-    const handleMove = (event: PointerEvent) => {
-      pointerRef.current = { x: event.clientX, y: event.clientY };
-    };
-
-    window.addEventListener('pointermove', handleMove, { passive: true });
-
-    let rotX = 0;
-    let rotY = 0;
-    let last = performance.now();
-    let frame = 0;
-
-    const tick = (now: number) => {
-      frame = requestAnimationFrame(tick);
-      const dt = Math.min((now - last) / 1000, 0.1);
-      last = now;
-
-      const rect = root.getBoundingClientRect();
-      if (rect.width === 0) return;
-
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = pointerRef.current.x - cx;
-      const dy = pointerRef.current.y - cy;
-
-      // Influence falls off with distance, so a pointer on the far side of the
-      // page leaves the pill near rest instead of pinned at full tilt.
-      const distance = Math.hypot(dx, dy);
-      const influence = Math.max(0, 1 - distance / INFLUENCE_PX);
-
-      // Saturates within about half a button-width, not a full one: with the
-      // wider mapping the pill barely moved while the cursor was on it, which
-      // is precisely when the reference is at its most angled.
-      const wantY = clamp(dx / (rect.width * 0.45), -1, 1) * MAX_TILT_DEG * influence;
-      const wantX = -clamp(dy / (rect.height * 0.9), -1, 1) * MAX_TILT_DEG * influence;
-
-      // A slow sway underneath, so the pill is never completely static — the
-      // reference is visibly angled even with the cursor parked far away.
-      const sway = now / 1000;
-      const idleY = Math.sin(sway / 3.7) * 5.5;
-      const idleX = Math.sin(sway / 5.3) * 3.0;
-
-      rotX = damp(rotX, wantX + idleX, TILT_LAMBDA, dt);
-      rotY = damp(rotY, wantY + idleY, TILT_LAMBDA, dt);
-
-      root.style.setProperty('--rot-x', `${rotX.toFixed(3)}deg`);
-      root.style.setProperty('--rot-y', `${rotY.toFixed(3)}deg`);
-      // Specular slides opposite the tilt, as a highlight on a curved face does.
-      root.style.setProperty('--shine-x', `${(50 - rotY * 1.6).toFixed(2)}%`);
-    };
-    frame = requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('pointermove', handleMove);
-    };
-  }, []);
+  // Shared with PrismButton so both CTAs move identically — see
+  // use-pointer-tilt.ts for why that behaviour was lifted out of here.
+  usePointerTilt(rootRef);
 
   const field = (
     <span className={styles.field} aria-hidden="true">
@@ -203,15 +136,6 @@ export function LiquidButton({ href, children, external = false, className }: Li
   );
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
-/** Frame-rate independent easing — the naive lerp moves further per second on
- *  a 144Hz display than a 60Hz one. */
-function damp(current: number, target: number, lambda: number, dt: number): number {
-  if (!Number.isFinite(dt) || dt <= 0) return current;
-  return target + (current - target) * Math.exp(-lambda * dt);
-}
 
 export default LiquidButton;

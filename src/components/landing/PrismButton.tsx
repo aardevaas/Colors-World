@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { usePointerTilt } from '@/lib/landing/use-pointer-tilt';
 import styles from './prism-button.module.css';
 
 /**
@@ -33,11 +34,19 @@ interface PrismButtonProps {
 const RIBBON_PATH = 'M -6 40 C 34 46, 62 16, 104 24 S 168 48, 206 18';
 
 export function PrismButton({ href, children, className }: PrismButtonProps) {
+  const rootRef = useRef<HTMLAnchorElement>(null);
+  // The same hook the liquid pill uses, so the two CTAs move identically.
+  // Before this they behaved nothing alike — one tracked the pointer in 3D and
+  // the other was inert — and the pair read as two unrelated controls.
+  usePointerTilt(rootRef);
+
   return (
     <Link
+      ref={rootRef}
       href={href}
       className={className === undefined ? styles.button : `${styles.button} ${className}`}
     >
+      <span className={styles.tilt}>
       <span className={styles.face}>
         <span className={styles.glowLeft} aria-hidden="true" />
         <span className={styles.glowRight} aria-hidden="true" />
@@ -70,6 +79,7 @@ export function PrismButton({ href, children, className }: PrismButtonProps) {
         </span>
         <span className={styles.fringe} aria-hidden="true" />
         <span className={styles.label}>{children}</span>
+      </span>
       </span>
     </Link>
   );

@@ -18,6 +18,10 @@
  */
 
 .button {
+  /* Perspective must sit on an ancestor of the rotating element, or the tilt
+     flattens into a shear that reads as a skew. Same structure as the liquid
+     pill, so both respond identically. */
+  perspective: 620px;
   position: relative;
   display: inline-block;
   border-radius: 999px;
@@ -208,6 +212,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .tilt {
+    transform: none;
+  }
+
   .glowLeft,
   .glowRight,
   .strokeWide,
