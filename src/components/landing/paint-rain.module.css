@@ -1,0 +1,72 @@
+/*
+ * Cartoonish paint droplets.
+ *
+ * Cartoonish rather than photographic is a deliberate simplification and also
+ * the cheaper one: a drop here is a rounded teardrop with one hard highlight
+ * and a flat body. Real rain needs refraction and motion blur; a paint drop
+ * needs to look like it was drawn.
+ */
+
+.field {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  /* Opacity is set inline from the intensity curve. */
+  transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drop {
+  position: absolute;
+  top: 0;
+  left: var(--left, 50%);
+  width: var(--size, 12px);
+  height: calc(var(--size, 12px) * 1.35);
+  /* Teardrop: round at the bottom, drawn to a point at the top, which is the
+     shape a falling drop reads as in illustration even though real ones are
+     spherical. */
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  background:
+    /* One hard specular dot, offset — this single highlight is what makes it
+       read as drawn rather than as a blurred circle. */
+    radial-gradient(
+      circle at 32% 26%,
+      oklch(100% 0 0 / 0.95) 0%,
+      oklch(100% 0 0 / 0.55) 14%,
+      transparent 34%
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--hue, #7c5cff) 82%, white) 0%,
+      var(--hue, #7c5cff) 52%,
+      color-mix(in oklab, var(--hue, #7c5cff) 78%, black) 100%
+    );
+  filter: blur(var(--blur, 0px));
+  opacity: var(--dim, 1);
+  will-change: transform;
+  animation: fall var(--duration, 10s) linear var(--delay, 0s) infinite;
+}
+
+/*
+ * Falls past the bottom and restarts above the top, so there is no moment where
+ * a drop pops in or out inside the viewport. 120vh of travel starting at -20vh
+ * covers the tallest drop plus its blur.
+ */
+@keyframes fall {
+  0% {
+    transform: translate3d(0, -20vh, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(var(--sway, 0px), 50vh, 0) rotate(3deg);
+  }
+  100% {
+    transform: translate3d(0, 120vh, 0) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field {
+    display: none;
+  }
+}

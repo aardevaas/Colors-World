@@ -5,6 +5,7 @@ import { roomPalette, seedHueFromRandom } from '@/lib/landing/room-palette';
 import { useScrollProgress } from '@/lib/landing/use-scroll-progress';
 import { resolveHudFade } from '@/lib/landing/scroll-fade';
 import { HeroHud } from './HeroHud';
+import { PaintRain } from './PaintRain';
 import { FeatureCards } from './FeatureCards';
 import styles from './landing.module.css';
 
@@ -41,6 +42,10 @@ interface LandingExperienceProps {
 // painted word, room to animate across a scroll. With neither of them here
 // it was half a screen of empty space between the title and the rooms.
 const SECTION_HEIGHT_VH = 100;
+
+/** How hard it rains at the top of the page. Low on purpose — the brief is
+ *  "very very lightly" until the visitor starts scrolling. */
+const RESTING_RAIN = 0.34;
 
 /** Stable on the server, replaced on mount. Randomising during render would
  *  hand the server and the client different colours and break hydration. */
@@ -99,6 +104,10 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
         className={styles.stage}
         style={{ height: `${SECTION_HEIGHT_VH}vh` }}
       >
+        {/* Very sparse at rest. `intensity` is the dial the scroll work will
+            take over — for now it sits at the resting value so the top of
+            the page shows the odd drop rather than weather. */}
+        <PaintRain intensity={RESTING_RAIN} rooms={rooms} reducedMotion={!motionEnabled} />
         <div className={styles.pinned}>
           <HeroHud
             ref={hudRef}
