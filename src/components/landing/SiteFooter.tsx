@@ -33,7 +33,11 @@ interface SiteFooterProps {
 
 export function SiteFooter({ rooms }: SiteFooterProps) {
   return (
-    <footer className={styles.footer}>
+    // `data-rain-intake` is the fraction of this element's width the fan sits
+    // at. The rain reads it to know where to blow — see PaintRain — and the run
+    // draws the fan at the same fraction, so the two cannot disagree about
+    // where the intake is.
+    <footer className={styles.footer} data-rain-intake="0.075">
       <PaintRun rooms={rooms} />
 
       <div className={styles.inner}>

@@ -51,6 +51,18 @@ interface PaintRainProps {
   readonly reducedMotion?: boolean;
 }
 
+/**
+ * How hard the fan pulls a drop sideways, px/s².
+ *
+ * Strong enough to visibly sweep the field toward the intake once a drop is in
+ * range, gentle enough that the sweep reads as wind rather than as drops being
+ * teleported into a funnel.
+ */
+const FAN_FORCE = 900;
+
+/** How far above the fan its draw reaches, as a fraction of the viewport. */
+const FAN_REACH = 0.55;
+
 /** Longest frame the simulation will accept, seconds. A backgrounded tab hands
  *  back a delta of several seconds, and every drop would teleport through every
  *  surface in one step. */
@@ -121,6 +133,7 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
 
       const surfaces = readSurfaces(surfaceNodes);
       const palette = roomsRef.current.map(toRgb);
+      blowTowardIntake(world.drops, dt);
 
       // The floor is the foot of the DOCUMENT, not of the viewport: paint
       // gathers where the page ends, so it is only ever seen from the footer.
@@ -212,6 +225,58 @@ function handOverAbsorbed(drops: SimDrop[], nodes: readonly HTMLElement[]): void
     }
     // Straight back into circulation, so the field never thins out.
     drop.phase = 'pooled';
+  }
+}
+
+/**
+ * The fan, doing what a fan does.
+ *
+ * It was drawn spinning on the canvas and had no effect on anything, which is
+ * the version of a fan that is a picture of a fan. This is the force: any drop
+ * within reach above the intake is pushed sideways toward it, hard, and one
+ * that arrives is handed to the ride and taken out of the field.
+ *
+ * The intake is found from the DOM — the footer carries `data-rain-intake`
+ * with the fraction of its width the fan sits at, and the run draws the fan at
+ * the same fraction — so the wind and the machine cannot disagree about where
+ * the opening is.
+ */
+function blowTowardIntake(drops: SimDrop[], dt: number): void {
+  const host = document.querySelector<HTMLElement>('[data-rain-intake]');
+  if (host === null) return;
+
+  const rect = host.getBoundingClientRect();
+  if (rect.width === 0) return;
+  const fraction = Number.parseFloat(host.dataset.rainIntake ?? '0.075');
+  const intakeX = rect.left + rect.width * fraction;
+  const intakeY = rect.top;
+
+  // Only when the fan is actually on screen; there is no wind on a page the
+  // reader has not scrolled to.
+  if (intakeY > window.innerHeight || rect.bottom < 0) return;
+  const reach = window.innerHeight * FAN_REACH;
+
+  for (const drop of drops) {
+    if (drop.phase !== 'falling') continue;
+    const above = intakeY - drop.y;
+    if (above < -40 || above > reach) continue;
+
+    // Stronger the closer it gets, so the field visibly converges on the mouth
+    // rather than drifting across at a constant rate.
+    const nearness = 1 - above / reach;
+    const dx = intakeX - drop.x;
+    const distance = Math.abs(dx) || 1;
+    drop.vx += Math.sign(dx) * FAN_FORCE * (0.25 + nearness) * dt;
+    // A little lift too: the fan blows across, not only sideways.
+    drop.vy -= FAN_FORCE * 0.12 * nearness * dt;
+
+    if (distance < 26 && above < 30) {
+      host.dispatchEvent(
+        new CustomEvent('rain:intake', { detail: { color: drop.color, size: drop.size } })
+      );
+      // Into the ride, and out of the weather.
+      drop.phase = 'pooled';
+    }
   }
 }
 

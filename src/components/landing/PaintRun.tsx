@@ -39,9 +39,6 @@ interface PaintRunProps {
   readonly rooms: readonly RoomColor[];
 }
 
-/** Drops fed in per second. Independent of the rain above, which is a fixed
- *  field — this is the flow the ride is designed for. */
-const FEED_PER_SECOND = 5.5;
 /** Most drops in the glass at once, so a long visit cannot fill the tube. */
 const MAX_IN_TUBE = 34;
 
@@ -101,6 +98,28 @@ export function PaintRun({ rooms }: PaintRunProps) {
     observer.observe(host);
     resize();
 
+    /*
+     * Fed by the weather, not by a timer.
+     *
+     * A fixed feed rate meant the ride ran whether or not it was raining, which
+     * made the fan decorative and the whole chain a coincidence. Every particle
+     * in the tube is now a raindrop the fan actually caught.
+     */
+    const onIntake = (event: Event) => {
+      const detail = (event as CustomEvent<{ color: number; size: number }>).detail;
+      if (detail === undefined || carried.length >= MAX_IN_TUBE) return;
+      carried.push({
+        s: 0,
+        // A spread of entry speeds, or every particle takes the ride at
+        // exactly the same pace and they travel as one clump.
+        v: INTAKE_SPEED * (0.78 + Math.random() * 0.5),
+        lane: Math.random() * 2 - 1,
+        size: Math.max(5, Math.min(12, detail.size)),
+        color: detail.color,
+      });
+    };
+    host.addEventListener('rain:intake', onIntake);
+
     // Pointer nudges the fan, which nudges what comes out of the nozzle.
     let aim = 0;
     const onMove = (event: PointerEvent) => {
@@ -111,7 +130,6 @@ export function PaintRun({ rooms }: PaintRunProps) {
 
     let frame = 0;
     let last = performance.now();
-    let owed = 0;
     let fanAngle = 0;
 
     const tick = (now: number) => {
@@ -121,23 +139,6 @@ export function PaintRun({ rooms }: PaintRunProps) {
       last = now;
 
       fanAngle += dt * 26;
-
-      // The fan, feeding the intake.
-      owed += dt * FEED_PER_SECOND;
-      while (owed >= 1) {
-        owed -= 1;
-        if (carried.length < MAX_IN_TUBE) {
-          carried.push({
-            s: 0,
-            // A spread of entry speeds, or every particle takes the ride at
-            // exactly the same pace and they travel as one clump.
-            v: INTAKE_SPEED * (0.78 + Math.random() * 0.5),
-            lane: Math.random() * 2 - 1,
-            size: 5 + Math.random() * 7,
-            color: Math.floor(Math.random() * 6),
-          });
-        }
-      }
 
       for (const ejected of stepTube(carried, path, dt)) {
         // The fan's aim tilts what leaves the open end.
@@ -168,6 +169,7 @@ export function PaintRun({ rooms }: PaintRunProps) {
       cancelAnimationFrame(frame);
       observer.disconnect();
       host.removeEventListener('pointermove', onMove);
+      host.removeEventListener('rain:intake', onIntake);
     };
   }, []);
 
@@ -175,49 +177,65 @@ export function PaintRun({ rooms }: PaintRunProps) {
 }
 
 /**
- * The ride, in the space available.
+ * The ride, after the reference sketch.
  *
- * After the reference sketch: a tall vertical loop with a smaller helix beside
- * it, on supports, read at a slight angle so the loops cross over themselves
- * and you can see which side is which.
+ * The first attempt at this was a single translucent tube winding through the
+ * footer, and it did not read as a rollercoaster at all — it read as a glass
+ * worm. What the reference actually has, and what a coaster silhouette is made
+ * of, is STRUCTURE: a dominant teardrop loop, a second smaller loop beside it,
+ * a flat run underneath, and the whole thing standing on columns. The track
+ * itself is two rails with ties between them, not a pipe.
  *
- * Authored in three dimensions and in fractions of the space, so it holds its
- * shape at any width. `z` is what makes it a ride rather than a diagram: the
- * loop leans away from the viewer on its far side and toward them on its near
- * one, so the two halves are drawn at different sizes and in the right order.
- *
- * It runs left to right and ends at 70% of the height, open, aimed at the wall.
+ * So this is laid out as that: in from the left, down the drop, up and around a
+ * tall teardrop loop, along the flat, round a smaller loop, and out to an open
+ * end at 70% of the height aimed at the wall. `z` swings only where the track
+ * crosses itself, which is the one place depth has to be read.
  */
 function layout(width: number, height: number): Point[] {
   const x = (f: number) => width * f;
   const y = (f: number) => height * f;
-  // Depth swing. Positive is further away.
-  const back = Math.min(210, width * 0.16);
+  const back = Math.min(150, width * 0.11);
 
   return [
-    // Intake: the fan feeds it here, at the top left.
-    { x: x(-0.02), y: y(0.12), z: 0 },
-    { x: x(0.08), y: y(0.16), z: 0 },
-    // The first drop, gathering speed for the loop.
-    { x: x(0.17), y: y(0.62), z: back * 0.2 },
-    // The vertical loop — round the back, over the top, down the front.
-    { x: x(0.24), y: y(0.8), z: back * 0.55 },
-    { x: x(0.33), y: y(0.5), z: back },
-    { x: x(0.3), y: y(0.14), z: back * 0.75 },
-    { x: x(0.21), y: y(0.1), z: back * 0.2 },
-    { x: x(0.17), y: y(0.42), z: -back * 0.35 },
-    { x: x(0.24), y: y(0.74), z: -back * 0.2 },
-    // Out of the loop and into a helix, which leans the other way.
-    { x: x(0.38), y: y(0.84), z: 0 },
-    { x: x(0.5), y: y(0.6), z: back * 0.7 },
-    { x: x(0.6), y: y(0.78), z: back * 0.3 },
-    { x: x(0.54), y: y(0.55), z: -back * 0.5 },
-    { x: x(0.64), y: y(0.72), z: -back * 0.2 },
-    // The run out to the nozzle, levelling as it comes forward.
-    { x: x(0.78), y: y(0.76), z: 0 },
-    { x: x(0.9), y: y(0.7), z: 0 },
+    // In from the left, where the fan delivers.
+    { x: x(-0.04), y: y(0.2), z: 0 },
+    { x: x(0.07), y: y(0.24), z: 0 },
+    // The drop, gathering speed for the loop.
+    { x: x(0.15), y: y(0.64), z: 0 },
+    { x: x(0.2), y: y(0.82), z: 0 },
+
+    /*
+     * The teardrop loop. Tall and narrow, as the reference draws it — a
+     * circular loop is not what coasters use, because the g-force at the
+     * bottom of one is brutal; a teardrop is the real shape and it is also the
+     * more striking silhouette.
+     *
+     * The far side runs at depth and the near side comes forward, so the
+     * crossing at the bottom is unambiguous.
+     */
+    { x: x(0.29), y: y(0.7), z: back },
+    { x: x(0.34), y: y(0.34), z: back },
+    { x: x(0.28), y: y(0.1), z: back * 0.5 },
+    { x: x(0.19), y: y(0.13), z: -back * 0.4 },
+    { x: x(0.16), y: y(0.42), z: -back * 0.6 },
+    { x: x(0.22), y: y(0.76), z: -back * 0.3 },
+
+    // Out along the flat, under the loop.
+    { x: x(0.36), y: y(0.88) , z: 0 },
+    { x: x(0.5), y: y(0.86), z: 0 },
+
+    // The second, smaller loop.
+    { x: x(0.62), y: y(0.7), z: back * 0.8 },
+    { x: x(0.7), y: y(0.46), z: back * 0.4 },
+    { x: x(0.64), y: y(0.34), z: -back * 0.35 },
+    { x: x(0.57), y: y(0.5), z: -back * 0.5 },
+    { x: x(0.63), y: y(0.76), z: -back * 0.2 },
+
+    // The run out, levelling as it comes forward.
+    { x: x(0.78), y: y(0.8), z: 0 },
+    { x: x(0.9), y: y(0.72), z: 0 },
     // Open end, at 70% down, pointing at the wall.
-    { x: x(1.02), y: y(0.7), z: 0 },
+    { x: x(1.04), y: y(0.7), z: 0 },
   ];
 }
 
@@ -249,6 +267,8 @@ function draw(context: CanvasRenderingContext2D, scene: Scene, rooms: readonly R
   context.clearRect(0, 0, width, height);
 
   drawPool(context, scene);
+  // Structure first: the columns stand behind the track they carry.
+  drawSupports(context, path, camera, height * 0.94);
 
   interface Piece {
     readonly z: number;
@@ -303,7 +323,7 @@ function draw(context: CanvasRenderingContext2D, scene: Scene, rooms: readonly R
             )
           );
         }
-        drawGlassRun(context, points);
+        drawTrackRun(context, points, from);
       },
     });
   };
@@ -350,45 +370,155 @@ function draw(context: CanvasRenderingContext2D, scene: Scene, rooms: readonly R
 }
 
 /**
- * A continuous length of glass, all at roughly one depth.
+ * A length of track: two rails, the ties between them, and the bore.
  *
- * Three strokes over the same polyline: a wide soft bore, a dark interior, and
- * a hairline along the top. Width follows the perspective, so a run at the back
- * of the loop is genuinely narrower than one at the front — which sells the
- * depth more than the ordering does.
+ * This is the difference between a rollercoaster and a pipe. The reference's
+ * track is a ladder — two rails with sleepers across them — standing on
+ * columns, and that structure is what the eye reads as a coaster before it has
+ * worked out the shape. The first version drew one soft tube and read as a
+ * glass worm no matter what the shape underneath was doing.
+ *
+ * Everything is still glass: the rails are bright hairlines, the ties are thin
+ * translucent bars, and the bore between them is the dark body the paint runs
+ * through. All three widths follow the perspective, so a run at the back of a
+ * loop is genuinely slighter than one at the front.
  */
-function drawGlassRun(context: CanvasRenderingContext2D, points: readonly Projected[]): void {
+function drawTrackRun(
+  context: CanvasRenderingContext2D,
+  points: readonly Projected[],
+  tieOffset: number
+): void {
   if (points.length < 2) return;
+
   let scale = 0;
   for (const point of points) scale += point.scale;
   scale /= points.length;
 
-  const trace = () => {
+  // The rails sit either side of the centre line, in screen space.
+  const gauge = 13 * scale;
+  const left: { x: number; y: number }[] = [];
+  const right: { x: number; y: number }[] = [];
+
+  for (let i = 0; i < points.length; i += 1) {
+    const here = points[i];
+    const next = points[Math.min(points.length - 1, i + 1)];
+    const prev = points[Math.max(0, i - 1)];
+    if (here === undefined || next === undefined || prev === undefined) continue;
+
+    const dx = next.sx - prev.sx;
+    const dy = next.sy - prev.sy;
+    const length = Math.hypot(dx, dy) || 1;
+    // Perpendicular, normalised.
+    const nx = -dy / length;
+    const ny = dx / length;
+
+    left.push({ x: here.sx + nx * gauge, y: here.sy + ny * gauge });
+    right.push({ x: here.sx - nx * gauge, y: here.sy - ny * gauge });
+  }
+
+  const trace = (path: readonly { x: number; y: number }[]) => {
     context.beginPath();
-    context.moveTo(points[0]?.sx ?? 0, points[0]?.sy ?? 0);
-    for (let i = 1; i < points.length; i += 1) {
-      context.lineTo(points[i]?.sx ?? 0, points[i]?.sy ?? 0);
-    }
+    context.moveTo(path[0]?.x ?? 0, path[0]?.y ?? 0);
+    for (let i = 1; i < path.length; i += 1) context.lineTo(path[i]?.x ?? 0, path[i]?.y ?? 0);
   };
 
   context.lineCap = 'round';
   context.lineJoin = 'round';
 
-  trace();
-  context.lineWidth = 32 * scale;
-  context.strokeStyle = `rgba(196,228,255,${0.05 + scale * 0.035})`;
+  // The bore: the dark glass body the paint travels inside.
+  context.beginPath();
+  context.moveTo(points[0]?.sx ?? 0, points[0]?.sy ?? 0);
+  for (let i = 1; i < points.length; i += 1) {
+    context.lineTo(points[i]?.sx ?? 0, points[i]?.sy ?? 0);
+  }
+  context.lineWidth = gauge * 2.05;
+  context.strokeStyle = `rgba(150,200,255,${0.045 + scale * 0.03})`;
+  context.stroke();
+  context.lineWidth = gauge * 1.7;
+  context.strokeStyle = `rgba(8,11,18,${0.4 * scale})`;
   context.stroke();
 
-  trace();
-  context.lineWidth = 27 * scale;
-  context.strokeStyle = `rgba(8,11,18,${0.34 * scale})`;
+  /*
+   * The ties. Spaced along the run rather than one per sample: at one per
+   * sample they merge into a solid band and the ladder disappears, which is
+   * exactly the texture that makes it read as track.
+   */
+  const spacing = Math.max(2, Math.round(5 / Math.max(0.35, scale)));
+  context.lineWidth = Math.max(0.5, 1.5 * scale);
+  context.strokeStyle = `rgba(214,236,255,${0.1 + scale * 0.16})`;
+  context.beginPath();
+  for (let i = (tieOffset % spacing); i < left.length; i += spacing) {
+    const a = left[i];
+    const b = right[i];
+    if (a === undefined || b === undefined) continue;
+    context.moveTo(a.x, a.y);
+    context.lineTo(b.x, b.y);
+  }
   context.stroke();
 
-  // The rim: what actually reads as glass, and brighter the nearer it is.
-  trace();
-  context.lineWidth = Math.max(0.6, 1.5 * scale);
-  context.strokeStyle = `rgba(255,255,255,${0.1 + scale * 0.26})`;
+  // The rails themselves — the brightest thing, because they are the edges
+  // where glass catches light.
+  context.lineWidth = Math.max(0.7, 1.8 * scale);
+  context.strokeStyle = `rgba(255,255,255,${0.18 + scale * 0.34})`;
+  trace(left);
   context.stroke();
+  trace(right);
+  context.stroke();
+}
+
+/**
+ * The columns the ride stands on.
+ *
+ * Placed where a real coaster is supported — under stretches of track that are
+ * running roughly level, which is where the load is — and never inside a loop,
+ * where a post would be crossing the track it holds up. Each runs from the
+ * track down to the ground line and finishes in a base plate, which is the
+ * detail in the reference that most says "structure" rather than "line".
+ */
+function drawSupports(
+  context: CanvasRenderingContext2D,
+  path: Path,
+  camera: Camera,
+  groundY: number
+): void {
+  const count = path.at.length;
+  const every = 9;
+
+  context.save();
+  for (let i = every; i < count - every; i += every) {
+    const ax = path.xyz[(i - 2) * 3] ?? 0;
+    const ay = path.xyz[(i - 2) * 3 + 1] ?? 0;
+    const bx = path.xyz[(i + 2) * 3] ?? 0;
+    const by = path.xyz[(i + 2) * 3 + 1] ?? 0;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const slope = Math.abs(dy) / (Math.hypot(dx, dy) || 1);
+    // Only under track that is running level enough to be carrying load.
+    if (slope > 0.34) continue;
+
+    const y = path.xyz[i * 3 + 1] ?? 0;
+    if (y > groundY - 12) continue;
+
+    const top = project(path.xyz[i * 3] ?? 0, y, path.xyz[i * 3 + 2] ?? 0, camera);
+    const foot = project(path.xyz[i * 3] ?? 0, groundY, path.xyz[i * 3 + 2] ?? 0, camera);
+
+    context.beginPath();
+    context.moveTo(top.sx, top.sy);
+    context.lineTo(foot.sx, foot.sy);
+    context.lineWidth = Math.max(0.6, 2.4 * top.scale);
+    context.strokeStyle = `rgba(190,214,240,${0.1 + top.scale * 0.12})`;
+    context.stroke();
+
+    // Base plate.
+    const plate = 9 * foot.scale;
+    context.beginPath();
+    context.moveTo(foot.sx - plate, foot.sy);
+    context.lineTo(foot.sx + plate, foot.sy);
+    context.lineWidth = Math.max(0.8, 3 * foot.scale);
+    context.strokeStyle = `rgba(200,222,246,${0.14 + foot.scale * 0.14})`;
+    context.stroke();
+  }
+  context.restore();
 }
 
 /**
