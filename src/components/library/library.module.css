@@ -628,3 +628,32 @@ a.teleportOption:hover {
   font-size: var(--text-micro);
   color: var(--text-secondary);
 }
+
+/*
+ * The destination's own name, beside the thing it will do.
+ *
+ * The verb says why you would go; this says where you land, in the same word
+ * the navigation uses — so the menu teaches the building rather than inventing
+ * a second set of names for it.
+ */
+.teleportRoom {
+  margin-left: auto;
+  padding-left: 0.75rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.teleportOption {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+.teleportOption:hover .teleportRoom,
+.teleportOption:focus-visible .teleportRoom {
+  opacity: 0.85;
+}

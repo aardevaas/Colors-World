@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import { FAMILY_STEPS, familyStepSwatch, type FamilyAxis } from '@/lib/spectrum/swatch-family';
+import type { TabId } from '@/lib/nav/tabs';
 import { useSystem } from '@/lib/system/system-context';
 import { setSwatchDragPayload } from '@/lib/system/drag-payload';
 import { pinColorAction } from '@/app/actions';
@@ -16,24 +18,41 @@ interface LibraryCardProps {
   readonly onOpenDrawer: (swatch: GeneratedSwatch, semanticMatch: ColorRecord | null) => void;
 }
 
-/** Destinations for the cross-tab teleport overlay (spec §7). Only Studio
- *  exists as a real route today — the other three are honestly disabled
- *  rather than linking somewhere that 404s. */
+/**
+ * Where a colour can be sent, and how it gets there.
+ *
+ * Three of these were disabled with "not built yet" against rooms that have
+ * been built and sitting in the navigation for some time — the list was written
+ * before they shipped and never revisited. So the one place in the product
+ * where you say "take this colour over there" answered "no" to most of the
+ * building, while the room in question was one line up on the screen.
+ *
+ * Ordered to match the nav, because that is the order the visitor has already
+ * learned the building in.
+ *
+ * `via` is the part that matters: a destination is not a link, it is a HANDOVER,
+ * and the two kinds of room receive a colour differently. Most read the
+ * Harmonic Dock, so the colour is docked and travels with you. The studio wall
+ * keeps real records, so it is written first and the move waits for it to land.
+ */
 interface TeleportTarget {
+  readonly room: TabId;
   readonly label: string;
-  readonly href: string | null;
-  readonly disabledReason?: string;
+  readonly href: string;
+  readonly via: 'dock' | 'wall';
 }
 
 const TELEPORT_TARGETS: readonly TeleportTarget[] = [
-  { label: 'Send to Scale Lab', href: null, disabledReason: 'Scale Lab (/builder) is not built yet' },
-  { label: 'Pin to Canvas', href: '/studio' },
-  { label: 'Test on UI', href: null, disabledReason: '/visualizer is not built yet' },
-  { label: 'Typography', href: null, disabledReason: '/typography is not built yet' },
+  { room: 'compose', label: 'Build a system from it', href: '/compose', via: 'dock' },
+  { room: 'scales', label: 'Deepen it into a ramp', href: '/scales', via: 'dock' },
+  { room: 'visualizer', label: 'Try it on real UI', href: '/visualizer', via: 'dock' },
+  { room: 'typography', label: 'Set type against it', href: '/typography', via: 'dock' },
+  { room: 'studio', label: 'Pin it to the wall', href: '/studio', via: 'wall' },
 ];
 
 export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCardProps) {
   const { addColor } = useSystem();
+  const router = useRouter();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [previewAxis, setPreviewAxis] = useState<FamilyAxis>('lightness');
   const [previewStep, setPreviewStep] = useState<number | null>(null);
@@ -71,6 +90,30 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
   };
 
   const [teleportOpen, setTeleportOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  /*
+   * The move happens a frame after the handover, and that is deliberate.
+   *
+   * The System writes itself into the address bar — that is how a palette
+   * travels by link. Docking a colour therefore schedules a `replaceState` for
+   * the CURRENT path, and pushing a route in the same interaction loses: the
+   * navigation is still in flight when that effect runs, so the URL is rewritten
+   * back to `/library?c=…` and the visitor never leaves the room. It looked for
+   * all the world like a dead button, while the colour it sent had in fact
+   * arrived.
+   *
+   * A frame is long enough for the System's own effect to have written, and
+   * short enough that nobody sees it.
+   */
+  useEffect(() => {
+    if (pendingHref === null) return;
+    const frame = requestAnimationFrame(() => {
+      setPendingHref(null);
+      router.push(pendingHref);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pendingHref, router]);
   const [pinned, setPinned] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
 
@@ -97,6 +140,33 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
 
   function handleDock() {
     addColor(displayed.hex, displayed.oklch);
+  }
+
+  /**
+   * Hand this colour to another room, then go there.
+   *
+   * The order is the whole point. Docking is synchronous, so the colour is
+   * already waiting by the time the next room mounts. The wall is a server
+   * record, so the navigation waits for it — a `Link` fired the write and left
+   * at the same moment, which is a race the colour can lose.
+   */
+  async function handleTeleport(target: TeleportTarget) {
+    setTeleportOpen(false);
+    if (target.via === 'dock') {
+      addColor(displayed.hex, displayed.oklch);
+      setPendingHref(target.href);
+      return;
+    }
+    setPinned(true);
+    setPinError(null);
+    try {
+      await pinColorAction(displayed.hex);
+      setPendingHref(target.href);
+    } catch (error) {
+      setPinError(error instanceof Error ? error.message : String(error));
+    } finally {
+      window.setTimeout(() => setPinned(false), 1600);
+    }
   }
 
   async function handlePinToStudio() {
@@ -231,27 +301,27 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
           role="menu"
           aria-label="Teleport this color"
         >
-          {TELEPORT_TARGETS.map((target) =>
-            target.href === null ? (
-              <span
-                key={target.label}
-                className={styles.teleportOption}
-                data-disabled="true"
-                title={target.disabledReason}
-              >
-                {target.label}
-              </span>
-            ) : (
-              <Link
-                key={target.label}
-                href={target.href}
-                className={styles.teleportOption}
-                onClick={handlePinToStudio}
-              >
-                {target.label}
-              </Link>
-            )
-          )}
+          {/*
+            Buttons, not links.
+
+            Each of these HANDS THE COLOUR OVER and then moves — a side effect,
+            which is what a button is for. As links they also fired the write and
+            navigated in the same instant, so the colour could arrive after the
+            room that was meant to receive it.
+          */}
+          {TELEPORT_TARGETS.map((target) => (
+            <button
+              key={target.room}
+              type="button"
+              role="menuitem"
+              className={styles.teleportOption}
+              onClick={() => handleTeleport(target)}
+            >
+              {target.label}
+              {/* The room's own name, so the option maps to the tab above it. */}
+              <span className={styles.teleportRoom}>{target.room}</span>
+            </button>
+          ))}
           <button
             type="button"
             className={styles.teleportClose}
