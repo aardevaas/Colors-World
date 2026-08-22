@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { TABS } from '@/lib/nav/tabs';
-import { REPO_URL } from '@/lib/landing/repo-stats';
+import { REPO_URL } from '@/lib/landing/repo';
+import type { RoomColor } from '@/lib/landing/room-palette';
+import { PaintRun } from './PaintRun';
 import styles from './site-footer.module.css';
 
 /**
@@ -14,10 +18,24 @@ import styles from './site-footer.module.css';
  *
  * Every room is listed, because the nav is pinned inside the app and a visitor
  * on the landing page has no other way to see what the product is made of.
+ *
+ * It is also where the rain goes. The paint run behind this — a fan, a length
+ * of glass and a wall it gets hosed at — is the end of the story the top of the
+ * page starts: everything that has been falling for four screens is caught
+ * here, put through a loop and thrown at the edge. See PaintRun.
+ *
+ * The text sits above it and the run is scenery, never a layer over the links.
  */
-export function SiteFooter() {
+interface SiteFooterProps {
+  /** The generated six, so the paint is the same colors as the weather. */
+  readonly rooms: readonly RoomColor[];
+}
+
+export function SiteFooter({ rooms }: SiteFooterProps) {
   return (
     <footer className={styles.footer}>
+      <PaintRun rooms={rooms} />
+
       <div className={styles.inner}>
         <div className={styles.brandColumn}>
           <p className={styles.wordmark}>Colors World</p>
@@ -25,6 +43,24 @@ export function SiteFooter() {
             An open-source studio for color and typography. Every color computed, every
             claim measurable.
           </p>
+          <a
+            className={styles.action}
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className={styles.actionLabel}>Read the source</span>
+            <span className={styles.actionArrow} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" focusable="false">
+                <path
+                  d="M4 12h15M13 6l6 6-6 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="square"
+                />
+              </svg>
+            </span>
+          </a>
         </div>
 
         <nav className={styles.column} aria-label="Rooms">

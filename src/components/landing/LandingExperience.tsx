@@ -8,6 +8,7 @@ import { RESTING_INTENSITY, rainIntensityAt, visibleDrops } from '@/lib/landing/
 import { HeroHud } from './HeroHud';
 import { PaintRain } from './PaintRain';
 import { ColorRooms } from './ColorRooms';
+import { SiteFooter } from './SiteFooter';
 import styles from './landing.module.css';
 
 /**
@@ -31,7 +32,10 @@ interface LandingExperienceProps {
    * WebGL and the scroll, and a client component cannot import a server one.
    */
   readonly credibility?: ReactNode;
-  readonly footer?: ReactNode;
+  /** No longer accepted: the footer needs the generated palette for its paint
+   *  run, so LandingExperience constructs it rather than receiving it. The
+   *  credibility strip stays a prop because it is a server component and cannot
+   *  be built from here. */
 }
 
 /**
@@ -49,7 +53,7 @@ const SECTION_HEIGHT_VH = 100;
  *  hand the server and the client different colors and break hydration. */
 const INITIAL_SEED_HUE = 262;
 
-export function LandingExperience({ credibility, footer }: LandingExperienceProps) {
+export function LandingExperience({ credibility }: LandingExperienceProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
   const [motionEnabled, setMotionEnabled] = useState(true);
@@ -139,7 +143,7 @@ export function LandingExperience({ credibility, footer }: LandingExperienceProp
       </section>
       <ColorRooms rooms={rooms} />
       {credibility}
-      {footer}
+      <SiteFooter rooms={rooms} />
     </>
   );
 }

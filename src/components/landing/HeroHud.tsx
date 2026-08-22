@@ -1,6 +1,7 @@
 'use client';
 
 import { GitHubIcon } from '@/components/icons/GitHubIcon';
+import { REPO_URL } from '@/lib/landing/repo';
 import type { RoomColor } from '@/lib/landing/room-palette';
 import { GlowTitle } from './GlowTitle';
 import { LiquidButton } from './LiquidButton';
@@ -14,8 +15,6 @@ interface HeroHudProps {
    *  CSS variable on this node rather than React state. */
   readonly ref?: React.Ref<HTMLDivElement>;
 }
-
-const REPO_URL = 'https://github.com/aardevaas/Colors-World';
 
 const SUB_COPY =
   'The free, open-source studio for color, palettes, branding, and typography — built in the open, for everyone.';

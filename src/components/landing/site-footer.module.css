@@ -3,13 +3,36 @@
  * because the in-app nav is not reachable from here.
  */
 
+/*
+ * Tall enough to be a room of its own, because the paint run lives in it.
+ *
+ * The footer used to be a strip of links under the last section. It is now
+ * where the rain ends: a fan gathers what has been falling for four screens, a
+ * length of glass loops it, and the far end hoses it at the right-hand edge.
+ * The text sits above that and the run stays behind — scenery the links are
+ * read against.
+ */
 .footer {
   position: relative;
+  isolation: isolate;
+  min-height: clamp(30rem, 62vh, 44rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
   z-index: 2;
   background: var(--surface-void, #0b0b0c);
   border-top: 1px solid var(--hairline);
   padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.5rem, 3vw, 2.5rem);
 }
+
+.inner,
+.colophon {
+  position: relative;
+  z-index: 1;
+}
+
+
 
 .inner {
   max-width: 68rem;
@@ -94,4 +117,72 @@
   font-size: 0.78rem;
   line-height: 1.6;
   color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------- the action */
+
+/*
+ * The repository link, moved down from the credibility strip where it was
+ * making the first cell of a six-cell grid twice the height of the rest.
+ *
+ * Square and split, like the arrow boxes on the room bands and the one that
+ * used to sit upstairs — the page has one arrow, not a rounded pill here and a
+ * hard box above.
+ */
+.action {
+  align-self: start;
+  display: inline-flex;
+  align-items: stretch;
+  margin-top: 0.35rem;
+  text-decoration: none;
+  color: var(--surface-void, #0b0b0c);
+  background: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  border-radius: 0;
+  transition:
+    background-color 320ms cubic-bezier(0.33, 1, 0.68, 1),
+    color 320ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.action:hover,
+.action:focus-visible {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.actionLabel {
+  padding: 0.7rem 1.1rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.actionArrow {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  border-inline-start: 1px solid currentColor;
+}
+
+.actionArrow svg {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.action:hover .actionArrow svg,
+.action:focus-visible .actionArrow svg {
+  transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .actionArrow svg {
+    transition: none;
+  }
+
+  .action:hover .actionArrow svg {
+    transform: none;
+  }
 }

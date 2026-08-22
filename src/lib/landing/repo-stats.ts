@@ -19,7 +19,7 @@ import 'server-only';
  * of the layout.
  */
 
-export const REPO_URL = 'https://github.com/aardevaas/Colors-World';
+export { REPO_URL } from './repo';
 
 const API_URL = 'https://api.github.com/repos/aardevaas/Colors-World';
 const CACHE_SECONDS = 3600;

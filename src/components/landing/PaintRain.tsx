@@ -279,8 +279,16 @@ function draw(
   context.clearRect(0, 0, world.width, world.height);
   context.globalAlpha = fieldOpacity(count / MAX_DROPS);
 
-  drawPool(context, world);
-  drawSplashes(context, world);
+  /*
+   * The pool and its splashes are no longer drawn here.
+   *
+   * What the rain runs into at the foot of the page is the paint run in the
+   * footer — a fan, a length of glass and a wall it gets hosed at — and having
+   * a flat pool underneath that meant two paint systems arguing over the same
+   * ground. The simulation still gathers drops at the floor, which is what
+   * takes them out of the field and recycles them; it simply has nothing to
+   * show for it any more.
+   */
 
   for (const drop of world.drops) {
     // Absorbed drops belong to the button that caught them and are drawn on its

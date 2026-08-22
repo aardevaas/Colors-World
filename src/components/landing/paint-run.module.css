@@ -1,0 +1,19 @@
+/*
+ * The paint run's canvas.
+ *
+ * Sits behind the footer's text rather than over it — the tube is scenery the
+ * links are read against, not a layer on top of them.
+ */
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    display: none;
+  }
+}

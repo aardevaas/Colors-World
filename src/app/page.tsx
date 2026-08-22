@@ -1,7 +1,6 @@
 import { JetBrains_Mono, Plus_Jakarta_Sans, Unbounded } from 'next/font/google';
 import { LandingExperience } from '@/components/landing/LandingExperience';
 import { CredibilityStrip } from '@/components/landing/CredibilityStrip';
-import { SiteFooter } from '@/components/landing/SiteFooter';
 
 /**
  * next/font self-hosts these at build time — no runtime request to Google, no
@@ -41,7 +40,9 @@ export default function LandingPage() {
       <a href="#main" className="skipLink">
         Skip to content
       </a>
-      <LandingExperience credibility={<CredibilityStrip />} footer={<SiteFooter />} />
+      {/* The footer is built inside LandingExperience now: it needs the
+          generated palette for its paint run, which is state that lives there. */}
+      <LandingExperience credibility={<CredibilityStrip />} />
     </div>
   );
 }
