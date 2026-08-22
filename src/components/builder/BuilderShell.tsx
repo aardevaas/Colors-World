@@ -29,6 +29,7 @@ import { ContrastMatrixPanel } from './ContrastMatrixPanel';
 import { GamutTriptych } from './GamutTriptych';
 import { ExportVault } from './ExportVault';
 import styles from './builder.module.css';
+import { RoomMain, SkipLink } from '@/components/nav/SkipLink';
 
 const GAMUT_OPTIONS: readonly Gamut[] = ['srgb', 'p3', 'rec2020'];
 const CVD_OPTIONS: readonly { readonly value: CvdMode; readonly label: string }[] = [
@@ -187,7 +188,9 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
 
   return (
     <div className={styles.shell}>
+      <SkipLink />
       <TabNav current="scales">{accountSlot}</TabNav>
+      <RoomMain>
 
       <div className={styles.globalControls}>
         <StepControls
@@ -305,6 +308,7 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
           />
         </>
       )}
+      </RoomMain>
     </div>
   );
 }

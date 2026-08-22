@@ -1,5 +1,12 @@
+import type { Metadata } from 'next';
 import { AccountStatus } from '@/components/auth/AccountStatus';
 import { TypographyShell } from '@/components/typography/TypographyShell';
+
+export const metadata: Metadata = {
+  title: 'typography',
+  description:
+    'Type and color judged together, because neither is legible on its own.',
+};
 
 /**
  * No next/font here, unlike /builder and /visualizer. This tab's whole purpose

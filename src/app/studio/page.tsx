@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { listBoardItems } from '@/lib/supabase/board';
 import { resolveDefaultProjectId } from '@/lib/supabase/projects';
@@ -8,6 +9,13 @@ import { TabNav } from '@/components/nav/TabNav';
 import { StudioWallBoard } from '@/components/studio-wall/StudioWallBoard';
 import { ShareControl } from '@/components/studio-wall/ShareControl';
 import styles from '@/components/studio-wall/studio-wall.module.css';
+import { RoomMain, SkipLink } from '@/components/nav/SkipLink';
+
+export const metadata: Metadata = {
+  title: 'studio',
+  description:
+    'A wall to arrange color on, shared by link.',
+};
 
 export default async function StudioWallPage() {
   const supabase = await createServerSupabaseClient();
@@ -25,12 +33,15 @@ export default async function StudioWallPage() {
 
   return (
     <div className={styles.shell}>
+      <SkipLink />
       <TabNav current="studio">
         <ShareControl />
         <AccountStatus />
       </TabNav>
 
-      <StudioWallBoard initialCards={cards} />
+      <RoomMain>
+        <StudioWallBoard initialCards={cards} />
+      </RoomMain>
     </div>
   );
 }

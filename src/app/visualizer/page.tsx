@@ -1,6 +1,13 @@
+import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Unbounded } from 'next/font/google';
 import { AccountStatus } from '@/components/auth/AccountStatus';
 import { VisualizerShell } from '@/components/visualizer/VisualizerShell';
+
+export const metadata: Metadata = {
+  title: 'visualizer',
+  description:
+    'Proof on real interfaces rather than swatches, audited live as you change it.',
+};
 
 /**
  * Loaded page-locally rather than at the root, matching /builder — per the

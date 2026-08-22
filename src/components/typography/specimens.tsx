@@ -25,9 +25,16 @@ function Magazine() {
   return (
     <article className={styles.magazine}>
       <p className={styles.kicker}>Field notes · Issue 04</p>
-      <h1 className={styles.magazineHeadline} data-audit-size="display" data-audit-weight="700">
+      {/*
+        A specimen, not the page's heading.
+        This was an `h1`, which gave the typography room two of them — one from
+        the wordmark and one from a sample article that exists to be looked at
+        rather than read as structure. The display size is set by the class and
+        the audit hooks, so nothing about how it renders depends on the tag.
+      */}
+      <p className={styles.magazineHeadline} data-audit-size="display" data-audit-weight="700">
         The quiet argument for slower type
-      </h1>
+      </p>
       <p className={styles.standfirst} data-audit-size="h4" data-audit-weight="400">
         Every typeface is a set of decisions someone already made for you. Reading
         slowly is how you find out which ones you disagree with.

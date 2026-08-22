@@ -24,14 +24,14 @@ export function MobileTemplate() {
             <span aria-hidden="true">▮▮▮</span>
           </div>
 
-          <header className={styles.phoneHeader}>
-            <h3 className={styles.phoneTitle} data-audit-fg="text" data-audit-bg="background">
+          <div className={styles.phoneHeader}>
+            <p className={styles.phoneTitle} data-audit-fg="text" data-audit-bg="background">
               Notifications
-            </h3>
+            </p>
             <span className={styles.badge} data-audit-fg="background" data-audit-bg="accent">
               2 on
             </span>
-          </header>
+          </div>
 
           <div className={styles.phoneBody}>
             {ROWS.map((row) => (
@@ -56,14 +56,14 @@ export function MobileTemplate() {
             ))}
           </div>
 
-          <nav className={styles.tabBar} aria-label="Mobile tabs">
+          <div className={styles.tabBar} aria-label="Mobile tabs">
             {[0, 1, 2, 3].map((index) => (
               <span
                 key={index}
                 className={index === 1 ? `${styles.tabIcon} ${styles.tabIconActive}` : styles.tabIcon}
               />
             ))}
-          </nav>
+          </div>
         </div>
       </div>
     </div>

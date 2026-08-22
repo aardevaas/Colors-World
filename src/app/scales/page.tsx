@@ -1,9 +1,16 @@
+import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Unbounded } from 'next/font/google';
 import { AccountStatus } from '@/components/auth/AccountStatus';
 import { BuilderShell } from '@/components/builder/BuilderShell';
 import { getBranchSnapshot } from '@/lib/supabase/branch-workflow';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 import type { ScaleSpec } from '@/lib/color-engine';
+
+export const metadata: Metadata = {
+  title: 'scales',
+  description:
+    'Every color deepened into a ramp, with sRGB, Display P3 and Rec2020 marked at every step.',
+};
 
 const MAIN_BRANCH = 'main';
 

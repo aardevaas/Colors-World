@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type MouseEvent } from 'react';
+import { useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import type { GeneratedSwatch } from '@/lib/spectrum/generate-color';
 import { FAMILY_STEPS, familyStepSwatch, type FamilyAxis } from '@/lib/spectrum/swatch-family';
@@ -37,6 +37,39 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [previewAxis, setPreviewAxis] = useState<FamilyAxis>('lightness');
   const [previewStep, setPreviewStep] = useState<number | null>(null);
+  /*
+   * The colours the stepper actually steps through.
+   *
+   * They were drawn as ten identical grey dashes, which is a control that looks
+   * like a loading skeleton — nobody presses a placeholder, so the whole family
+   * feature sat there unfound. Painting each tick with the colour it leads to
+   * turns the row into a small readable ramp of this very swatch, which on a
+   * page about colour is the obvious thing for it to be.
+   */
+  const ramp = useMemo(
+    () =>
+      Array.from({ length: FAMILY_STEPS }, (_, i) =>
+        familyStepSwatch(swatch.index, previewAxis, i + 1).hex
+      ),
+    [swatch.index, previewAxis]
+  );
+
+  /** Arrow keys move along the ramp; Home and End jump to its ends. */
+  const handleTickKeys = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const moves: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+    const current = previewStep ?? 1;
+    let next: number | null = null;
+    if (event.key in moves) next = current + (moves[event.key] ?? 0);
+    else if (event.key === 'Home') next = 1;
+    else if (event.key === 'End') next = FAMILY_STEPS;
+    if (next === null) return;
+    event.preventDefault();
+    const clamped = Math.max(1, Math.min(FAMILY_STEPS, next));
+    setPreviewStep(clamped);
+    const group = event.currentTarget;
+    (group.children[clamped - 1] as HTMLElement | undefined)?.focus();
+  };
+
   const [teleportOpen, setTeleportOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
@@ -126,15 +159,32 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
           >
             {previewAxis === 'lightness' ? 'L' : 'C'}
           </button>
-          <div className={styles.familyTicks} role="group" aria-label={`${previewAxis} steps`}>
+          {/*
+            One tab stop for the whole ramp, not ten.
+            Every tick was separately focusable, and with ten of them on each of
+            forty-odd cards the library came to six hundred stops — a keyboard
+            user reaching the second row of colours after a hundred presses of
+            Tab. This is the roving-tabindex pattern: the group is one stop and
+            the arrow keys move within it, which is how a set of related
+            controls is meant to behave anyway.
+          */}
+          <div
+            className={styles.familyTicks}
+            role="group"
+            aria-label={`${previewAxis} steps`}
+            onKeyDown={handleTickKeys}
+          >
             {Array.from({ length: FAMILY_STEPS }, (_, i) => i + 1).map((step) => (
               <button
                 key={step}
                 type="button"
                 className={styles.familyTick}
                 data-active={previewStep === step}
+                // The focused tick, or the first one when none is chosen yet.
+                tabIndex={step === (previewStep ?? 1) ? 0 : -1}
+                style={{ '--tick-color': ramp[step - 1] } as React.CSSProperties}
                 onClick={() => setPreviewStep((current) => (current === step ? null : step))}
-                aria-label={`${previewAxis} step ${step} of ${FAMILY_STEPS}`}
+                aria-label={`${previewAxis} step ${step} of ${FAMILY_STEPS}, ${ramp[step - 1]}`}
                 aria-pressed={previewStep === step}
               />
             ))}

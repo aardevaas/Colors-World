@@ -25,9 +25,9 @@ export function EditorialTemplate() {
           </span>
         </div>
 
-        <h1 className={styles.headline} data-audit-fg="text" data-audit-bg="background">
+        <p className={styles.headline} data-audit-fg="text" data-audit-bg="background">
           Color is a place, not a list.
-        </h1>
+        </p>
 
         <p className={styles.subcopy} data-audit-fg="text" data-audit-bg="background">
           Sixteen million shades, computed rather than stored — so you can wander

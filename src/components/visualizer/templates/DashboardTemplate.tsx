@@ -19,12 +19,12 @@ export function DashboardTemplate() {
   return (
     <div className={styles.frame}>
       <div className={styles.dashboard}>
-        <aside className={styles.sidebar}>
+        <div className={styles.sidebar}>
           <div className={styles.brandRow} data-audit-fg="text" data-audit-bg="surface">
             <span className={styles.brandDot} />
             Northwind
           </div>
-          <nav className={styles.navList}>
+          <div className={styles.navList}>
             {NAV_ITEMS.map((item, index) => (
               <span
                 key={item}
@@ -35,14 +35,14 @@ export function DashboardTemplate() {
                 {item}
               </span>
             ))}
-          </nav>
-        </aside>
+          </div>
+        </div>
 
         <section className={styles.main}>
           <div className={styles.mainHead}>
-            <h2 className={styles.title} data-audit-fg="text" data-audit-bg="background">
+            <p className={styles.title} data-audit-fg="text" data-audit-bg="background">
               Overview
-            </h2>
+            </p>
             <button type="button" className={styles.button} data-audit-fg="background" data-audit-bg="primary">
               New report
             </button>

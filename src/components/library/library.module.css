@@ -248,17 +248,31 @@
   min-width: 0;
   border: none;
   border-radius: 2px;
-  background: oklch(100% 0 0 / 0.14);
+  /* The colour this step leads to, so the row reads as the ramp it is. */
+  background: var(--tick-color, oklch(100% 0 0 / 0.14));
   cursor: pointer;
   padding: 0;
+  opacity: 0.62;
+  transition:
+    opacity var(--duration-fast, 150ms) ease,
+    transform var(--duration-fast, 150ms) ease;
 }
 
 .familyTick:hover {
-  background: oklch(100% 0 0 / 0.3);
+  opacity: 1;
+  transform: scaleY(1.5);
+}
+
+.familyTick:focus-visible {
+  outline: 2px solid oklch(92% 0.02 250);
+  outline-offset: 2px;
+  opacity: 1;
 }
 
 .familyTick[data-active='true'] {
-  background: oklch(85% 0.18 95 / 0.9);
+  opacity: 1;
+  transform: scaleY(1.85);
+  box-shadow: 0 0 0 1px oklch(100% 0 0 / 0.55);
 }
 
 .hoverActions {

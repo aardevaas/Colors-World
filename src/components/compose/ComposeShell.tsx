@@ -6,6 +6,7 @@ import { SystemLink } from '@/components/system/SystemLink';
 import { useSystem } from '@/lib/system/system-context';
 import { PaletteComposer } from './PaletteComposer';
 import styles from './compose-shell.module.css';
+import { RoomMain, SkipLink } from '@/components/nav/SkipLink';
 
 /**
  * The Compose room.
@@ -33,7 +34,9 @@ export function ComposeShell({ accountSlot }: ComposeShellProps) {
 
   return (
     <div className={styles.shell}>
+      <SkipLink />
       <TabNav current="compose">{accountSlot}</TabNav>
+      <RoomMain>
 
       <header className={styles.intro}>
         <h2 className={styles.title}>Start from one color, get a whole system.</h2>
@@ -76,6 +79,7 @@ export function ComposeShell({ accountSlot }: ComposeShellProps) {
           </p>
         )}
       </footer>
+      </RoomMain>
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { ImageSeed } from './ImageSeed';
 import { LibraryGrid, LIBRARY_BATCH_SIZE } from './LibraryGrid';
 import { GeneticsDrawer } from './GeneticsDrawer';
 import styles from './library.module.css';
+import { RoomMain, SkipLink } from '@/components/nav/SkipLink';
 
 const INITIAL_BATCH = LIBRARY_BATCH_SIZE * 2;
 const VIBE_RESULT_COUNT = 90;
@@ -136,7 +137,9 @@ export function LibraryShell() {
 
   return (
     <div className={styles.shell}>
+      <SkipLink />
       <TabNav current="library" />
+      <RoomMain>
 
       <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
         <input
@@ -190,6 +193,7 @@ export function LibraryShell() {
           }
         />
       )}
+      </RoomMain>
     </div>
   );
 }

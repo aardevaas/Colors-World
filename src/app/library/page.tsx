@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
 import { LibraryShell } from '@/components/library/LibraryShell';
+
+export const metadata: Metadata = {
+  title: 'library',
+  description:
+    'Browse the full 16.7-million-color space, generated on demand rather than pulled from a curated list.',
+};
 
 /**
  * Tab 01: an infinite, generated-on-demand grid (see generate-color.ts) with

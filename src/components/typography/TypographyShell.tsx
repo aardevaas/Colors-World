@@ -18,6 +18,7 @@ import { TabNav } from '@/components/nav/TabNav';
 import { LegibilityField } from './LegibilityField';
 import { SPECIMENS, specimenById, type SpecimenId } from './specimens';
 import styles from './typography.module.css';
+import { RoomMain, SkipLink } from '@/components/nav/SkipLink';
 
 /** Viewport range the fluid scale interpolates across. */
 const MIN_VIEWPORT = 360;
@@ -122,7 +123,9 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
 
   return (
     <div className={styles.shell}>
+      <SkipLink />
       <TabNav current="typography">{accountSlot}</TabNav>
+      <RoomMain>
 
       <div className={styles.controlBar}>
         <div className={styles.pillRow}>
@@ -316,6 +319,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
           </button>
         </aside>
       </div>
+      </RoomMain>
     </div>
   );
 }

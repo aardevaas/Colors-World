@@ -1,3 +1,17 @@
+/*
+ * SPECIMEN MARKUP — deliberately not semantic.
+ *
+ * These templates are PICTURES of interfaces: something to judge a palette
+ * against, not something to operate. Built from real landmarks they published
+ * themselves into the visualizer's own document, and a screen-reader user found
+ * two navigations, an aside and a page heading belonging to a dashboard that
+ * does not exist and cannot be used — on top of the room's own structure.
+ *
+ * So every element in them is a div or a p. The styling is entirely
+ * class-driven, so nothing renders differently, and the room keeps one heading
+ * outline and one set of landmarks: its own.
+ */
+
 import type { ComponentType } from 'react';
 import { DashboardTemplate } from './DashboardTemplate';
 import { CommerceTemplate } from './CommerceTemplate';

@@ -20,9 +20,9 @@ export function CommerceTemplate() {
           </div>
 
           <div className={styles.productBody}>
-            <h3 className={styles.productName} data-audit-fg="text" data-audit-bg="surface">
+            <p className={styles.productName} data-audit-fg="text" data-audit-bg="surface">
               Cassette Field Recorder
-            </h3>
+            </p>
 
             <div className={styles.stars} data-audit-fg="text" data-audit-bg="surface">
               <span className={styles.starFilled} aria-hidden="true">

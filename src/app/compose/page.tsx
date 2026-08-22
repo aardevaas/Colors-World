@@ -1,6 +1,13 @@
+import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Unbounded } from 'next/font/google';
 import { AccountStatus } from '@/components/auth/AccountStatus';
 import { ComposeShell } from '@/components/compose/ComposeShell';
+
+export const metadata: Metadata = {
+  title: 'compose',
+  description:
+    'One color in, a whole system out — reconciled against the gamut rather than clipped to it.',
+};
 
 /**
  * Compose — where a palette is made.

@@ -18,6 +18,7 @@ import { TabNav } from '@/components/nav/TabNav';
 import { AuditOverlay } from './AuditOverlay';
 import { TEMPLATES, templateById, type TemplateId } from './templates';
 import styles from './visualizer.module.css';
+import { RoomMain, SkipLink } from '@/components/nav/SkipLink';
 
 const EXPORT_DPR = 2;
 const EXPORT_TIMEOUT_MS = 15_000;
@@ -152,7 +153,9 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
 
   return (
     <div className={styles.shell}>
+      <SkipLink />
       <TabNav current="visualizer">{accountSlot}</TabNav>
+      <RoomMain>
 
       <div className={styles.controlBar}>
         <div className={styles.templateTabs}>
@@ -406,6 +409,7 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
           )}
         </aside>
       </div>
+      </RoomMain>
     </div>
   );
 }

@@ -5,7 +5,18 @@ import { SystemBar } from '@/components/system/SystemBar';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Colors World',
+  /*
+   * A template, so every room names itself.
+   *
+   * All six rooms inherited this one string, so every tab, every history entry
+   * and every shared link read "Colors World" and nothing else — six rooms
+   * indistinguishable from one another anywhere outside the page itself. A room
+   * now exports its own `title` and this wraps it.
+   */
+  title: {
+    default: 'Colors World',
+    template: '%s · Colors World',
+  },
   description: 'An open-source studio for color, palettes, branding, and typography.',
 };
 
