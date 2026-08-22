@@ -303,3 +303,50 @@
     transition: none;
   }
 }
+
+/*
+ * The tally, beside the name rather than instead of it.
+ *
+ * Set as its own chip so the pill reads "System 3" at a glance — the word says
+ * what the control is, the number says how much is in it, and neither has to
+ * displace the other.
+ */
+.countNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35em;
+  height: 1.35em;
+  margin-left: 0.45em;
+  padding: 0 0.3em;
+  border-radius: 999px;
+  background: oklch(100% 0 0 / 0.16);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+/*
+ * The acknowledgement.
+ *
+ * A short, single pulse when the collection grows — enough to catch the eye at
+ * the foot of the page after a press at the top of it, and over before it can
+ * become annoying. Scale and box-shadow only, so it stays on the compositor.
+ */
+@keyframes system-bar-caught {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 oklch(88% 0.12 200 / 0.5); }
+  35% { transform: scale(1.09); box-shadow: 0 0 0 7px oklch(88% 0.12 200 / 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 oklch(88% 0.12 200 / 0); }
+}
+
+.collapsedPill[data-added='true'] {
+  animation: system-bar-caught 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapsedPill[data-added='true'] {
+    animation: none;
+    outline: 2px solid oklch(88% 0.12 200 / 0.8);
+    outline-offset: 2px;
+  }
+}

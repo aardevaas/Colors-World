@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSystem } from '@/lib/system/system-context';
 import { SEMANTIC_ROLES } from '@/lib/roles/semantic-roles';
@@ -34,6 +34,30 @@ export function SystemBar() {
   } = useSystem();
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
+
+  /*
+   * Did the collection just grow?
+   *
+   * The one question a visitor has after pressing "+ Dock" on a card at the top
+   * of a grid is whether anything happened, and the answer was a 126px pill at
+   * the foot of the page quietly changing a word into a digit. Nothing moved,
+   * nothing drew the eye, and the honest reading of that is "the button is
+   * broken". This is the acknowledgement.
+   */
+  const [justAdded, setJustAdded] = useState(false);
+  // Read off `system` rather than the destructured `palette`: that binding is
+  // below the landing-page early return, and a hook cannot sit after one.
+  const count = system.palette.length;
+  const lastCountRef = useRef(count);
+  useEffect(() => {
+    if (count > lastCountRef.current) {
+      setJustAdded(true);
+      const clear = window.setTimeout(() => setJustAdded(false), 700);
+      lastCountRef.current = count;
+      return () => window.clearTimeout(clear);
+    }
+    lastCountRef.current = count;
+  }, [count]);
   const [dragOver, setDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -75,6 +99,12 @@ export function SystemBar() {
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         data-drag-over={dragOver}
+        data-added={justAdded}
+        title={
+          palette.length === 0
+            ? 'Your System — collect colors here, or drop one in'
+            : `Your System — ${palette.length} color${palette.length === 1 ? '' : 's'}`
+        }
         aria-label={
           palette.length === 0
             ? 'Open the System — no colors collected yet'
@@ -98,8 +128,16 @@ export function SystemBar() {
                 />
               ))}
         </span>
+        {/*
+          The pill keeps its NAME once it has something in it.
+
+          It used to swap the word "System" for a bare digit on the first colour
+          — so the control shed the one label that said what it was at the exact
+          moment it started to matter, and shrank while doing it. A thing that
+          gains contents should not get smaller and quieter.
+        */}
         <span className={styles.count}>
-          {palette.length === 0 ? 'System' : palette.length}
+          System{palette.length > 0 && <span className={styles.countNumber}>{palette.length}</span>}
         </span>
       </button>
     );
