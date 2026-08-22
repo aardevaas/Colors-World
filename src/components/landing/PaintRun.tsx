@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MAX_POOL,
+  POOL_COLUMNS,
   columnAt,
   createWorld,
   dropVolume,
@@ -46,17 +47,31 @@ const VALVE_TIME = 0.42;
  * dies away with the wheel instead of switching on at pressure.
  *
  * The turns are chosen against measured fill speeds. At 1440 the pool gains
- * about 0.8 of that. The relationship is SUBLINEAR at the top — past a point
- * the column under the spout hits the cap and the surplus is thrown away, which
- * is why the stream widens with the flow and why the top setting needs more
- * rate than a straight line would suggest. Measured at 3, 6 and 10 px/s.
+ * about 0.7 of that.
+ *
+ * The three settings are the TAP'S OWN contribution: 3, 6 and 10px of mean pool
+ * depth a second, on top of the weather. That distinction matters, because it
+ * always rains here now and the rain alone is worth ~3px/s — so a setting tuned
+ * to a TOTAL of 3 would be a tap you could not tell from a closed one.
+ *
+ * Solved against the simulation rather than the page: from an empty floor the
+ * pool gains `rate / 23.4` px of mean depth a second, dead linear, which puts
+ * the three settings at rates of 72, 142 and 240. In the browser the same
+ * measurement carries ±20% of noise from where the drain happened to leave the
+ * floor, which is not enough resolution to tune against.
+ *
+ * Measure from an EMPTY floor, and measure the middle of it. Taken back to back
+ * the settings read the cap rather than the tap: by the third the pool is near
+ * MAX_POOL and cannot rise, so the hardest setting comes out slower than the
+ * middle one. And sampled across the whole width the reading includes the tap
+ * and the lever, both drawn up from the floor, which is worth a phantom 8px.
  */
-const MAX_POUR_RATE = 300;
+const MAX_POUR_RATE = 240;
 
 const STRENGTHS = [
   { turn: 0, label: 'off' },
-  { turn: 0.162, label: 'a trickle' },
-  { turn: 0.387, label: 'a steady run' },
+  { turn: 0.30, label: 'a trickle' },
+  { turn: 0.59, label: 'a steady run' },
   { turn: 1, label: 'full' },
 ] as const;
 interface Droplet {
@@ -109,6 +124,21 @@ export function faucetGeometry(width: number, height: number) {
 /** Splash particles thrown up by one droplet meeting the paint. */
 const SPLASH_PER_DROP = 4;
 
+/**
+ * How a landing drop's volume is shared with the columns around it.
+ *
+ * Tapering out to two columns either side. Sums to 1, so nothing is invented —
+ * this only decides WHERE the paint goes, and spreading it is what stops the
+ * column under the spout hitting the cap and throwing the surplus away.
+ */
+const SPLASH_FOOTPRINT: readonly (readonly [number, number])[] = [
+  [0, 0.32],
+  [-1, 0.2],
+  [1, 0.2],
+  [-2, 0.14],
+  [2, 0.14],
+];
+
 /** How fast the drain swallows paint at its own columns, px of depth a second. */
 const DRAIN_RATE = 2800;
 
@@ -157,30 +187,27 @@ const PULL_TIME = 1.05;
  */
 export function drainGeometry(width: number, height: number) {
   const scale = Math.max(0.72, Math.min(1.25, width / 1440)) * 0.8;
-  const base = height - 4 * scale;
   /*
-   * The head waits clear of a FULL pool. Anything lower submerges itself at the
-   * exact moment there is most to flush, and a control you cannot see is not a
-   * control.
+   * The plunger hangs from the CEILING of the footer.
+   *
+   * It stood on the floor, which put it in the paint and, at the moment the
+   * floor was fullest, underneath it. Hung from the top it is always clear of
+   * the pool however deep the pool gets, it never crosses the centred credit
+   * line, and it plunges DOWNWARD — which is the direction a plunger works in.
    */
-  const head = height - MAX_POOL - 34 * scale;
+  const ceilingY = 2 * scale;
+  const shaft = 132 * scale;
   return {
     scale,
-    /** Aligned to the centre of the page. */
+    /** The drain itself is centred — and invisible. Only the paint shows it. */
     x: width / 2,
-    /** All the way at the bottom. */
     grateY: height - 5 * scale,
-    /*
-     * Against the right-hand wall, opposite the tap.
-     *
-     * Beside the grate it stood in the middle of the footer's centred credit
-     * line and drew its shaft straight through it. Out here the room reads as
-     * what it is: paint in on the left, paint out on the right, and the hole in
-     * the floor between them.
-     */
-    leverX: width - 112 * scale,
-    leverBaseY: base,
-    leverLength: base - head,
+    plungerX: width - 118 * scale,
+    ceilingY,
+    /** Where the cup sits at rest, hanging. */
+    cupY: ceilingY + shaft,
+    /** How far it drives down on the stroke. */
+    travel: 96 * scale,
   };
 }
 
@@ -254,13 +281,9 @@ export function PaintRun({ rooms }: PaintRunProps) {
       setHit({ x: g.handleX - reach / 2, y: g.handleY - reach / 2, size: reach });
 
       const d = drainGeometry(width, height);
-      // Centred on the head of the lever, which is the part you would grab.
-      const grip = 82 * d.scale;
-      setDrainHit({
-        x: d.leverX - grip / 2,
-        y: d.leverBaseY - d.leverLength - grip * 0.4,
-        size: grip,
-      });
+      // Centred on the cup, which is the part that looks grabbable.
+      const grip = 86 * d.scale;
+      setDrainHit({ x: d.plungerX - grip / 2, y: d.cupY - grip * 0.5, size: grip });
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
@@ -288,7 +311,25 @@ export function PaintRun({ rooms }: PaintRunProps) {
        * is open. Without this the tap and the drain reached a standstill and the
        * floor never cleared, which is not what pulling a flush does.
        */
-      if (!drainingRef.current) pourInto(pool, x, dropVolume(size, width), rgb);
+      if (!drainingRef.current) {
+        /*
+         * Paint spreads where it lands, over about a column either side.
+         *
+         * All of a drop's volume going into the single column under it is what
+         * kept the tap saturating: that column reaches the cap, the surplus is
+         * discarded, and no amount of opening the valve delivers more. Widening
+         * the FALL instead made the stream look like a rectangle of paint beside
+         * the tap. A drop hitting a pool does not sink into a slot — it spreads
+         * — so the volume is shared with its neighbours, which is both truer and
+         * the thing that lets the top setting actually reach the floor.
+         */
+        const volume = dropVolume(size, width);
+        const step = width / POOL_COLUMNS;
+        // Two columns either side, tapering — a splash, not a slot.
+        for (const [offset, share] of SPLASH_FOOTPRINT) {
+          pourInto(pool, x + offset * step, volume * share, rgb);
+        }
+      }
       rings.push({ x, y, t: 0, size, rgb });
       if (rings.length > 18) rings.shift();
       for (let i = 0; i < SPLASH_PER_DROP; i += 1) {
@@ -330,6 +371,10 @@ export function PaintRun({ rooms }: PaintRunProps) {
     /** 0 at rest, running up on every push of the plunger. */
     /** 0 at rest; runs up while the lever is bending and ringing back. */
     let pullT = 0;
+    /** Drips still to fall from the mouth after the tap is shut. */
+    let dripsLeft = 0;
+    let dripClock = 0;
+    let wasFlowing = false;
 
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
@@ -345,26 +390,67 @@ export function PaintRun({ rooms }: PaintRunProps) {
 
       const g = faucetGeometry(width, height);
 
+      /*
+       * A closed tap drips.
+       *
+       * Paint left in the spout finds its way out over the next few seconds,
+       * and those two or three late drops are most of what makes the thing read
+       * as a real tap that was just running rather than a picture that stopped.
+       */
+      const flowing = flow > 0.02;
+      if (wasFlowing && !flowing) {
+        dripsLeft = 2 + Math.floor(Math.random() * 2);
+        dripClock = 0.5;
+      }
+      wasFlowing = flowing;
+
+      if (dripsLeft > 0) {
+        dripClock -= dt;
+        if (dripClock <= 0) {
+          dripsLeft -= 1;
+          dripClock = 0.7 + Math.random() * 0.8;
+          colorCursor += 1;
+          droplets.push({
+            x: g.spoutX + (Math.random() - 0.5) * g.pipe * 0.12,
+            y: g.spoutY + 4 * g.scale,
+            vx: 0,
+            vy: 14,
+            size: 7 + Math.random() * 4,
+            rgb: roomRgb(colorCursor),
+          });
+        }
+      }
+
       // --- pour ------------------------------------------------------------
       if (flow > 0.01) {
         pourDebt += MAX_POUR_RATE * flow * dt;
         while (pourDebt >= 1) {
           pourDebt -= 1;
           colorCursor += 1;
+          /*
+           * Everything leaves through the HOLE.
+           *
+           * The spread used to be applied at the spawn point and widened with
+           * the flow, which meant that at full blast paint appeared along a
+           * band as wide as your hand — a rectangle of drops beside the tap
+           * rather than a stream out of it. But some spread is needed: with
+           * every drop landing inside half a column the column under the spout
+           * hits the cap and the surplus is discarded, and the tap saturates
+           * however far it is opened.
+           *
+           * So the spread moved from the spawn to the VELOCITY. Paint leaves
+           * the aperture — always the same few pixels, whatever the setting —
+           * and fans out on the way down, which is what a jet breaking up
+           * actually does, and it arrives across as many columns as before.
+           */
+          const aperture = g.pipe * 0.17;
+          const fan = 14 + flow * 108;
           droplets.push({
-            /*
-             * A stream has width, and a harder stream has MORE width.
-             *
-             * Not decoration. Every drop used to land within half a column of
-             * the spout, so at full blast the column under it hit the cap and
-             * the surplus was thrown away — the tap saturated at 7.2px/s however
-             * hard it was opened. Spreading the fall with the flow lets the
-             * paint actually arrive, and is what an open tap looks like.
-             */
-            x: g.spoutX + (Math.random() - 0.5) * (14 + flow * 78) * g.scale,
-            y: g.spoutY + 6 * g.scale,
-            vx: (Math.random() - 0.5) * 16,
-            vy: 150 + Math.random() * 90,
+            x: g.spoutX + (Math.random() - 0.5) * aperture,
+            y: g.spoutY + 4 * g.scale,
+            vx: (Math.random() - 0.5) * fan,
+            // Harder open, faster out of the mouth.
+            vy: 130 + flow * 90 + Math.random() * 70,
             size: 5 + Math.random() * 7,
             rgb: roomRgb(colorCursor),
           });
@@ -579,32 +665,39 @@ function drawFaucet(
   context.strokeStyle = steel(0.32);
   context.stroke();
 
-  // A collar just above the mouth — the detail that says "tap" rather than
-  // "bent tube".
+  /*
+   * The mouth: a collar and a flare, drawn as one tapered end.
+   *
+   * This was two stacked rounded rectangles and it read as a small box bolted
+   * to the bottom of the pipe — hard corners where a tap has none. A spout end
+   * is a swell and a lip, so that is what it is: a band that widens to the rim,
+   * and a dark ellipse of an opening under it.
+   */
+  const rim = pipe * 0.74;
   context.beginPath();
-  context.roundRect(spoutX - pipe * 0.62, spoutY - 22 * scale, pipe * 1.24, 9 * scale, 2 * scale);
-  context.fillStyle = 'rgba(38,48,63,1)';
+  context.moveTo(spoutX - pipe * 0.5, spoutY - 26 * scale);
+  context.quadraticCurveTo(spoutX - rim, spoutY - 14 * scale, spoutX - rim, spoutY);
+  context.lineTo(spoutX + rim, spoutY);
+  context.quadraticCurveTo(spoutX + rim, spoutY - 14 * scale, spoutX + pipe * 0.5, spoutY - 26 * scale);
+  context.closePath();
+  const collar = context.createLinearGradient(spoutX - rim, 0, spoutX + rim, 0);
+  collar.addColorStop(0, 'rgba(24,31,42,1)');
+  collar.addColorStop(0.34, 'rgba(120,138,162,1)');
+  collar.addColorStop(1, 'rgba(30,38,50,1)');
+  context.fillStyle = collar;
   context.fill();
-  context.lineWidth = 1.6 * scale;
-  context.strokeStyle = steel(0.5);
+  context.lineWidth = 1.4 * scale;
+  context.strokeStyle = steel(0.42);
   context.stroke();
 
-  // The mouth, flared wider than the pipe.
+  // The opening itself, seen slightly from below.
   context.beginPath();
-  context.roundRect(spoutX - pipe * 0.78, spoutY - 8 * scale, pipe * 1.56, 13 * scale, 3 * scale);
-  context.fillStyle = 'rgba(20,27,37,1)';
+  context.ellipse(spoutX, spoutY + 1 * scale, rim * 0.86, 4.6 * scale, 0, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(8,11,16,1)';
   context.fill();
-  context.lineWidth = 2 * scale;
-  context.strokeStyle = steel(0.6);
+  context.lineWidth = 1.3 * scale;
+  context.strokeStyle = steel(0.36);
   context.stroke();
-
-  // Paint standing in the throat once it is running.
-  if (flow > 0.02) {
-    context.beginPath();
-    context.ellipse(spoutX, spoutY + 3 * scale, pipe * 0.5, 3 * scale, 0, 0, Math.PI * 2);
-    context.fillStyle = `rgba(255,255,255,${0.12 + flow * 0.2})`;
-    context.fill();
-  }
 
   // --- the handle ----------------------------------------------------------
   run(handleX, wallY - 6 * scale, handleX, handleY + 6 * scale, pipe * 0.52);
@@ -648,36 +741,76 @@ function drawFaucet(
   context.strokeStyle = 'rgba(40,52,68,0.9)';
   context.stroke();
 
-  // --- the stream ----------------------------------------------------------
-  //
-  // Only the first stretch below the mouth is solid. Past that the individual
-  // droplets take over, which is what a falling stream does — it holds together
-  // for an inch and then breaks up.
+  /*
+   * The stream, and where it stops being one.
+   *
+   * A jet leaves a tap as a solid glassy column, holds together for a way, and
+   * then necks down and breaks into drops — and the harder it runs, the FURTHER
+   * it gets before that happens. So the solid part lengthens with the flow and
+   * the droplets take over from wherever it ends, which is why the two never
+   * look like separate effects layered on each other.
+   *
+   * It leaves through the aperture at every setting. Only its width and how far
+   * it holds together change, because that is what actually changes when you
+   * open a tap.
+   */
   if (flow > 0.02) {
-    const length = 34 * scale * flow;
-    const half = pipe * 0.3 * flow;
+    const mouth = spoutY + 3 * scale;
+    const length = (16 + 46 * flow) * scale;
+    const half = pipe * (0.1 + 0.13 * flow);
+    // Necks in as it falls and speeds up, as a real jet does.
+    const neck = half * 0.62;
+
     context.beginPath();
-    context.moveTo(spoutX - half, spoutY + 3 * scale);
-    context.lineTo(spoutX + half, spoutY + 3 * scale);
-    context.lineTo(spoutX + half * 0.5, spoutY + length);
-    context.lineTo(spoutX - half * 0.5, spoutY + length);
+    context.moveTo(spoutX - half, mouth);
+    context.lineTo(spoutX + half, mouth);
+    context.quadraticCurveTo(
+      spoutX + neck, mouth + length * 0.6,
+      spoutX + neck * 0.7, mouth + length
+    );
+    context.lineTo(spoutX - neck * 0.7, mouth + length);
+    context.quadraticCurveTo(
+      spoutX - neck, mouth + length * 0.6,
+      spoutX - half, mouth
+    );
     context.closePath();
-    context.fillStyle = `rgba(238,246,255,${0.26 * flow})`;
+    const jet = context.createLinearGradient(spoutX - half, 0, spoutX + half, 0);
+    jet.addColorStop(0, `rgba(206,224,246,${0.2 * flow})`);
+    jet.addColorStop(0.4, `rgba(248,252,255,${0.4 * flow})`);
+    jet.addColorStop(1, `rgba(198,218,242,${0.18 * flow})`);
+    context.fillStyle = jet;
     context.fill();
   }
+
+  /*
+   * The bead at the mouth.
+   *
+   * Present whether the tap is running or not — a spout that has had paint
+   * through it keeps a drop hanging in it. Swells slightly with the flow.
+   */
+  context.beginPath();
+  context.ellipse(
+    spoutX,
+    spoutY + 3 * scale,
+    pipe * (0.1 + 0.08 * flow),
+    pipe * (0.07 + 0.05 * flow),
+    0, 0, Math.PI * 2
+  );
+  context.fillStyle = `rgba(232,244,255,${0.24 + flow * 0.26})`;
+  context.fill();
 
   context.restore();
 }
 
 /**
- * The drain in the floor, and the flush lever beside it.
+ * The plunger hanging over an invisible drain.
  *
- * The lever is rubber and it behaves like rubber: pulled, it does not travel to
- * a new position and stop, it WHIPS — bending hard, overshooting past its own
- * rest, and ringing down. That bend is the whole character of the thing, so it
- * is drawn as a curve whose control point carries the displacement rather than
- * as a rigid arm on a hinge, which is the version of this that reads as a
- * switch instead of as something with give in it.
+ * THE DRAIN IS NOT DRAWN. A grate rendered into the floor read as a sticker of
+ * a grate — a hard little ellipse of hardware sitting on top of a body of
+ * paint, and no amount of shading fixed it, because the paint is in front of it
+ * and metal seen through paint is not metal. What tells you there is a hole is
+ * the paint: it dips, it turns, and it goes. So the only thing drawn at the
+ * centre is what the fluid is doing.
  */
 function drawDrain(
   context: CanvasRenderingContext2D,
@@ -685,38 +818,18 @@ function drawDrain(
   draining: boolean,
   pullT: number
 ): void {
-  const { scale, x, grateY, leverX, leverBaseY, leverLength } = d;
+  const { scale, x, grateY, plungerX, ceilingY, cupY: rest, travel } = d;
 
   context.save();
   context.lineCap = 'round';
   context.lineJoin = 'round';
 
-  // --- the grate ------------------------------------------------------------
-  context.beginPath();
-  context.ellipse(x, grateY, 40 * scale, 13 * scale, 0, 0, Math.PI * 2);
-  context.fillStyle = 'rgba(8,11,16,0.97)';
-  context.fill();
-  context.lineWidth = 3 * scale;
-  context.strokeStyle = 'rgba(198,214,234,0.5)';
-  context.stroke();
-
-  context.lineWidth = 2.4 * scale;
-  context.strokeStyle = 'rgba(198,214,234,0.3)';
-  for (let i = -3; i <= 3; i += 1) {
-    const bx = x + i * 10 * scale;
-    const span = 12 * scale * Math.sqrt(Math.max(0, 1 - (i / 4.1) ** 2));
-    context.beginPath();
-    context.moveTo(bx, grateY - span);
-    context.lineTo(bx, grateY + span);
-    context.stroke();
-  }
-
   /*
    * The vortex, drawn only while it is running.
    *
-   * Two arms of a spiral tightening into the grate, turning fast. It sits on
-   * top of the paint because the paint is what is turning — the surface itself
-   * is already dipping here, because the solver is answering a hole.
+   * Three arms tightening into the centre, turning fast. This is the drain: the
+   * surface is already dipping here because the solver is answering a hole, and
+   * these are the streaks that make the dip read as a turn rather than a sag.
    */
   if (draining) {
     const spin = pullT * 26;
@@ -725,96 +838,112 @@ function drawDrain(
       context.beginPath();
       for (let t = 0; t <= 1.001; t += 0.045) {
         const angle = spin + (arm * Math.PI * 2) / 3 + t * Math.PI * 3.2;
-        const radius = 62 * scale * (1 - t) ** 1.2;
+        const radius = 66 * scale * (1 - t) ** 1.2;
         const px = x + Math.cos(angle) * radius;
         const py = grateY + Math.sin(angle) * radius * 0.34;
         if (t === 0) context.moveTo(px, py);
         else context.lineTo(px, py);
       }
-      context.strokeStyle = `rgba(255,255,255,${0.4 - arm * 0.11})`;
+      context.strokeStyle = `rgba(255,255,255,${0.42 - arm * 0.11})`;
       context.stroke();
     }
   }
 
-  // --- the lever ------------------------------------------------------------
+  // --- the plunger ----------------------------------------------------------
   //
-  // A damped ring rather than a travel-and-stop. Peaks almost at once, swings
-  // back through its rest and settles — which is what a rubber arm does and a
-  // hinged one does not.
-  const bend = draining || pullT > 0
-    ? Math.exp(-3.1 * pullT) * Math.sin(pullT * 11.5) * 1.35
+  // A damped ring rather than a travel-and-stop: it dives, overshoots, comes
+  // back past its rest and settles. Rubber does that; a hinge does not.
+  const swing = draining || pullT > 0
+    ? Math.exp(-3.1 * pullT) * Math.sin(pullT * 11.5)
     : 0;
+  const cupY = rest + Math.max(0, swing) * travel;
+  // The shaft bows as it drives, so the whole thing reads as one object under
+  // load rather than a rigid stick that happens to be moving.
+  const bow = swing * 26 * scale;
 
-  const tipX = leverX - bend * 78 * scale;
-  const tipY = leverBaseY - leverLength + Math.abs(bend) * 34 * scale;
-  // The control point leads the tip, so the arm bows through its length instead
-  // of pivoting stiffly at the base.
-  const ctrlX = leverX - bend * 30 * scale;
-  const ctrlY = leverBaseY - leverLength * 0.52;
-
-  // A collar bolting it to the floor.
+  // The bracket it hangs from.
   context.beginPath();
-  context.ellipse(leverX, leverBaseY, 21 * scale, 7 * scale, 0, 0, Math.PI * 2);
-  context.fillStyle = 'rgba(20,24,31,1)';
+  context.roundRect(plungerX - 17 * scale, ceilingY - 2 * scale, 34 * scale, 11 * scale, 3 * scale);
+  context.fillStyle = 'rgba(30,36,46,1)';
   context.fill();
-  context.lineWidth = 2.2 * scale;
-  context.strokeStyle = 'rgba(150,166,186,0.45)';
+  context.lineWidth = 1.8 * scale;
+  context.strokeStyle = 'rgba(150,166,186,0.4)';
   context.stroke();
 
-  // The shaft: black rubber, thick at the foot and tapering to the head.
-  for (const [width_, tint] of [
-    [15 * scale, 'rgba(10,12,16,1)'],
-    [9 * scale, 'rgba(38,42,50,1)'],
-    [3 * scale, 'rgba(96,104,118,0.55)'],
+  /*
+   * The handle: warm wood against the steel of the tap.
+   *
+   * The two fixtures do different jobs and should not look like a matching set.
+   * The tap is cold metal and lives on the left; this is wood and rubber and
+   * lives on the right, and you can tell them apart at a glance from across the
+   * page — which is the whole point of giving it a colour of its own.
+   */
+  const ctrlX = plungerX + bow;
+  for (const [w, tint] of [
+    [11 * scale, 'rgba(72,46,26,1)'],
+    [7 * scale, 'rgba(146,100,58,1)'],
+    [2.4 * scale, 'rgba(206,158,104,0.9)'],
   ] as const) {
     context.beginPath();
-    context.moveTo(leverX, leverBaseY - 2 * scale);
-    context.quadraticCurveTo(ctrlX, ctrlY, tipX, tipY);
-    context.lineWidth = width_;
+    context.moveTo(plungerX, ceilingY + 8 * scale);
+    context.quadraticCurveTo(ctrlX, (ceilingY + cupY) / 2, plungerX + bow * 0.35, cupY - 26 * scale);
+    context.lineWidth = w;
     context.strokeStyle = tint;
     context.stroke();
   }
 
-  /*
-   * The head: a rubber cup, leaning the way the arm is bent.
-   *
-   * Squashed along its lean rather than drawn upright, so the whole thing reads
-   * as one flexible object under load instead of a solid shape sitting on a
-   * bent stick.
-   */
-  const lean = Math.atan2(tipX - ctrlX, ctrlY - tipY);
-  context.save();
-  context.translate(tipX, tipY);
-  context.rotate(-lean);
-  const r = 27 * scale;
+  const tipX = plungerX + bow * 0.35;
+
+  // The collar where the rubber grips the handle.
   context.beginPath();
-  context.moveTo(-r, 6 * scale);
-  context.quadraticCurveTo(-r, -26 * scale, 0, -26 * scale);
-  context.quadraticCurveTo(r, -26 * scale, r, 6 * scale);
-  context.quadraticCurveTo(r, 17 * scale, 0, 17 * scale);
-  context.quadraticCurveTo(-r, 17 * scale, -r, 6 * scale);
+  context.roundRect(tipX - 8 * scale, cupY - 32 * scale, 16 * scale, 10 * scale, 2 * scale);
+  context.fillStyle = 'rgba(58,60,66,1)';
+  context.fill();
+
+  /*
+   * The cup: a proper plunger bell — domed shoulders, a flared lip, and a
+   * squash on the downstroke.
+   *
+   * Red rubber, because that is the thing everyone has already seen. A black
+   * cup on a dark floor was a silhouette you had to work out; this one is
+   * recognisable before you have finished looking at it.
+   */
+  const squash = 1 + Math.max(0, swing) * 0.2;
+  context.save();
+  context.translate(tipX, cupY);
+  context.scale(squash, 1 - Math.max(0, swing) * 0.16);
+
+  const r = 30 * scale;
+  context.beginPath();
+  context.moveTo(-r * 0.52, -24 * scale);
+  context.quadraticCurveTo(-r * 0.98, -12 * scale, -r, 12 * scale);
+  context.quadraticCurveTo(-r, 24 * scale, 0, 24 * scale);
+  context.quadraticCurveTo(r, 24 * scale, r, 12 * scale);
+  context.quadraticCurveTo(r * 0.98, -12 * scale, r * 0.52, -24 * scale);
   context.closePath();
-  const rubber = context.createLinearGradient(0, -26 * scale, 0, 17 * scale);
-  rubber.addColorStop(0, 'rgba(46,50,58,1)');
-  rubber.addColorStop(0.55, 'rgba(16,18,23,1)');
-  rubber.addColorStop(1, 'rgba(6,7,10,1)');
+  const rubber = context.createLinearGradient(-r, -24 * scale, r * 0.4, 24 * scale);
+  rubber.addColorStop(0, 'rgba(214,74,58,1)');
+  rubber.addColorStop(0.45, 'rgba(166,36,32,1)');
+  rubber.addColorStop(1, 'rgba(96,16,18,1)');
   context.fillStyle = rubber;
   context.fill();
-  context.lineWidth = 1.8 * scale;
-  context.strokeStyle = 'rgba(128,140,158,0.34)';
+  context.lineWidth = 1.6 * scale;
+  context.strokeStyle = 'rgba(248,150,132,0.32)';
   context.stroke();
 
-  // A ring around the cup, and a highlight — the two details that stop black
-  // rubber rendering as a hole in the page.
+  // The flared lip at the bottom, which is what makes it a plunger and not a bell.
   context.beginPath();
-  context.ellipse(0, 4 * scale, r * 0.72, 5 * scale, 0, 0, Math.PI * 2);
-  context.lineWidth = 1.4 * scale;
-  context.strokeStyle = 'rgba(120,132,150,0.24)';
+  context.ellipse(0, 22 * scale, r, 7 * scale, 0, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(128,22,22,1)';
+  context.fill();
+  context.lineWidth = 1.5 * scale;
+  context.strokeStyle = 'rgba(240,132,116,0.3)';
   context.stroke();
 
+  // A highlight down one shoulder — rubber is matte, but not flat.
   context.beginPath();
-  context.ellipse(-r * 0.34, -14 * scale, r * 0.28, 6 * scale, -0.4, 0, Math.PI * 2);
-  context.fillStyle = 'rgba(196,210,230,0.16)';
+  context.ellipse(-r * 0.4, -4 * scale, r * 0.2, 12 * scale, -0.25, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(255,196,180,0.2)';
   context.fill();
   context.restore();
 

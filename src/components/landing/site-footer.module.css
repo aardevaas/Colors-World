@@ -23,7 +23,22 @@
   z-index: 2;
   background: var(--surface-void, #0b0b0c);
   border-top: 1px solid var(--hairline);
-  padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 5vw, 4rem) clamp(1.5rem, 3vw, 2.5rem);
+  /*
+   * The bottom padding reserves the BASIN.
+   *
+   * The paint caps at MAX_POOL (165px) and the lowest line of the colophon sat
+   * 40px off the floor, so a full pool rose 125px past it and put the last room
+   * link on a field of bright paint at 2.5:1 — an unreadable link, on the page
+   * that sells measurable contrast. The paint now has a band of its own below
+   * everything that has to be read, which is also the only way it can be SEEN:
+   * it was previously hidden behind the very text it was drowning.
+   *
+   * Keep this at least `MAX_POOL` plus a margin. If the cap in rain-sim moves,
+   * this moves with it.
+   */
+  --paint-basin: 12.5rem;
+  padding: clamp(2.5rem, 6vw, 4rem) clamp(1.25rem, 5vw, 4rem)
+    calc(clamp(1.5rem, 3vw, 2.5rem) + var(--paint-basin));
 }
 
 .inner,
