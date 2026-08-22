@@ -93,6 +93,7 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
       seed: (index * 2.399963) % (Math.PI * 2),
       terminal: TERMINAL_FAR + (1 - drop.depth) * (TERMINAL_NEAR - TERMINAL_FAR),
       squash: 0,
+      spread: 0,
     }));
     world.drops.push(...drops);
 
@@ -290,7 +291,18 @@ function draw(
   context.globalAlpha = 1;
 }
 
-/** A teardrop: round below, drawn to a point above, with one hard specular. */
+/**
+ * A drop, in whichever shape it currently is.
+ *
+ * Three, and the difference between them is the whole point: a falling drop is
+ * a teardrop, a drop touching something is a BEAD — wide, low, and flat where
+ * it meets the surface — and a bead that is running is that same bead stretched
+ * out behind itself. Drawing an airborne teardrop while a drop sits on a button
+ * is the single thing that most gave the interaction away.
+ *
+ * `spread` carries which of those it is: 0 in the air, rising hard on impact,
+ * relaxing to a resting dome, stretching again once it runs.
+ */
 function drawDrop(
   context: CanvasRenderingContext2D,
   drop: SimDrop,
@@ -298,33 +310,81 @@ function drawDrop(
 ): void {
   const r = drop.size / 2;
   const [red, green, blue] = rgb;
-  const dim = 1 - drop.depth * 0.4;
 
   context.save();
   context.translate(drop.x, drop.y);
-  context.globalAlpha *= dim;
-  // Flattened by the impact, recovering — see `squash` in rain-sim.
-  if (drop.squash > 0.01) {
-    context.scale(1 + drop.squash * 0.45, 1 - drop.squash * 0.4);
-  }
-
-  context.beginPath();
-  context.moveTo(0, -r * 1.5);
-  context.bezierCurveTo(r * 0.92, -r * 0.28, r, r * 0.34, 0, r);
-  context.bezierCurveTo(-r, r * 0.34, -r * 0.92, -r * 0.28, 0, -r * 1.5);
+  context.globalAlpha *= 1 - drop.depth * 0.4;
 
   const body = context.createLinearGradient(0, -r, 0, r);
   body.addColorStop(0, `rgb(${lighten(red)} ${lighten(green)} ${lighten(blue)})`);
   body.addColorStop(0.55, `rgb(${red} ${green} ${blue})`);
   body.addColorStop(1, `rgb(${darken(red)} ${darken(green)} ${darken(blue)})`);
   context.fillStyle = body;
+
+  if (drop.spread > 0.04) {
+    drawBead(context, drop, r);
+  } else {
+    drawTeardrop(context, drop, r);
+  }
   context.fill();
 
+  // One hard specular. On a bead it sits nearer the top, because the bead is
+  // flatter and the highlight rides its crown.
   context.beginPath();
-  context.arc(-r * 0.3, -r * 0.34, r * 0.26, 0, Math.PI * 2);
+  context.arc(-r * 0.3, -r * (0.34 + drop.spread * 0.2), r * 0.24, 0, Math.PI * 2);
   context.fillStyle = 'rgba(255,255,255,0.9)';
   context.fill();
   context.restore();
+}
+
+/** In the air: round below, drawn to a point above. */
+function drawTeardrop(context: CanvasRenderingContext2D, drop: SimDrop, r: number): void {
+  if (drop.squash > 0.01) {
+    context.scale(1 + drop.squash * 0.4, 1 - drop.squash * 0.34);
+  }
+  context.beginPath();
+  context.moveTo(0, -r * 1.5);
+  context.bezierCurveTo(r * 0.92, -r * 0.28, r, r * 0.34, 0, r);
+  context.bezierCurveTo(-r, r * 0.34, -r * 0.92, -r * 0.28, 0, -r * 1.5);
+}
+
+/**
+ * Touching something: a bead with a flat foot.
+ *
+ * Volume is held roughly constant as it spreads — a drop that flattens gets
+ * WIDER, it does not shrink — so the width scales up by the same factor the
+ * height scales down. The foot is flat because that is where the surface is,
+ * and the trailing side is drawn out when it is moving, which is what a bead
+ * running down glass actually looks like.
+ */
+function drawBead(context: CanvasRenderingContext2D, drop: SimDrop, r: number): void {
+  const flatten = 1 - drop.spread * 0.52;
+  const widen = 1 / flatten;
+  const halfWidth = r * widen;
+  const height = r * flatten * 2;
+  const tail = Math.max(0, Math.min(1.6, Math.abs(drop.vx) / 150)) * halfWidth;
+  const lead = Math.sign(drop.vx) || 1;
+
+  // Foot on the surface, crown above it, and a tail dragged out behind.
+  context.beginPath();
+  context.moveTo(-halfWidth - (lead < 0 ? 0 : tail), r);
+  context.bezierCurveTo(
+    -halfWidth * 1.05 - (lead < 0 ? 0 : tail),
+    r - height * 0.9,
+    -halfWidth * 0.45,
+    r - height,
+    0,
+    r - height
+  );
+  context.bezierCurveTo(
+    halfWidth * 0.45,
+    r - height,
+    halfWidth * 1.05 + (lead > 0 ? 0 : tail),
+    r - height * 0.9,
+    halfWidth + (lead > 0 ? 0 : tail),
+    r
+  );
+  context.closePath();
 }
 
 /**

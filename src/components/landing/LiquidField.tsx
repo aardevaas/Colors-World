@@ -201,6 +201,7 @@ function makeBlob(x: number, y: number, depth: number, color: number, index: num
     seed: (index * 2.399963) % (Math.PI * 2),
     terminal: 120,
     squash: 0,
+    spread: 0,
   };
 }
 

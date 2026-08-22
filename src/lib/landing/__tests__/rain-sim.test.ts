@@ -35,6 +35,7 @@ function drop(overrides: Partial<SimDrop> = {}): SimDrop {
     seed: 1.234,
     terminal: TERMINAL_NEAR,
     squash: 0,
+    spread: 0,
     ...overrides,
   };
 }

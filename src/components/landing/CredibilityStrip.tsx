@@ -1,5 +1,5 @@
 import { formatOklchCss, parseColor } from '@/lib/color-engine';
-import { REPO_URL, repoStats } from '@/lib/landing/repo-stats';
+import { repoStats } from '@/lib/landing/repo-stats';
 import { TEXT_MIN_RATIO, solveForeground } from '@/lib/landing/room-theme';
 import styles from './credibility-strip.module.css';
 
@@ -150,29 +150,17 @@ export async function CredibilityStrip() {
         measure and puts everything on the same footing.
       */}
       <div className={styles.inner}>
-        <div className={styles.lead}>
-          <h2 id="credibility-heading" className={styles.heading}>
-            Open-source, you&rsquo;re welcome.
-          </h2>
+        {/*
+          The claim is one cell of six, and now nothing but the claim.
 
-          <a className={styles.action} href={REPO_URL} target="_blank" rel="noopener noreferrer">
-            <span className={styles.actionLabel}>Read the source</span>
-            {/* The same square mark the rooms use, so the page has one arrow
-                rather than a rounded pill here and a hard box above. */}
-            <span className={styles.actionArrow} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" focusable="false">
-                <path
-                  d="M4 12h15M13 6l6 6-6 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="square"
-                />
-              </svg>
-            </span>
-          </a>
-
-          <p className={styles.note}>No account, no trial, nothing to cancel.</p>
-        </div>
+          It carried the repository link and a reassurance under it, and with
+          those the first cell was half again as tall as the five beside it —
+          which is what made the two rows look like different sections. The link
+          is not lost: the footer carries it, and so does the hero.
+        */}
+        <h2 id="credibility-heading" className={styles.heading}>
+          Open-source, you&rsquo;re welcome.
+        </h2>
 
         {facts.map((fact) => (
           <dl className={styles.fact} key={fact.label}>

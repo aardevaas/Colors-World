@@ -61,6 +61,16 @@ export interface SimDrop {
   /** 1 at the instant of landing, decaying to 0. Drives the flatten-and-recover
    *  the renderer draws, which is what makes an impact read as an impact. */
   squash: number;
+  /**
+   * How far the drop has spread across whatever it is sitting on, 0-1.
+   *
+   * A drop meeting glass does not stay a drop: it flattens into a bead, wide
+   * and low, held in that shape by surface tension against its own weight. This
+   * rises fast on impact and relaxes back as the bead settles, and the renderer
+   * reads it to decide what shape to draw at all — an airborne teardrop, a
+   * spread bead, or a bead stretched out along its run.
+   */
+  spread: number;
 }
 
 /** A thing in the world the rain can land on. Viewport coordinates. */
@@ -332,6 +342,10 @@ function stepFalling(
   drop.vy = Math.min(drop.terminal, drop.vy + GRAVITY * dt);
   drop.y += drop.vy * dt;
   drop.x += drop.vx * dt;
+  // Back to a drop once nothing is holding it flat. Quick, but not instant —
+  // a bead thrown off an edge is visibly still wide for a moment.
+  drop.spread = Math.max(0, drop.spread - dt * 2.6);
+  drop.squash = Math.max(0, drop.squash - dt * 2.2);
 
   const bottom = drop.y + drop.size / 2;
 
@@ -374,8 +388,10 @@ function stepFalling(
     drop.phase = 'resting';
     drop.host = i;
     drop.y = surfaceAt(surface, drop.x).y - drop.size / 2;
-    // How hard it arrived, normalised — a fast drop flattens more.
+    // How hard it arrived, normalised — a fast drop flattens more, and spreads
+    // further across the surface before surface tension pulls it back in.
     drop.squash = Math.min(1, drop.vy / drop.terminal);
+    drop.spread = Math.min(1, 0.45 + drop.squash * 0.55);
     drop.vy = 0;
     // Keeps a little of the sideways drift it arrived with, so drops do not all
     // start from a dead stop in the middle of a flat surface.
@@ -432,6 +448,14 @@ function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): v
 
   // The impact flattens it; it rounds out again as it settles.
   drop.squash = Math.max(0, drop.squash - dt * 3.4);
+  /*
+   * The bead relaxes toward the shape surface tension wants, not toward a
+   * sphere. A drop at rest on glass stays a wide low dome — it never becomes
+   * round again while it is still touching. Running stretches it out further,
+   * which is the elongation you see on a windscreen.
+   */
+  const wants = 0.42 + Math.min(0.4, Math.abs(drop.vx) / 260);
+  drop.spread += (wants - drop.spread) * Math.min(1, dt * 5);
 
   const contact = surfaceAt(surface, drop.x);
   const mass = Math.max(0.05, (drop.size / 12) ** 2);

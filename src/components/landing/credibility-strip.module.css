@@ -25,101 +25,43 @@
   z-index: 2;
   background: var(--paper);
   color: var(--ink);
-  padding: clamp(3.5rem, 9vw, 7rem) clamp(1.25rem, 5vw, 5rem);
+  /* Tightened: with the link and its note gone there is far less to hold, and
+     the section was mostly air. */
+  padding: clamp(2.25rem, 5vw, 4rem) clamp(1.25rem, 5vw, 5rem);
 }
 
 .inner {
   max-width: 78rem;
   margin-inline: auto;
   display: grid;
-  gap: clamp(2rem, 4vw, 3rem);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
   align-items: start;
 }
 
-/* ------------------------------------------------------------------ the lead */
+/* --------------------------------------------------------------- the claim */
 
-.lead {
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: clamp(1rem, 2vw, 1.5rem);
-}
-
+/*
+ * One cell among six, sharing their alignment and their rule.
+ *
+ * It used to be a block of its own — heading, link, reassurance — and stood
+ * half again as tall as the facts beside it, which is what made two rows of
+ * three read as two unrelated sections. It is now the same kind of thing in the
+ * same kind of box.
+ */
 .heading {
   margin: 0;
-  max-width: 14ch;
+  align-self: start;
   font-family: var(--font-display), system-ui, sans-serif;
-  font-size: clamp(1.75rem, 1rem + 2.2vw, 2.75rem);
+  font-size: clamp(1.6rem, 1rem + 1.7vw, 2.4rem);
   font-weight: 700;
-  /* Tight, as on the bands — this is display type, not a paragraph. */
-  line-height: 0.98;
+  line-height: 1;
   letter-spacing: -0.03em;
+  text-align: center;
   text-wrap: balance;
   color: var(--ink);
-}
-
-/* --------------------------------------------------------------- the action */
-
-.action {
-  display: inline-flex;
-  align-items: stretch;
-  text-decoration: none;
-  color: var(--paper);
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  /* Square, like the arrow boxes on the bands. */
-  border-radius: 0;
-  transition:
-    background-color 320ms cubic-bezier(0.33, 1, 0.68, 1),
-    color 320ms cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-.action:hover,
-.action:focus-visible {
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.action:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 3px;
-}
-
-.actionLabel {
-  padding: 0.8rem 1.25rem;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  white-space: nowrap;
-}
-
-.actionArrow {
-  display: grid;
-  place-items: center;
-  width: 2.9rem;
-  /* Its own cell, divided from the label — the mark reads as a destination
-     rather than as an icon decorating a word. */
-  border-inline-start: 1px solid currentColor;
-  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-.actionArrow svg {
-  width: 1.05rem;
-  height: 1.05rem;
-  transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-.action:hover .actionArrow svg,
-.action:focus-visible .actionArrow svg {
-  transform: translateX(2px);
-}
-
-.note {
-  margin: 0;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 0.875rem;
-  color: var(--ink-quiet);
+  padding-top: clamp(1rem, 2vw, 1.5rem);
+  /* The same rule the facts carry, so all six sit on one line. */
+  border-top: 1px solid var(--rule);
 }
 
 /* ------------------------------------------------------------------- a fact */
@@ -203,9 +145,9 @@
 
 @media (min-width: 64rem) {
   .inner {
-    /* Three and three. */
+    /* Three and three, every cell the same width. */
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(2rem, 4vw, 3.5rem);
+    gap: clamp(1.75rem, 3vw, 3rem);
   }
 }
 
