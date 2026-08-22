@@ -240,6 +240,12 @@ export interface World {
   /** Scratch for one step's face fluxes. Held on the world rather than
    *  allocated per frame — see the note on mutation at the top of this file. */
   readonly flux: Float64Array;
+  /**
+   * Scratch for advecting colour: each column's paint, snapshotted before the
+   * mass moves so a cell mixes with what its neighbour WAS, not with what the
+   * same pass has already turned it into.
+   */
+  readonly tint: Float64Array;
   /** Viewport width the pool columns are spread across. */
   width: number;
   height: number;
@@ -384,6 +390,18 @@ export const VISCOSITY = 0.62;
 
 /** Retention on depth differences, which is what finally flattens the pool. */
 export const SURFACE_TENSION = 0.55;
+
+/**
+ * How much of the colour a moving parcel of paint hands over per step.
+ *
+ * Not 1. At full strength the tracer homogenises: within seconds every column
+ * holds the same average and the pool is one flat hue, and a pool of one flat
+ * hue cannot SHOW that it is moving — which was the whole reason for carrying
+ * colour in the first place. Held back, bands of colour survive long enough to
+ * be seen sliding past each other, dragging and folding at their edges, which
+ * is what a stirred pool of paint actually looks like.
+ */
+export const COLOUR_CARRY = 0.34;
 /** Ceiling on pool depth, px, so the page cannot be drowned.
  *  Kept below the footer's first line of text: the paint is meant to rise at
  *  the foot of the page, not to swallow what is written there. */
@@ -402,6 +420,7 @@ export function createWorld(width: number, height: number): World {
     landed: [],
     flow: new Float64Array(POOL_COLUMNS + 1),
     flux: new Float64Array(POOL_COLUMNS + 1),
+    tint: new Float64Array(POOL_COLUMNS * 3),
     width,
     height,
     floor: height,
@@ -935,10 +954,98 @@ export function stepPool(world: World, dt: number): void {
     flux[0] = 0;
     flux[last + 1] = 0;
 
+    /*
+     * Mass moves, and the COLOUR GOES WITH IT.
+     *
+     * The pool had a velocity field all along and the paint was not riding it:
+     * a column's colour was set where it landed and stayed there, so a solved
+     * fluid rendered as a row of fixed stripes that could change depth but
+     * never mix. Pour red into blue and you got red on top of blue.
+     *
+     * Colour is a tracer carried by the same face fluxes that carry the depth,
+     * upwinded to whichever cell the flux is actually coming FROM. So paint
+     * poured at one end is pushed along the pool, drags into what is already
+     * there and marbles — which is what a real pour looks like, and it is the
+     * fluid doing it rather than an effect painted over the top.
+     */
+    const tint = world.tint;
     for (let i = 0; i <= last; i += 1) {
       const column = pool[i];
       if (column === undefined) continue;
-      column.h = Math.max(0, column.h - (((flux[i + 1] ?? 0) - (flux[i] ?? 0)) / dx) * h);
+      tint[i * 3] = column.r;
+      tint[i * 3 + 1] = column.g;
+      tint[i * 3 + 2] = column.b;
+    }
+
+    for (let i = 0; i <= last; i += 1) {
+      const column = pool[i];
+      if (column === undefined) continue;
+
+      const leftFlux = flux[i] ?? 0;
+      const rightFlux = flux[i + 1] ?? 0;
+
+      // What arrives, and from which neighbour.
+      const inLeft = leftFlux > 0 ? (leftFlux / dx) * h : 0;
+      const inRight = rightFlux < 0 ? (-rightFlux / dx) * h : 0;
+      // What leaves takes the cell's own colour with it, so it changes nothing.
+      const outLeft = leftFlux < 0 ? (-leftFlux / dx) * h : 0;
+      const outRight = rightFlux > 0 ? (rightFlux / dx) * h : 0;
+
+      const stays = Math.max(0, column.h - outLeft - outRight);
+      const total = stays + inLeft + inRight;
+      column.h = Math.max(0, Math.min(MAX_POOL, total));
+
+      if (total <= 1e-6) continue;
+      const li = (i - 1) * 3;
+      const ri = (i + 1) * 3;
+      const mix = (channel: 0 | 1 | 2, own: number) =>
+        (stays * own +
+          inLeft * (i > 0 ? (tint[li + channel] ?? own) : own) +
+          inRight * (i < last ? (tint[ri + channel] ?? own) : own)) /
+        total;
+
+      const r = mix(0, column.r);
+      const g = mix(1, column.g);
+      const b = mix(2, column.b);
+
+      /*
+       * Mixed, but not muddied.
+       *
+       * Averaging colours channel by channel is what paint does and it is the
+       * wrong answer here: run enough hues together and every one of them
+       * converges on the same grey-brown, which on a page about colour is the
+       * one outcome that cannot be allowed. The mixing is kept — the paint has
+       * to move and blend, that is the whole point — and then the chroma is put
+       * back, toward the most saturated thing that went into it.
+       *
+       * Hue and lightness come out of the average untouched; only the distance
+       * from grey is restored. So two colours meeting still make a third
+       * colour, and it is a COLOUR.
+       */
+      const low = Math.min(r, g, b);
+      const high = Math.max(r, g, b);
+      const chroma = high - low;
+      const want = Math.max(
+        chromaOf(column.r, column.g, column.b),
+        i > 0 ? chromaOf(tint[li] ?? 0, tint[li + 1] ?? 0, tint[li + 2] ?? 0) : 0,
+        i < last ? chromaOf(tint[ri] ?? 0, tint[ri + 1] ?? 0, tint[ri + 2] ?? 0) : 0
+      );
+
+      let outR = r;
+      let outG = g;
+      let outB = b;
+      if (chroma > 0.5 && want > chroma) {
+        const mid = (high + low) / 2;
+        const lift = Math.min(2.4, want / chroma);
+        outR = clamp(mid + (r - mid) * lift, 0, 255);
+        outG = clamp(mid + (g - mid) * lift, 0, 255);
+        outB = clamp(mid + (b - mid) * lift, 0, 255);
+      }
+
+      // Only part of the way toward the mixture, so the bands last.
+      column.r += (outR - column.r) * COLOUR_CARRY;
+      column.g += (outG - column.g) * COLOUR_CARRY;
+      column.b += (outB - column.b) * COLOUR_CARRY;
     }
   }
 
@@ -962,6 +1069,11 @@ export function stepPool(world: World, dt: number): void {
     left.h -= move;
     right.h += move;
   }
+}
+
+/** How far a colour sits from grey. Cheap stand-in for chroma in a hot loop. */
+function chromaOf(r: number, g: number, b: number): number {
+  return Math.max(r, g, b) - Math.min(r, g, b);
 }
 
 /**

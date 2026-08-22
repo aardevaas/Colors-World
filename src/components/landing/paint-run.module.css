@@ -46,6 +46,53 @@
   opacity: 1;
 }
 
+/*
+ * The plunger's hit target. Same idea as the valve: no box of its own, because
+ * what the visitor sees is the drawn plunger.
+ */
+.plunger {
+  position: absolute;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 44% 44% 50% 50%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Arrives with the full pool rather than snapping in. */
+  animation: plunger-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.plunger::after {
+  content: '';
+  position: absolute;
+  inset: 6%;
+  border-radius: inherit;
+  background: radial-gradient(circle, oklch(100% 0 0 / 0.16), transparent 70%);
+  opacity: 0;
+  transition: opacity var(--duration-normal, 300ms) var(--ease-out-expo, ease);
+}
+
+.plunger:hover::after {
+  opacity: 1;
+}
+
+.plunger:focus-visible {
+  outline: 2px solid oklch(88% 0.05 200);
+  outline-offset: 3px;
+}
+
+@keyframes plunger-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .valve:focus-visible {
   outline: 2px solid oklch(88% 0.05 200);
   outline-offset: 3px;
@@ -71,7 +118,8 @@
  */
 @media (prefers-reduced-motion: reduce) {
   .canvas,
-  .valve {
+  .valve,
+  .plunger {
     display: none;
   }
 }

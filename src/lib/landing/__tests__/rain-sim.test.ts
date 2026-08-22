@@ -618,6 +618,81 @@ describe('the pool', () => {
     expect(column!.g).toBeCloseTo(0, 0);
   });
 
+  it('carries colour along with the paint', () => {
+    /*
+     * The pool had a velocity field and the colour was not riding it, so a
+     * solved fluid rendered as fixed stripes: pour red into blue and you got
+     * red sitting on top of blue forever. Colour is a tracer now, upwinded on
+     * the same face fluxes that move the depth.
+     */
+    const world = createWorld(1000, 800);
+    // Blue everywhere, then red poured steadily at the left, as the tap does.
+    for (const column of world.pool) {
+      column.h = 60;
+      column.r = 20;
+      column.g = 40;
+      column.b = 220;
+    }
+
+    /*
+     * Probed near the pour, not across the pool.
+     *
+     * Shallow water carries WAVES fast and MATERIAL slowly — the same reason a
+     * cork bobs where it is instead of racing off with the swell. A first
+     * version of this asked for red 175px away after three seconds and got
+     * 0.0001 of it, which was the test being wrong about the physics rather
+     * than the physics being wrong.
+     */
+    for (let second = 0; second < 3; second += 1) {
+      for (let frame = 0; frame < 60; frame += 1) {
+        pourInto(world, 90, 3, [255, 30, 30]);
+        pourInto(world, 90, 3, [255, 30, 30]);
+        stepPool(world, 1 / 60);
+      }
+    }
+
+    /*
+     * Measured as distance travelled from the original colour, not as "how much
+     * red is in channel 0".
+     *
+     * Restoring chroma after the mix moves every channel — the blue that is
+     * still blue comes out MORE blue, so its red channel falls, and a test
+     * watching that channel reads a colour front as the opposite of one.
+     */
+    const from = (index: number) => {
+      const c = world.pool[index]!;
+      return Math.hypot(c.r - 20, c.g - 40, c.b - 220);
+    };
+
+    // Where it went in, the blue has visibly become something else.
+    expect(from(12)).toBeGreaterThan(100);
+    // It is a FRONT: it falls away with distance rather than tinting the pool.
+    expect(from(12)).toBeGreaterThan(from(20) * 3);
+    // And the far end has not been quietly recoloured.
+    expect(from(50)).toBeLessThan(40);
+  });
+
+  it('does not invent or destroy colour while carrying it', () => {
+    // A tracer that is not conserved shows up as paint that brightens or goes
+    // muddy on its own, with nothing added.
+    const world = createWorld(1000, 800);
+    for (const [i, column] of world.pool.entries()) {
+      column.h = 30 + (i % 7);
+      column.r = 20 + (i % 200);
+      column.g = 90;
+      column.b = 200 - (i % 150);
+    }
+    for (let i = 0; i < 60 * 6; i += 1) stepPool(world, 1 / 60);
+
+    for (const column of world.pool) {
+      expect(column.r).toBeGreaterThanOrEqual(-0.001);
+      expect(column.r).toBeLessThanOrEqual(255.001);
+      expect(column.g).toBeGreaterThanOrEqual(-0.001);
+      expect(column.g).toBeLessThanOrEqual(255.001);
+      expect(Number.isFinite(column.b)).toBe(true);
+    }
+  });
+
   it('settles rather than oscillating forever', () => {
     /*
      * Asserted as decay, not as arrival at zero.

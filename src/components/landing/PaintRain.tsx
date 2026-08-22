@@ -123,9 +123,24 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
       const palette = roomsRef.current.map(toRgb);
 
 
-      // The floor is the foot of the DOCUMENT, not of the viewport: paint
-      // gathers where the page ends, so it is only ever seen from the footer.
-      world.floor = document.documentElement.scrollHeight - window.scrollY;
+      /*
+       * The floor is the foot of the VIEWPORT, wherever you are on the page.
+       *
+       * It used to be the foot of the document, and that had two consequences
+       * that both read as the rain being broken. At the top of the page a drop
+       * had to fall the better part of three thousand pixels of dead space
+       * below the fold before it retired, at 52–215px/s — so it left the screen
+       * and did not come back for anything up to a minute, and the weather
+       * visibly thinned the longer you stayed at the top. And no paint gathered
+       * at all until you reached the footer, measured at zero landings in sixty
+       * seconds at scrollY=0.
+       *
+       * It rains on this page all the time and everywhere. A drop leaves the
+       * bottom of the screen, is credited to the paint, and comes straight back
+       * round — so the field stays as dense at the hero as it is at the footer,
+       * and the pool has something in it when you arrive.
+       */
+      world.floor = window.innerHeight;
 
       recycle(world.drops, countRef.current, window.innerWidth, window.innerHeight);
       step(world, dt, surfaces, now / 1000);
@@ -230,7 +245,14 @@ function announceLandings(world: World): void {
 
   const rect = host.getBoundingClientRect();
   if (rect.width === 0) return;
-  if (rect.top > window.innerHeight || rect.bottom < 0) return;
+  /*
+   * Deliberately NOT gated on the footer being in view.
+   *
+   * It was, and that is what made the paint conditional on being looked at:
+   * scroll away and the rain stopped counting. The footer keeps its own pool
+   * whether or not it is on screen, so the paint is simply there — already
+   * gathered — by the time anyone scrolls down to it.
+   */
 
   /*
    * Drops that reached the floor this step become paint.

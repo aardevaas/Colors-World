@@ -251,6 +251,13 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.62rem 1.15rem;
+  /*
+   * `.hud` is `pointer-events: none` so the weather behind stays interactive,
+   * and only real controls opt back in. This one never did — so the credit was
+   * a link that could not be hovered and could not be CLICKED, which is why the
+   * name never lit up however bright the hover rule was made.
+   */
+  pointer-events: auto;
   border-radius: 0.32rem;
   border: 1px solid oklch(95% 0.06 168 / 0.42);
   font-family: var(--font-mono), ui-monospace, monospace;
@@ -457,7 +464,18 @@
  */
 .builtBy:hover .builtByName,
 .builtBy:focus-visible .builtByName {
-  filter: saturate(1.15) brightness(1.35) opacity(1);
+  /*
+   * Full colour, hard brightness, and a glow of its own.
+   *
+   * `drop-shadow` rather than `text-shadow`: the name is painted with a
+   * background clipped to the glyphs, so `color` is transparent and a text
+   * shadow has nothing to cast from — the filter sees the rendered glyphs and
+   * does. Two shadows, tight and wide, which is what reads as something
+   * lighting up rather than merely getting paler.
+   */
+  filter: saturate(1.6) brightness(1.75)
+    drop-shadow(0 0 6px oklch(92% 0.16 190 / 0.85))
+    drop-shadow(0 0 18px oklch(85% 0.2 250 / 0.55));
   animation: spectrumDrift 2.2s linear infinite;
 }
 

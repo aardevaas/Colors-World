@@ -28,9 +28,15 @@ import { useEffect, type RefObject } from 'react';
  * the type rather than the band itself.
  */
 
-/** Pointer speed, in px/ms, treated as a fully stirred surface. Above a walking
- *  flick the ripple should not keep getting stronger. */
-const FULL_STRENGTH_SPEED = 2.2;
+/**
+ * Pointer speed, in px/ms, treated as a fully stirred surface.
+ *
+ * Halved from 2.2. At that figure an ordinary move across a band produced a
+ * fraction of the available disturbance and the effect was, in practice,
+ * invisible — you had to flick at the room to see anything at all. An ordinary
+ * pass of the cursor should stir the surface fully.
+ */
+const FULL_STRENGTH_SPEED = 1.1;
 
 /** How fast the stirred-ness falls back to rest once the pointer settles. */
 const DECAY_PER_MS = 0.0022;
