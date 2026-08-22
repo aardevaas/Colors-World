@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   INTAKE_SPEED,
   buildPath,
+  project,
   sampleAt,
   stepSpray,
   stepTube,
@@ -10,23 +11,25 @@ import {
   type Point,
 } from '../paint-tube';
 
+/** Flat cases keep z at 0: the old two-dimensional behaviour is the z = 0
+ *  slice of the three-dimensional one, and should be unchanged by the move. */
 const STRAIGHT_DOWN: Point[] = [
-  { x: 0, y: 0 },
-  { x: 0, y: 100 },
-  { x: 0, y: 200 },
-  { x: 0, y: 300 },
+  { x: 0, y: 0, z: 0 },
+  { x: 0, y: 100, z: 0 },
+  { x: 0, y: 200, z: 0 },
+  { x: 0, y: 300, z: 0 },
 ];
 
 /** Down, round a loop, and out to the right. */
 const WITH_LOOP: Point[] = [
-  { x: 0, y: 0 },
-  { x: 40, y: 120 },
-  { x: 140, y: 200 },
-  { x: 220, y: 120 },
-  { x: 140, y: 40 },
-  { x: 60, y: 120 },
-  { x: 140, y: 260 },
-  { x: 320, y: 300 },
+  { x: 0, y: 0, z: 0 },
+  { x: 40, y: 120, z: 0 },
+  { x: 140, y: 200, z: 0 },
+  { x: 220, y: 120, z: 0 },
+  { x: 140, y: 40, z: 0 },
+  { x: 60, y: 120, z: 0 },
+  { x: 140, y: 260, z: 0 },
+  { x: 320, y: 300, z: 0 },
 ];
 
 function carried(overrides: Partial<Carried> = {}): Carried {
@@ -62,9 +65,9 @@ describe('buildPath', () => {
   });
 
   it('survives being handed too few points to make a path', () => {
-    const path = buildPath([{ x: 0, y: 0 }]);
+    const path = buildPath([{ x: 0, y: 0, z: 0 }]);
     expect(path.total).toBe(0);
-    expect(sampleAt(path, 10)).toEqual({ x: 0, y: 0, tx: 1, ty: 0 });
+    expect(sampleAt(path, 10)).toEqual({ x: 0, y: 0, z: 0, tx: 1, ty: 0, tz: 0 });
   });
 
   it('clamps a distance past either end', () => {
@@ -151,7 +154,7 @@ describe('travelling the tube', () => {
 
 describe('the spray', () => {
   it('arcs under gravity and reports what hits the wall', () => {
-    const spray: Ejected[] = [{ x: 0, y: 0, vx: 400, vy: -50, size: 8, color: 2 }];
+    const spray: Ejected[] = [{ x: 0, y: 0, z: 0, vx: 400, vy: -50, vz: 0, size: 8, color: 2 }];
     let hits: ReturnType<typeof stepSpray> = [];
     let peak = 0;
     for (let i = 0; i < 120 && hits.length === 0; i += 1) {
@@ -169,7 +172,7 @@ describe('the spray', () => {
   });
 
   it('gives up on anything that falls out of the world', () => {
-    const spray: Ejected[] = [{ x: 0, y: 0, vx: 5, vy: 100, size: 8, color: 0 }];
+    const spray: Ejected[] = [{ x: 0, y: 0, z: 0, vx: 5, vy: 100, vz: 0, size: 8, color: 0 }];
     for (let i = 0; i < 240; i += 1) stepSpray(spray, 1 / 60, 900, 4000, 400);
     expect(spray).toHaveLength(0);
   });
@@ -185,3 +188,50 @@ function findWhere(
   }
   return -1;
 }
+
+describe('depth', () => {
+  it('follows z through the spline, so a loop has near and far sides', () => {
+    const path = buildPath([
+      { x: 0, y: 0, z: 0 },
+      { x: 100, y: 0, z: 200 },
+      { x: 200, y: 0, z: 0 },
+      { x: 300, y: 0, z: -200 },
+    ]);
+    const mid = sampleAt(path, path.total * 0.33);
+    expect(mid.z).toBeGreaterThan(40);
+
+    const late = sampleAt(path, path.total * 0.95);
+    expect(late.z).toBeLessThan(0);
+  });
+
+  it('measures length in three dimensions', () => {
+    // A path that only moves in z still has length; measured flat it would be 0
+    // and every particle in the loop would teleport.
+    const flat = buildPath([
+      { x: 0, y: 0, z: 0 },
+      { x: 0, y: 0, z: 100 },
+      { x: 0, y: 0, z: 200 },
+    ]);
+    expect(flat.total).toBeGreaterThan(150);
+  });
+
+  it('projects further things smaller and nearer things larger', () => {
+    const camera = { cx: 100, cy: 100, focal: 500 };
+    const near = project(200, 100, -200, camera);
+    const flat = project(200, 100, 0, camera);
+    const far = project(200, 100, 400, camera);
+
+    expect(near.scale).toBeGreaterThan(flat.scale);
+    expect(flat.scale).toBeGreaterThan(far.scale);
+    // And pulls them toward the vanishing point as they recede.
+    expect(far.sx).toBeLessThan(flat.sx);
+    expect(near.sx).toBeGreaterThan(flat.sx);
+  });
+
+  it('never divides by zero, however close the eye gets', () => {
+    const camera = { cx: 0, cy: 0, focal: 500 };
+    const behind = project(10, 10, -100_000, camera);
+    expect(Number.isFinite(behind.sx)).toBe(true);
+    expect(Number.isFinite(behind.scale)).toBe(true);
+  });
+});

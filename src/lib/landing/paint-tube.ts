@@ -21,15 +21,61 @@
 export interface Point {
   readonly x: number;
   readonly y: number;
+  /**
+   * Depth. Positive is further from the viewer.
+   *
+   * The track is three-dimensional for one reason: a loop that crosses over
+   * itself has to be readable, and in two dimensions the near and far sides of
+   * a loop are the same line. With depth, the near side is drawn over the far
+   * one and larger than it, and the shape of the ride becomes legible at a
+   * glance — which is the whole point of a rollercoaster silhouette.
+   */
+  readonly z: number;
 }
 
 /** A sampled path with cumulative arc length, so travel can be by distance. */
 export interface Path {
-  /** Sample positions, flattened as x, y, x, y … */
-  readonly xy: Float64Array;
+  /** Sample positions, flattened as x, y, z, x, y, z … */
+  readonly xyz: Float64Array;
   /** Distance from the start to each sample. */
   readonly at: Float64Array;
   readonly total: number;
+}
+
+/** Where the viewer is, for projecting the track onto the canvas. */
+export interface Camera {
+  /** Screen position depth 0 maps to. */
+  readonly cx: number;
+  readonly cy: number;
+  /** Distance from the eye to the z = 0 plane. Larger is a longer lens: less
+   *  perspective, flatter loops. */
+  readonly focal: number;
+}
+
+export interface Projected {
+  readonly sx: number;
+  readonly sy: number;
+  /** Foreshortening at this depth. Multiply any width by it. */
+  readonly scale: number;
+  readonly z: number;
+}
+
+/**
+ * Perspective projection — the whole of the 3D, in four lines.
+ *
+ * Deliberately the simplest thing that produces depth: no rotation, no camera
+ * basis, just a pinhole on the z axis. The track is authored directly in the
+ * space the viewer sees, so anything more would be machinery between the design
+ * and the screen with nothing to show for it.
+ */
+export function project(x: number, y: number, z: number, camera: Camera): Projected {
+  const scale = camera.focal / Math.max(1, camera.focal + z);
+  return {
+    sx: camera.cx + (x - camera.cx) * scale,
+    sy: camera.cy + (y - camera.cy) * scale,
+    scale,
+    z,
+  };
 }
 
 export interface Carried {
@@ -48,8 +94,10 @@ export interface Carried {
 export interface Ejected {
   x: number;
   y: number;
+  z: number;
   vx: number;
   vy: number;
+  vz: number;
   readonly size: number;
   readonly color: number;
 }
@@ -72,7 +120,7 @@ export const STALL_SPEED = 4;
  */
 export function buildPath(points: readonly Point[], perSegment = 24): Path {
   if (points.length < 2) {
-    return { xy: new Float64Array(0), at: new Float64Array(0), total: 0 };
+    return { xyz: new Float64Array(0), at: new Float64Array(0), total: 0 };
   }
 
   const samples: number[] = [];
@@ -88,43 +136,42 @@ export function buildPath(points: readonly Point[], perSegment = 24): Path {
       const t2 = t * t;
       const t3 = t2 * t;
       // Standard Catmull-Rom basis, tension 0.5.
+      const spline = (a: number, b: number, c: number, d: number) =>
+        0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+
       samples.push(
-        0.5 *
-          (2 * p1.x +
-            (-p0.x + p2.x) * t +
-            (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
-            (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
-        0.5 *
-          (2 * p1.y +
-            (-p0.y + p2.y) * t +
-            (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
-            (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3)
+        spline(p0.x, p1.x, p2.x, p3.x),
+        spline(p0.y, p1.y, p2.y, p3.y),
+        spline(p0.z, p1.z, p2.z, p3.z)
       );
     }
   }
   const lastPoint = points[points.length - 1];
-  if (lastPoint !== undefined) samples.push(lastPoint.x, lastPoint.y);
+  if (lastPoint !== undefined) samples.push(lastPoint.x, lastPoint.y, lastPoint.z);
 
-  const xy = new Float64Array(samples);
-  const count = xy.length / 2;
+  const xyz = new Float64Array(samples);
+  const count = xyz.length / 3;
   const at = new Float64Array(count);
   for (let i = 1; i < count; i += 1) {
-    const dx = (xy[i * 2] ?? 0) - (xy[i * 2 - 2] ?? 0);
-    const dy = (xy[i * 2 + 1] ?? 0) - (xy[i * 2 - 1] ?? 0);
-    at[i] = (at[i - 1] ?? 0) + Math.hypot(dx, dy);
+    const dx = (xyz[i * 3] ?? 0) - (xyz[i * 3 - 3] ?? 0);
+    const dy = (xyz[i * 3 + 1] ?? 0) - (xyz[i * 3 - 2] ?? 0);
+    const dz = (xyz[i * 3 + 2] ?? 0) - (xyz[i * 3 - 1] ?? 0);
+    at[i] = (at[i - 1] ?? 0) + Math.hypot(dx, dy, dz);
   }
-  return { xy, at, total: at[count - 1] ?? 0 };
+  return { xyz, at, total: at[count - 1] ?? 0 };
 }
 
 /** Position and unit tangent at a distance along the path. */
 export function sampleAt(path: Path, s: number): {
   x: number;
   y: number;
+  z: number;
   tx: number;
   ty: number;
+  tz: number;
 } {
   const count = path.at.length;
-  if (count === 0) return { x: 0, y: 0, tx: 1, ty: 0 };
+  if (count === 0) return { x: 0, y: 0, z: 0, tx: 1, ty: 0, tz: 0 };
 
   const distance = Math.max(0, Math.min(path.total, s));
   // Binary search: the sample spacing is uneven, so an index cannot be derived.
@@ -141,20 +188,25 @@ export function sampleAt(path: Path, s: number): {
   const span = b - a;
   const t = span > 0 ? (distance - a) / span : 0;
 
-  const x0 = path.xy[low * 2] ?? 0;
-  const y0 = path.xy[low * 2 + 1] ?? 0;
-  const x1 = path.xy[high * 2] ?? x0;
-  const y1 = path.xy[high * 2 + 1] ?? y0;
+  const x0 = path.xyz[low * 3] ?? 0;
+  const y0 = path.xyz[low * 3 + 1] ?? 0;
+  const z0 = path.xyz[low * 3 + 2] ?? 0;
+  const x1 = path.xyz[high * 3] ?? x0;
+  const y1 = path.xyz[high * 3 + 1] ?? y0;
+  const z1 = path.xyz[high * 3 + 2] ?? z0;
 
   const dx = x1 - x0;
   const dy = y1 - y0;
-  const length = Math.hypot(dx, dy) || 1;
+  const dz = z1 - z0;
+  const length = Math.hypot(dx, dy, dz) || 1;
 
   return {
     x: x0 + dx * t,
     y: y0 + dy * t,
+    z: z0 + dz * t,
     tx: dx / length,
     ty: dy / length,
+    tz: dz / length,
   };
 }
 
@@ -192,8 +244,10 @@ export function stepTube(
       out.push({
         x: exit.x,
         y: exit.y,
+        z: exit.z,
         vx: exit.tx * particle.v,
         vy: exit.ty * particle.v,
+        vz: exit.tz * particle.v,
         size: particle.size,
         color: particle.color,
       });
@@ -231,6 +285,10 @@ export function stepSpray(
     particle.vy += gravity * dt;
     particle.x += particle.vx * dt;
     particle.y += particle.vy * dt;
+    particle.z += particle.vz * dt;
+    // Drifts back toward the plane of the page as it flies, so paint thrown
+    // from a deep part of the track still lands on the wall the viewer sees.
+    particle.vz *= Math.pow(0.2, dt);
 
     if (particle.x >= wallX) {
       hits.push({

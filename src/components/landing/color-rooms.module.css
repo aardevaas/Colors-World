@@ -88,24 +88,23 @@
 }
 
 /*
- * The typography room opens its tracking under the pointer.
+ * Every room opens its tracking under the pointer.
  *
- * The one gesture that is genuinely about type rather than decorated with it:
- * tracking is the letterspacing a typographer sets, and watching a word breathe
- * from -0.045em out to normal is watching the thing this room is for. It also
- * cannot be mistaken for a wobble or a glow, which is what the two previous
- * attempts here amounted to.
+ * This began as the typography room's own gesture and it was wrong to keep it
+ * there: six bands that behave identically except for one is not a special
+ * case, it is an inconsistency. Applied to all six it becomes the language of
+ * the section rather than a feature of one band.
  *
- * It costs nothing extra to fit: the name is sized in `cqw` against its own
- * column, so a word that grows wider is a word the container has already
+ * Tracking is the letterspacing a typographer sets, and watching a word breathe
+ * from -0.045em out to normal is a properly typographic move — it cannot be
+ * mistaken for a wobble or a glow.
+ *
+ * It costs nothing extra to fit: the names are sized in `cqw` against their own
+ * columns, so a word that grows wider is a word the container has already
  * accounted for.
  */
-.patRules .name {
-  --name-tracking: -0.045em;
-}
-
-.patRules:hover .name,
-.patRules:focus-within .name {
+.room:hover .name,
+.room:focus-within .name {
   --name-tracking: 0.02em;
 }
 

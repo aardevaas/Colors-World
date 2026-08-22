@@ -845,6 +845,37 @@ export function stepPool(world: World, dt: number): void {
   }
 }
 
+/**
+ * Pours paint into the pool at `x`, as a landing drop does.
+ *
+ * Exported so the footer's wall pool can be fed by the paint run without that
+ * component reimplementing the mixing rule — the pool it fills is the same
+ * shallow-water field the rain used, and it should behave identically.
+ */
+export function pourInto(
+  world: World,
+  x: number,
+  volume: number,
+  rgb: readonly [number, number, number]
+): void {
+  const column = world.pool[columnAt(world, x)];
+  if (column === undefined) return;
+
+  const wasEmpty = column.h < 0.05;
+  column.h = Math.min(MAX_POOL, column.h + volume);
+
+  if (wasEmpty) {
+    column.r = rgb[0];
+    column.g = rgb[1];
+    column.b = rgb[2];
+    return;
+  }
+  const mix = Math.min(0.5, volume / Math.max(1, column.h));
+  column.r += (rgb[0] - column.r) * mix;
+  column.g += (rgb[1] - column.g) * mix;
+  column.b += (rgb[2] - column.b) * mix;
+}
+
 export function columnAt(world: World, x: number): number {
   const index = Math.floor((x / Math.max(1, world.width)) * POOL_COLUMNS);
   return Math.max(0, Math.min(POOL_COLUMNS - 1, index));

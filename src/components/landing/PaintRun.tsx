@@ -4,14 +4,18 @@ import { useEffect, useRef } from 'react';
 import {
   INTAKE_SPEED,
   buildPath,
+  project,
   sampleAt,
   stepSpray,
   stepTube,
+  type Camera,
   type Carried,
   type Ejected,
   type Path,
   type Point,
+  type Projected,
 } from '@/lib/landing/paint-tube';
+import { createWorld, pourInto, stepPool, type World } from '@/lib/landing/rain-sim';
 import type { RoomColor } from '@/lib/landing/room-palette';
 import styles from './paint-run.module.css';
 
@@ -40,10 +44,6 @@ interface PaintRunProps {
 const FEED_PER_SECOND = 5.5;
 /** Most drops in the glass at once, so a long visit cannot fill the tube. */
 const MAX_IN_TUBE = 34;
-/** Rows the painted wall is divided into. */
-const WALL_ROWS = 90;
-/** Ceiling on how far the paint creeps out from the wall, px. */
-const MAX_WALL = 74;
 
 export function PaintRun({ rooms }: PaintRunProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,11 +63,12 @@ export function PaintRun({ rooms }: PaintRunProps) {
     let height = 0;
     let dpr = 1;
     let path: Path = buildPath([]);
+    let camera: Camera = { cx: 0, cy: 0, focal: 900 };
 
     const carried: Carried[] = [];
     const spray: Ejected[] = [];
-    const wall = new Float64Array(WALL_ROWS);
-    const wallColor = new Float64Array(WALL_ROWS * 3);
+    // The pool the spray builds, on the same shallow-water solver the rain used.
+    let pool: World = createWorld(1, 1);
 
     const resize = () => {
       const rect = host.getBoundingClientRect();
@@ -80,6 +81,21 @@ export function PaintRun({ rooms }: PaintRunProps) {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       path = buildPath(layout(width, height));
+      // Vanishing point a little above centre, so the ride is looked at very
+      // slightly from above — which is the angle the reference is drawn from.
+      camera = { cx: width * 0.42, cy: height * 0.34, focal: Math.max(520, width * 0.85) };
+      const previous = pool;
+      pool = createWorld(width, height);
+      // Keep whatever has already been poured across a resize.
+      for (let i = 0; i < pool.pool.length; i += 1) {
+        const was = previous.pool[i];
+        const now = pool.pool[i];
+        if (was === undefined || now === undefined) continue;
+        now.h = was.h;
+        now.r = was.r;
+        now.g = was.g;
+        now.b = was.b;
+      }
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
@@ -96,12 +112,15 @@ export function PaintRun({ rooms }: PaintRunProps) {
     let frame = 0;
     let last = performance.now();
     let owed = 0;
+    let fanAngle = 0;
 
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
       if (width === 0 || path.total === 0) return;
       const dt = Math.min(1 / 30, (now - last) / 1000);
       last = now;
+
+      fanAngle += dt * 26;
 
       // The fan, feeding the intake.
       owed += dt * FEED_PER_SECOND;
@@ -110,7 +129,9 @@ export function PaintRun({ rooms }: PaintRunProps) {
         if (carried.length < MAX_IN_TUBE) {
           carried.push({
             s: 0,
-            v: INTAKE_SPEED,
+            // A spread of entry speeds, or every particle takes the ride at
+            // exactly the same pace and they travel as one clump.
+            v: INTAKE_SPEED * (0.78 + Math.random() * 0.5),
             lane: Math.random() * 2 - 1,
             size: 5 + Math.random() * 7,
             color: Math.floor(Math.random() * 6),
@@ -119,16 +140,27 @@ export function PaintRun({ rooms }: PaintRunProps) {
       }
 
       for (const ejected of stepTube(carried, path, dt)) {
-        // The fan's aim tilts what leaves the nozzle.
+        // The fan's aim tilts what leaves the open end.
         ejected.vy += aim * 220;
         spray.push(ejected);
       }
 
+      /*
+       * The spray hits the right-hand wall, runs down it, and joins the pool.
+       *
+       * Poured in at the foot of the wall rather than where it struck, because
+       * that is where it would actually arrive: paint thrown at a vertical
+       * surface does not stay where it lands, it runs. The pool then takes over
+       * — it is the rain's shallow-water field, so the arriving volume raises a
+       * column, the slope drives flow, and the wave spreads on its own.
+       */
       for (const hit of stepSpray(spray, dt, 900, width - 2, height)) {
-        paintWall(wall, wallColor, hit, height, roomsRef.current);
+        const rgb = toRgb(roomsRef.current[hit.color % Math.max(1, roomsRef.current.length)]);
+        pourInto(pool, width - 6 - Math.random() * 26, hit.size * 0.5, rgb);
       }
+      stepPool(pool, dt);
 
-      draw(context, { width, height, dpr, path, carried, spray, wall, wallColor }, roomsRef.current);
+      draw(context, { width, height, dpr, path, camera, carried, spray, pool, fanAngle }, roomsRef.current);
     };
     frame = requestAnimationFrame(tick);
 
@@ -143,70 +175,50 @@ export function PaintRun({ rooms }: PaintRunProps) {
 }
 
 /**
- * The run, in the space available.
+ * The ride, in the space available.
  *
- * Laid out in fractions so it holds its shape at any width: a funnel at the
- * left, a drop, a full loop, a chicane across the middle, and a nozzle aimed at
- * the right-hand edge. The loop is placed where there is height for it, which
- * is why the whole thing sits low.
+ * After the reference sketch: a tall vertical loop with a smaller helix beside
+ * it, on supports, read at a slight angle so the loops cross over themselves
+ * and you can see which side is which.
+ *
+ * Authored in three dimensions and in fractions of the space, so it holds its
+ * shape at any width. `z` is what makes it a ride rather than a diagram: the
+ * loop leans away from the viewer on its far side and toward them on its near
+ * one, so the two halves are drawn at different sizes and in the right order.
+ *
+ * It runs left to right and ends at 70% of the height, open, aimed at the wall.
  */
 function layout(width: number, height: number): Point[] {
-  const x = (fraction: number) => width * fraction;
-  const y = (fraction: number) => height * fraction;
+  const x = (f: number) => width * f;
+  const y = (f: number) => height * f;
+  // Depth swing. Positive is further away.
+  const back = Math.min(210, width * 0.16);
 
   return [
-    { x: x(0.06), y: y(0.06) },
-    { x: x(0.1), y: y(0.34) },
-    { x: x(0.17), y: y(0.62) },
-    // The loop.
-    { x: x(0.26), y: y(0.82) },
-    { x: x(0.34), y: y(0.5) },
-    { x: x(0.26), y: y(0.26) },
-    { x: x(0.18), y: y(0.5) },
-    { x: x(0.26), y: y(0.82) },
-    /*
-     * Chicane along the FOOT of the section rather than across its middle.
-     *
-     * The first layout ran it straight through where the link columns are, and
-     * a tube behind a list of links is a tube you cannot read links against.
-     * Kept low, it passes under them.
-     */
-    { x: x(0.42), y: y(0.92) },
-    { x: x(0.56), y: y(0.74) },
-    { x: x(0.7), y: y(0.9) },
-    { x: x(0.84), y: y(0.66) },
-    // Nozzle, aimed at the wall.
-    { x: x(0.95), y: y(0.5) },
+    // Intake: the fan feeds it here, at the top left.
+    { x: x(-0.02), y: y(0.12), z: 0 },
+    { x: x(0.08), y: y(0.16), z: 0 },
+    // The first drop, gathering speed for the loop.
+    { x: x(0.17), y: y(0.62), z: back * 0.2 },
+    // The vertical loop — round the back, over the top, down the front.
+    { x: x(0.24), y: y(0.8), z: back * 0.55 },
+    { x: x(0.33), y: y(0.5), z: back },
+    { x: x(0.3), y: y(0.14), z: back * 0.75 },
+    { x: x(0.21), y: y(0.1), z: back * 0.2 },
+    { x: x(0.17), y: y(0.42), z: -back * 0.35 },
+    { x: x(0.24), y: y(0.74), z: -back * 0.2 },
+    // Out of the loop and into a helix, which leans the other way.
+    { x: x(0.38), y: y(0.84), z: 0 },
+    { x: x(0.5), y: y(0.6), z: back * 0.7 },
+    { x: x(0.6), y: y(0.78), z: back * 0.3 },
+    { x: x(0.54), y: y(0.55), z: -back * 0.5 },
+    { x: x(0.64), y: y(0.72), z: -back * 0.2 },
+    // The run out to the nozzle, levelling as it comes forward.
+    { x: x(0.78), y: y(0.76), z: 0 },
+    { x: x(0.9), y: y(0.7), z: 0 },
+    // Open end, at 70% down, pointing at the wall.
+    { x: x(1.02), y: y(0.7), z: 0 },
   ];
-}
-
-function paintWall(
-  wall: Float64Array,
-  wallColor: Float64Array,
-  hit: { y: number; color: number; size: number; speed: number },
-  height: number,
-  rooms: readonly RoomColor[]
-): void {
-  const row = Math.max(0, Math.min(WALL_ROWS - 1, Math.floor((hit.y / height) * WALL_ROWS)));
-  const rgb = toRgb(rooms[hit.color % Math.max(1, rooms.length)]);
-  // A faster hit spreads further, as a thrown drop does.
-  const gain = hit.size * (0.5 + hit.speed / 900);
-
-  // Spread over the neighbours too, so the wall builds as a run rather than as
-  // a bar chart of individual hits.
-  for (let offset = -2; offset <= 2; offset += 1) {
-    const index = row + offset;
-    if (index < 0 || index >= WALL_ROWS) continue;
-    const share = gain * (offset === 0 ? 0.5 : offset === -1 || offset === 1 ? 0.2 : 0.05);
-    const before = wall[index] ?? 0;
-    wall[index] = Math.min(MAX_WALL, before + share);
-
-    const mix = before < 0.5 ? 1 : Math.min(0.4, share / Math.max(1, before));
-    for (let c = 0; c < 3; c += 1) {
-      const at = index * 3 + c;
-      wallColor[at] = (wallColor[at] ?? 0) + ((rgb[c] ?? 0) - (wallColor[at] ?? 0)) * mix;
-    }
-  }
 }
 
 interface Scene {
@@ -214,117 +226,265 @@ interface Scene {
   readonly height: number;
   readonly dpr: number;
   readonly path: Path;
+  readonly camera: Camera;
   readonly carried: readonly Carried[];
   readonly spray: readonly Ejected[];
-  readonly wall: Float64Array;
-  readonly wallColor: Float64Array;
+  readonly pool: World;
+  readonly fanAngle: number;
 }
 
-function draw(
-  context: CanvasRenderingContext2D,
-  scene: Scene,
-  rooms: readonly RoomColor[]
-): void {
-  const { width, height, dpr, path } = scene;
+/**
+ * Everything, in depth order.
+ *
+ * The whole reason the track is 3D is that a loop crosses over itself, and in
+ * two dimensions the near and far sides of a loop are the same line. So nothing
+ * here draws in the order it was written — every piece of tube and every drop
+ * is collected with the depth it sits at, sorted furthest-first, and painted in
+ * that order. The far side of the loop goes down before the near side and comes
+ * out smaller, and the shape of the ride becomes readable.
+ */
+function draw(context: CanvasRenderingContext2D, scene: Scene, rooms: readonly RoomColor[]): void {
+  const { width, height, dpr, path, camera } = scene;
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
   context.clearRect(0, 0, width, height);
 
-  drawWall(context, scene);
-  drawGlass(context, path);
+  drawPool(context, scene);
 
-  // What is in the tube.
+  interface Piece {
+    readonly z: number;
+    readonly paint: () => void;
+  }
+  const pieces: Piece[] = [];
+
+  /*
+   * The tubing, in depth BANDS rather than segment by segment.
+   *
+   * Stroking each short segment on its own is the obvious way to depth-sort a
+   * tube and it renders as a string of beads: every segment gets its own round
+   * cap, and a hundred overlapping translucent discs is what you see. Grouping
+   * consecutive segments that sit at a similar depth and stroking each group as
+   * one polyline keeps the ordering — a band at the back is still drawn before
+   * one at the front — while the glass inside a band is continuous.
+   */
+  const count = path.at.length;
+  const BANDS = 16;
+  let zMin = Number.POSITIVE_INFINITY;
+  let zMax = Number.NEGATIVE_INFINITY;
+  for (let i = 0; i < count; i += 1) {
+    const z = path.xyz[i * 3 + 2] ?? 0;
+    if (z < zMin) zMin = z;
+    if (z > zMax) zMax = z;
+  }
+  const span = Math.max(1, zMax - zMin);
+  const bandOf = (z: number) =>
+    Math.max(0, Math.min(BANDS - 1, Math.floor(((z - zMin) / span) * BANDS)));
+
+  let runStart = 0;
+  let runBand = bandOf(path.xyz[2] ?? 0);
+  const flushRun = (endIndex: number) => {
+    if (endIndex - runStart < 1) return;
+    const from = runStart;
+    const to = endIndex;
+    let zSum = 0;
+    for (let i = from; i <= to; i += 1) zSum += path.xyz[i * 3 + 2] ?? 0;
+    const z = zSum / (to - from + 1);
+
+    pieces.push({
+      z,
+      paint: () => {
+        const points: Projected[] = [];
+        for (let i = from; i <= to; i += 1) {
+          points.push(
+            project(
+              path.xyz[i * 3] ?? 0,
+              path.xyz[i * 3 + 1] ?? 0,
+              path.xyz[i * 3 + 2] ?? 0,
+              camera
+            )
+          );
+        }
+        drawGlassRun(context, points);
+      },
+    });
+  };
+
+  for (let i = 1; i < count; i += 1) {
+    const band = bandOf(path.xyz[i * 3 + 2] ?? 0);
+    if (band !== runBand) {
+      // Overlap by one so consecutive bands meet with no seam between them.
+      flushRun(i);
+      runStart = i - 1;
+      runBand = band;
+    }
+  }
+  flushRun(count - 1);
+
+  // The paint inside it.
   for (const particle of scene.carried) {
     const here = sampleAt(path, particle.s);
     // Rides off-centre across the bore, so they do not queue single file.
     const nx = -here.ty;
     const ny = here.tx;
     const offset = particle.lane * 5;
-    drawPaint(
-      context,
-      here.x + nx * offset,
-      here.y + ny * offset,
-      particle.size,
-      toRgb(rooms[particle.color % Math.max(1, rooms.length)])
-    );
+    const at = project(here.x + nx * offset, here.y + ny * offset, here.z, camera);
+    const rgb = toRgb(rooms[particle.color % Math.max(1, rooms.length)]);
+    pieces.push({
+      z: here.z - 1,
+      paint: () => drawPaint(context, at.sx, at.sy, particle.size * at.scale, rgb),
+    });
   }
 
   for (const particle of scene.spray) {
-    drawPaint(
-      context,
-      particle.x,
-      particle.y,
-      particle.size,
-      toRgb(rooms[particle.color % Math.max(1, rooms.length)])
-    );
+    const at = project(particle.x, particle.y, particle.z, camera);
+    const rgb = toRgb(rooms[particle.color % Math.max(1, rooms.length)]);
+    pieces.push({
+      z: particle.z - 1,
+      paint: () => drawPaint(context, at.sx, at.sy, particle.size * at.scale, rgb),
+    });
   }
+
+  pieces.sort((a, b) => b.z - a.z);
+  for (const piece of pieces) piece.paint();
+
+  drawFan(context, scene);
 }
 
 /**
- * The tubing: three strokes on one path.
+ * A continuous length of glass, all at roughly one depth.
  *
- * A wide dark bore, a narrower bright fill, and a thin highlight offset toward
- * the top — which is how a cylinder of glass reads when it is drawn rather than
- * rendered. Nothing here is animated; it is the thing the paint moves through.
+ * Three strokes over the same polyline: a wide soft bore, a dark interior, and
+ * a hairline along the top. Width follows the perspective, so a run at the back
+ * of the loop is genuinely narrower than one at the front — which sells the
+ * depth more than the ordering does.
  */
-function drawGlass(context: CanvasRenderingContext2D, path: Path): void {
+function drawGlassRun(context: CanvasRenderingContext2D, points: readonly Projected[]): void {
+  if (points.length < 2) return;
+  let scale = 0;
+  for (const point of points) scale += point.scale;
+  scale /= points.length;
+
   const trace = () => {
     context.beginPath();
-    context.moveTo(path.xy[0] ?? 0, path.xy[1] ?? 0);
-    for (let i = 1; i < path.at.length; i += 1) {
-      context.lineTo(path.xy[i * 2] ?? 0, path.xy[i * 2 + 1] ?? 0);
+    context.moveTo(points[0]?.sx ?? 0, points[0]?.sy ?? 0);
+    for (let i = 1; i < points.length; i += 1) {
+      context.lineTo(points[i]?.sx ?? 0, points[i]?.sy ?? 0);
     }
   };
 
-  context.save();
   context.lineCap = 'round';
   context.lineJoin = 'round';
 
   trace();
-  context.lineWidth = 26;
-  context.strokeStyle = 'rgba(255,255,255,0.045)';
+  context.lineWidth = 32 * scale;
+  context.strokeStyle = `rgba(196,228,255,${0.05 + scale * 0.035})`;
   context.stroke();
 
   trace();
-  context.lineWidth = 22;
-  context.strokeStyle = 'rgba(180,220,255,0.035)';
+  context.lineWidth = 27 * scale;
+  context.strokeStyle = `rgba(8,11,18,${0.34 * scale})`;
   context.stroke();
 
-  // The rim is what actually says "glass"; it can stay crisp while the bore
-  // behind it is quiet enough to read text over.
+  // The rim: what actually reads as glass, and brighter the nearer it is.
   trace();
-  context.lineWidth = 1;
-  context.strokeStyle = 'rgba(255,255,255,0.16)';
+  context.lineWidth = Math.max(0.6, 1.5 * scale);
+  context.strokeStyle = `rgba(255,255,255,${0.1 + scale * 0.26})`;
   context.stroke();
+}
+
+/**
+ * The fan, sitting on the line between the pale section above and this one.
+ *
+ * Drawn rather than imported: it is four blades and a hub, and an asset for
+ * that would be a request, a cache entry and a licence to no purpose. It spins
+ * fast enough to blur, which is the whole reason it reads as blowing.
+ */
+function drawFan(context: CanvasRenderingContext2D, scene: Scene): void {
+  const { width, fanAngle } = scene;
+  const x = width * 0.075;
+  const y = 0;
+  const r = Math.min(38, width * 0.03);
+
+  context.save();
+  context.translate(x, y);
+
+  // Housing, straddling the edge so it reads as mounted on the seam.
+  context.beginPath();
+  context.arc(0, 0, r * 1.16, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(16,20,28,0.9)';
+  context.fill();
+  context.lineWidth = 2;
+  context.strokeStyle = 'rgba(255,255,255,0.5)';
+  context.stroke();
+
+  // Blades. Two passes a few degrees apart, which is a cheap motion blur and
+  // reads better than either a sharp blade or a plain smear.
+  for (const [lag, alpha] of [[0, 0.55], [-0.22, 0.28], [-0.44, 0.14]] as const) {
+    context.save();
+    context.rotate(fanAngle + lag);
+    for (let blade = 0; blade < 4; blade += 1) {
+      context.rotate(Math.PI / 2);
+      context.beginPath();
+      context.moveTo(0, 0);
+      context.quadraticCurveTo(r * 0.75, -r * 0.42, r * 0.94, r * 0.1);
+      context.quadraticCurveTo(r * 0.5, r * 0.2, 0, 0);
+      context.fillStyle = `rgba(226,240,255,${alpha})`;
+      context.fill();
+    }
+    context.restore();
+  }
+
+  context.beginPath();
+  context.arc(0, 0, r * 0.2, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(240,248,255,0.9)';
+  context.fill();
   context.restore();
 }
 
-/** The paint on the right-hand edge, built from what has hit it. */
-function drawWall(context: CanvasRenderingContext2D, scene: Scene): void {
-  const { width, height, wall, wallColor } = scene;
-  const rowHeight = height / WALL_ROWS;
+/**
+ * The pool the spray builds at the foot of the footer.
+ *
+ * The same shallow-water field the rain used to gather in — depth at cell
+ * centres, flow at the faces — so it sloshes, levels and carries waves at
+ * `sqrt(g·h)` exactly as that one did. Reusing it rather than writing a second
+ * liquid means there is one set of fluid behaviour on this page and one set of
+ * tests behind it.
+ */
+function drawPool(context: CanvasRenderingContext2D, scene: Scene): void {
+  const { width, height, pool } = scene;
+  const columns = pool.pool.length;
+  const columnWidth = width / columns;
+  const floor = height;
+  const surfaceY = (i: number) => floor - (pool.pool[i]?.h ?? 0);
 
   context.save();
   context.beginPath();
-  context.moveTo(width, 0);
-  for (let i = 0; i < WALL_ROWS; i += 1) {
-    const depth = wall[i] ?? 0;
-    context.lineTo(width - depth, (i + 0.5) * rowHeight);
+  context.moveTo(0, surfaceY(0));
+  for (let i = 0; i < columns - 1; i += 1) {
+    const x = (i + 0.5) * columnWidth;
+    const nextX = (i + 1.5) * columnWidth;
+    context.quadraticCurveTo(x, surfaceY(i), (x + nextX) / 2, (surfaceY(i) + surfaceY(i + 1)) / 2);
   }
-  context.lineTo(width, height);
+  context.lineTo(width, surfaceY(columns - 1));
+  context.lineTo(width, floor);
+  context.lineTo(0, floor);
   context.closePath();
 
-  const paint = context.createLinearGradient(0, 0, 0, height);
-  for (let stop = 0; stop <= 6; stop += 1) {
-    const row = Math.round((stop / 6) * (WALL_ROWS - 1)) * 3;
+  const paint = context.createLinearGradient(0, 0, width, 0);
+  for (let stop = 0; stop <= 8; stop += 1) {
+    const column = pool.pool[Math.round((stop / 8) * (columns - 1))];
+    if (column === undefined) continue;
     paint.addColorStop(
-      stop / 6,
-      `rgb(${Math.round(wallColor[row] ?? 0)} ${Math.round(wallColor[row + 1] ?? 0)} ${Math.round(
-        wallColor[row + 2] ?? 0
-      )})`
+      stop / 8,
+      `rgb(${Math.round(column.r)} ${Math.round(column.g)} ${Math.round(column.b)})`
     );
   }
   context.fillStyle = paint;
   context.fill();
+
+  // A bright meniscus, which is what makes it read as wet.
+  context.strokeStyle = 'rgba(255,255,255,0.3)';
+  context.lineWidth = 1.5;
+  context.stroke();
   context.restore();
 }
 
@@ -335,7 +495,7 @@ function drawPaint(
   size: number,
   rgb: readonly [number, number, number]
 ): void {
-  const r = size / 2;
+  const r = Math.max(0.8, size / 2);
   const fill = context.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
   fill.addColorStop(0, `rgb(${Math.min(255, rgb[0] + 60)} ${Math.min(255, rgb[1] + 60)} ${Math.min(255, rgb[2] + 60)})`);
   fill.addColorStop(1, `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]})`);
