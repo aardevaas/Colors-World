@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { contrastRatio, type Oklch } from '@/lib/color-engine';
 import { deriveRoles } from '@/lib/roles/semantic-roles';
 import { HARMONY_RULES, type ChromaStrategy, type HarmonyRule } from '@/lib/harmony/harmony';
@@ -104,6 +104,34 @@ export function PaletteComposer() {
       from === undefined ? randomSeed(Math.random) : nextSeedAwayFrom(from, Math.random);
     build(nextSeed, locked, draft);
   }, [seed, locked, draft, build]);
+
+  /*
+   * START FROM THE COLOUR YOU ARRIVED WITH.
+   *
+   * The headline over this room promises "start from one color, get a whole
+   * system", and library now has a control that says "build a system from it"
+   * and sends you here carrying one. The composer ignored it completely: the
+   * seed began as null and the first roll called `randomSeed`. Carry in vivid
+   * magenta and press the button and you got greens — the colour you had
+   * deliberately chosen was not in the result, was not on the screen, and was
+   * not asked about.
+   *
+   * Only when there is nothing in progress. Adopting a new anchor mid-work
+   * would throw away a palette someone is in the middle of building, and the
+   * anchor changes every time a colour is docked from anywhere.
+   */
+  const anchorSeed = useMemo(() => {
+    if (system.anchorHex === null) return null;
+    return system.palette.find((color) => color.hex === system.anchorHex)?.oklch ?? null;
+  }, [system.anchorHex, system.palette]);
+
+  useEffect(() => {
+    if (seed !== null || anchorSeed === null) return;
+    build(anchorSeed, locked, draft);
+    // Deliberately not keyed on `locked`/`draft`: this runs once, on arrival,
+    // and both are empty at that point by construction.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchorSeed, seed, build]);
 
   // Regenerate when the rule, strategy or size changes, so the controls read
   // as live rather than as settings that need a separate roll to take effect.
