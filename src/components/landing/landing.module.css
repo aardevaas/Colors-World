@@ -252,7 +252,7 @@
   gap: 0.5rem;
   padding: 0.62rem 1.15rem;
   border-radius: 0.32rem;
-  border: 1px solid oklch(100% 0 0 / 0.22);
+  border: 1px solid oklch(95% 0.06 168 / 0.42);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.78rem;
   letter-spacing: 0.02em;
@@ -264,11 +264,27 @@
   /* Barely any fill at all. Glass is mostly what is behind it, and the pane
      reads as glass because of its EDGES and what it does to that background —
      not because of a milky panel painted over it. */
-  background: oklch(100% 0 0 / 0.035);
-  /* No saturation boost: a pane that intensifies the colour behind it is a
-     filter, not glass. Just thickness — a heavy blur and a little lift. */
-  backdrop-filter: blur(26px) brightness(1.14);
-  -webkit-backdrop-filter: blur(26px) brightness(1.14);
+  /*
+   * The green of real glass.
+   *
+   * Float glass is faintly green from the iron in it, which is why a pane looks
+   * colourless face-on and distinctly green edge-on. So the colour lives almost
+   * entirely in the EDGES below — the fill itself stays near enough to nothing
+   * that the stage behind still reads through it.
+   */
+  background: oklch(93% 0.055 166 / 0.17);
+  /*
+   * Lifted, not just tinted.
+   *
+   * At 4% over a near-black stage the green was arithmetically present and
+   * visually absent — the plate just read as dark grey. A pane of float glass
+   * in front of something dark still looks like PALE GREEN GLASS, because it
+   * scatters its own light rather than merely filtering what is behind it. So
+   * the fill carries real lightness and the backdrop is brightened under it,
+   * and the pane stays transparent because the alpha is what stays low.
+   */
+  backdrop-filter: blur(24px) brightness(1.5) saturate(1.08);
+  -webkit-backdrop-filter: blur(24px) brightness(1.5) saturate(1.08);
 
   transform: perspective(700px) translateZ(var(--lift))
     rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
@@ -276,13 +292,12 @@
 
   box-shadow:
     /* The bright top edge, where a sheet of glass catches the light. */
-    inset 0 1px 0 0 oklch(100% 0 0 / 0.4),
+    inset 0 1px 0 0 oklch(97% 0.02 168 / 0.42),
     /* And the dark bottom edge, which is its thickness. */
-    inset 0 -1px 0 0 oklch(0% 0 0 / 0.3),
-    /* A faint inner rim all the way round — the second surface of the pane,
-       seen through the first. This is the detail that stops it reading as a
-       flat panel with a highlight drawn on the top. */
-    inset 0 0 0 1px oklch(100% 0 0 / 0.06),
+    inset 0 -1px 0 0 oklch(22% 0.03 172 / 0.34),
+    /* A faint inner rim all the way round — the second surface of the pane
+       seen through the first, and where the green actually lives. */
+    inset 0 0 0 1px oklch(92% 0.038 170 / 0.11),
     /* Cast on the wall behind, offset down — the plate is above the light. */
     0 18px 34px -14px oklch(0% 0 0 / 0.72),
     0 4px 10px -4px oklch(0% 0 0 / 0.5);
@@ -308,47 +323,22 @@
   z-index: -1;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    oklch(100% 0 0 / 0.09) 0%,
-    oklch(100% 0 0 / 0.02) 38%,
-    oklch(100% 0 0 / 0) 62%,
-    oklch(100% 0 0 / 0.045) 100%
-  );
-}
-
-/*
- * The hard diagonal streak across the face — the single most recognisable
- * thing in the reference, and the one that most cheaply says "glass". A sharp
- * edge on one side and a soft fall-off on the other, because that is what a
- * reflected light source looks like on a flat pane.
- */
-.glassStreak {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  overflow: hidden;
   /*
-   * ONE sweep of light, not two bands.
+   * A continuous ramp, top to bottom, and nothing else.
    *
-   * This had three hard colour stops — 38/46/58 — and hard stops in a gradient
-   * are edges: what rendered was a bright stripe, a dim stripe, and two seams
-   * between them, which is exactly the "two weird lines" this looked like. A
-   * reflection on flat glass has one sharp leading edge where the light source
-   * begins and a long fall-off after it, so that is what this is now: a single
-   * stop, then a ramp to nothing.
+   * Every stop here moves by a small amount over a long distance, so there is
+   * no percentage at which the eye can find an edge. That is the whole
+   * requirement: the moment two stops sit close together the gradient renders
+   * as a line across the plate, which is what kept coming back.
    */
   background: linear-gradient(
-    104deg,
-    transparent 0 40%,
-    oklch(100% 0 0 / 0.13) 41%,
-    oklch(100% 0 0 / 0.03) 62%,
-    transparent 74%
+    to bottom,
+    oklch(96% 0.06 165 / 0.2) 0%,
+    oklch(94% 0.05 170 / 0.1) 45%,
+    oklch(93% 0.045 174 / 0.07) 75%,
+    oklch(96% 0.055 166 / 0.14) 100%
   );
 }
-
 
 /*
  * The tilt (driven by --tilt-x/--tilt-y from a pointermove handler in
@@ -364,10 +354,11 @@
 .builtBy:hover,
 .builtBy:focus-visible {
   --lift: 74px;
-  border-color: oklch(100% 0 0 / 0.34);
+  border-color: oklch(94% 0.036 170 / 0.42);
   box-shadow:
-    inset 0 1px 0 0 oklch(100% 0 0 / 0.45),
-    inset 0 -1px 0 0 oklch(0% 0 0 / 0.3),
+    inset 0 1px 0 0 oklch(97% 0.022 168 / 0.48),
+    inset 0 -1px 0 0 oklch(22% 0.03 172 / 0.34),
+    inset 0 0 0 1px oklch(92% 0.04 170 / 0.14),
     0 30px 52px -16px oklch(0% 0 0 / 0.78),
     0 8px 16px -6px oklch(0% 0 0 / 0.55);
 }
@@ -430,19 +421,29 @@
  * matter how the rest is eased.
  */
 .builtByName {
+  /*
+   * Every stop is light enough to clear 4.5:1 on its own.
+   *
+   * The name is knocked back to grey at rest, so the DARKEST stop of this ramp
+   * is what the contrast has to be judged on — not the average and not the
+   * brightest. It sat at 4.09:1 once the plate behind it was lifted to read as
+   * pale green, which is exactly the sort of thing this site exists to catch.
+   */
   background-image: linear-gradient(
     100deg,
-    oklch(74% 0.2 25),
-    oklch(80% 0.19 95),
-    oklch(76% 0.2 150),
-    oklch(74% 0.19 260),
-    oklch(74% 0.2 25)
+    oklch(82% 0.16 25),
+    oklch(86% 0.15 95),
+    oklch(83% 0.16 150),
+    oklch(82% 0.15 260),
+    oklch(82% 0.16 25)
   );
   background-size: 220% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: saturate(0) opacity(0.8);
+  /* No opacity knock-back: at 0.8 the grey composited down into the plate and
+     took the ratio with it. Desaturation alone is what "at rest" wants. */
+  filter: saturate(0);
   transition: filter 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 

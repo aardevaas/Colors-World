@@ -3,14 +3,14 @@
 import { useEffect, useRef } from 'react';
 import { MAX_DROPS, buildDrops, fieldOpacity } from '@/lib/landing/rain';
 import {
-  MAX_POOL,
-  POOL_COLUMNS,
   TERMINAL_FAR,
   TERMINAL_NEAR,
   createWorld,
+  recycle,
   step,
   type SimDrop,
   type Surface,
+  type World,
 } from '@/lib/landing/rain-sim';
 import type { RoomColor } from '@/lib/landing/room-palette';
 import styles from './paint-rain.module.css';
@@ -50,17 +50,6 @@ interface PaintRainProps {
   readonly rooms: readonly RoomColor[];
   readonly reducedMotion?: boolean;
 }
-
-/**
- * How hard the draught pushes a drop, px/s².
- *
- * Strong enough that the weather visibly leans away from the fan, gentle enough
- * that it reads as air rather than as drops being flicked across the screen.
- */
-const FAN_FORCE = 1250;
-
-/** How far the draught carries, px. */
-const FAN_REACH = 340;
 
 /** Longest frame the simulation will accept, seconds. A backgrounded tab hands
  *  back a delta of several seconds, and every drop would teleport through every
@@ -138,9 +127,9 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
       // gathers where the page ends, so it is only ever seen from the footer.
       world.floor = document.documentElement.scrollHeight - window.scrollY;
 
-      recycle(world.drops, countRef.current);
-      step(world, dt, surfaces, palette, now / 1000);
-      blowAndLand(world.drops, dt, world.floor);
+      recycle(world.drops, countRef.current, window.innerWidth, window.innerHeight);
+      step(world, dt, surfaces, now / 1000);
+      announceLandings(world);
       handOverAbsorbed(world.drops, surfaceNodes);
       draw(context, world, surfaces, palette, dpr, countRef.current);
     };
@@ -229,18 +218,13 @@ function handOverAbsorbed(drops: SimDrop[], nodes: readonly HTMLElement[]): void
 }
 
 /**
- * The fan, doing what a fan does — and the floor, taking what lands on it.
- *
- * A fan blows air AWAY from itself, so drops near it are pushed out and along
- * rather than sucked in. That is the whole behaviour: the corner of the footer
- * has a draught across it, the weather leans away from it, and the paint piles
- * up down-wind.
+ * Tells the footer what has just landed on it.
  *
  * The floor is announced from here rather than detected in the footer, because
  * the rain already knows when a drop has run out of page and two definitions of
  * where the floor is would eventually disagree.
  */
-function blowAndLand(drops: SimDrop[], dt: number, floor: number): void {
+function announceLandings(world: World): void {
   const host = document.querySelector<HTMLElement>('[data-paint-pool]');
   if (host === null) return;
 
@@ -248,53 +232,32 @@ function blowAndLand(drops: SimDrop[], dt: number, floor: number): void {
   if (rect.width === 0) return;
   if (rect.top > window.innerHeight || rect.bottom < 0) return;
 
-  const fanX = rect.left + Math.max(74, rect.width * 0.085);
-  const fanY = rect.bottom - 120;
-
-  for (const drop of drops) {
-    if (drop.phase !== 'falling') continue;
-
-    // The draught: strongest near the fan, falling away with distance.
-    const dx = drop.x - fanX;
-    const dy = drop.y - fanY;
-    const distance = Math.hypot(dx, dy);
-    if (distance < FAN_REACH) {
-      const strength = (1 - distance / FAN_REACH) ** 2;
-      // Blown away from the fan and lifted, as air off a blade does.
-      drop.vx += (Math.sign(dx) || 1) * FAN_FORCE * strength * dt;
-      drop.vy -= FAN_FORCE * 0.42 * strength * dt;
-    }
-
-    // (Landings are announced in the pass below, not here.)
-  }
-
   /*
-   * Drops that reached the floor this frame become paint.
+   * Drops that reached the floor this step become paint.
    *
-   * Announced in a second pass, and this ordering is the whole of it: the
-   * simulation marks a drop `pooled` the moment it meets the floor, which
-   * happens inside `step` — before this runs. A first attempt looked for
-   * still-falling drops below the floor line and never found one, so nothing
-   * ever reached the pool.
+   * Read straight off `world.landed`, which the simulation filled and which it
+   * clears at the top of every step. There is nothing to deduce and nothing to
+   * guard against: a landing is in that list because it happened, once, during
+   * the step that just ran.
    *
-   * `y` is what separates a real landing from a drop parked off-screen by
-   * `recycle`, which is also 'pooled' but sits above the viewport.
+   * What was here before tried to recover the same fact from each drop's phase
+   * and `y` — `pooled`, and no more than 80px above the floor. Both halves were
+   * wrong. `pooled` is also true of a drop parked off-screen by `recycle`, so
+   * the position test was carrying the whole distinction; and the 80px assumed
+   * drops always came to rest AT the floor, which stopped being true the moment
+   * the rain's own undrawn pool began lifting them above it. The rain went on
+   * falling and never reached the footer again.
    */
-  for (const drop of drops) {
-    if (drop.phase !== 'pooled') continue;
-    if (drop.y < floor - 80) continue;
-      host.dispatchEvent(
-        new CustomEvent('rain:land', {
-          detail: {
-            x: Math.max(0, Math.min(rect.width, drop.x - rect.left)),
-            color: drop.color,
-            size: drop.size,
-          },
-        })
-      );
-    // Moved out of the way so the next `recycle` sends it back to the top
-    // rather than announcing it again on the following frame.
-    drop.y = -9999;
+  for (const landing of world.landed) {
+    host.dispatchEvent(
+      new CustomEvent('rain:land', {
+        detail: {
+          x: Math.max(0, Math.min(rect.width, landing.x - rect.left)),
+          color: landing.color,
+          size: landing.size,
+        },
+      })
+    );
   }
 }
 
@@ -317,37 +280,6 @@ function effectiveOpacity(node: HTMLElement): number {
 }
 
 
-/** Puts pooled drops back at the top, keeping `target` of them in the air. */
-function recycle(drops: SimDrop[], target: number): void {
-  let airborne = 0;
-  for (const drop of drops) {
-    if (drop.phase === 'falling' || drop.phase === 'resting') airborne += 1;
-  }
-
-  for (const drop of drops) {
-    if (airborne >= target) break;
-    if (drop.phase !== 'pooled') continue;
-    drop.phase = 'falling';
-    drop.x = Math.random() * window.innerWidth;
-    drop.y = -drop.size - Math.random() * window.innerHeight * 0.5;
-    drop.vy = drop.terminal * 0.7;
-    drop.vx = (Math.random() - 0.5) * 12;
-    drop.host = -1;
-    airborne += 1;
-  }
-
-  // Anything airborne beyond the target is parked off-screen until it is wanted
-  // again, so lowering the count thins the rain without deleting anyone's fall.
-  for (let i = drops.length - 1; i >= 0 && airborne > target; i -= 1) {
-    const drop = drops[i];
-    if (drop === undefined || drop.phase !== 'falling') continue;
-    if (drop.y < 0) {
-      drop.phase = 'pooled';
-      airborne -= 1;
-    }
-  }
-}
-
 /* ------------------------------------------------------------------ drawing */
 
 function draw(
@@ -363,14 +295,15 @@ function draw(
   context.globalAlpha = fieldOpacity(count / MAX_DROPS);
 
   /*
-   * The pool and its splashes are no longer drawn here.
+   * The rain draws drops. It does not draw paint.
    *
-   * What the rain runs into at the foot of the page is the paint run in the
-   * footer — a fan, a length of glass and a wall it gets hosed at — and having
-   * a flat pool underneath that meant two paint systems arguing over the same
-   * ground. The simulation still gathers drops at the floor, which is what
-   * takes them out of the field and recycles them; it simply has nothing to
-   * show for it any more.
+   * What the rain runs into at the foot of the page is the footer's pool, and a
+   * second flat pool drawn up here meant two paint systems arguing over the same
+   * ground. The drawing for it went first and the pool behind it was left — and
+   * that leftover, filling and levelling where nobody could see it, is what
+   * eventually stopped the rain reaching the footer at all. Both are gone now:
+   * a drop that meets the floor is recorded as a landing and recycled, and the
+   * paint it becomes is poured in the footer, once.
    */
 
   for (const drop of world.drops) {
@@ -478,107 +411,7 @@ function drawBead(context: CanvasRenderingContext2D, drop: SimDrop, r: number): 
   context.closePath();
 }
 
-/**
- * The pool, drawn as one filled path across the width.
- *
- * The surface follows the height field column by column, smoothed with a
- * quadratic through the midpoints so a 120-column field reads as liquid rather
- * than as a bar chart. Colour is sampled from the columns, so the paint is
- * literally made of what has landed in it.
- */
-function drawPool(
-  context: CanvasRenderingContext2D,
-  world: ReturnType<typeof createWorld>
-): void {
-  const floor = world.floor;
-  if (floor > world.height + MAX_POOL) return;
-
-  const columnWidth = world.width / POOL_COLUMNS;
-  const surfaceY = (i: number) => floor - (world.pool[i]?.h ?? 0);
-
-  context.save();
-  context.beginPath();
-  context.moveTo(0, surfaceY(0));
-  for (let i = 0; i < POOL_COLUMNS - 1; i += 1) {
-    const x = (i + 0.5) * columnWidth;
-    const nextX = (i + 1.5) * columnWidth;
-    context.quadraticCurveTo(x, surfaceY(i), (x + nextX) / 2, (surfaceY(i) + surfaceY(i + 1)) / 2);
-  }
-  context.lineTo(world.width, surfaceY(POOL_COLUMNS - 1));
-  context.lineTo(world.width, floor + MAX_POOL);
-  context.lineTo(0, floor + MAX_POOL);
-  context.closePath();
-
-  const paint = context.createLinearGradient(0, 0, world.width, 0);
-  for (let stop = 0; stop <= 8; stop += 1) {
-    const column = world.pool[Math.round((stop / 8) * (POOL_COLUMNS - 1))];
-    if (column === undefined) continue;
-    paint.addColorStop(
-      stop / 8,
-      `rgb(${Math.round(column.r)} ${Math.round(column.g)} ${Math.round(column.b)})`
-    );
-  }
-  context.fillStyle = paint;
-  context.fill();
-
-  // A bright meniscus along the top, which is what makes it read as wet.
-  context.strokeStyle = 'rgba(255,255,255,0.32)';
-  context.lineWidth = 1.5;
-  context.stroke();
-  context.restore();
-}
-
-/**
- * A landing: a ring spreading outward, and a crown of thrown droplets.
- *
- * Both ease out hard, because an impact is fast at the start and nearly still
- * by the end — a linear expansion reads as a growing circle rather than as
- * something that was hit.
- */
-function drawSplashes(
-  context: CanvasRenderingContext2D,
-  world: ReturnType<typeof createWorld>
-): void {
-  for (const splash of world.splashes) {
-    const y = world.floor - splash.y;
-    if (y < -40 || y > world.height + 40) continue;
-
-    const eased = 1 - (1 - splash.t) ** 3;
-    const fade = 1 - splash.t;
-    const color = `rgb(${splash.r} ${splash.g} ${splash.b})`;
-
-    context.save();
-
-    // The ring.
-    context.beginPath();
-    context.ellipse(splash.x, y, splash.size * (0.5 + eased * 3.4), splash.size * (0.2 + eased * 1.1), 0, 0, Math.PI * 2);
-    context.strokeStyle = color;
-    context.globalAlpha *= fade * 0.65;
-    context.lineWidth = Math.max(0.6, 2.2 * fade);
-    context.stroke();
-
-    // The crown: droplets thrown up and out, falling back as it fades.
-    const crown = 7;
-    for (let i = 0; i < crown; i += 1) {
-      const angle = (i / crown) * Math.PI * 2 + splash.x;
-      const reach = splash.size * (0.4 + eased * 2.2);
-      const lift = Math.sin(splash.t * Math.PI) * splash.size * 1.5;
-      context.beginPath();
-      context.arc(
-        splash.x + Math.cos(angle) * reach,
-        y - lift + Math.sin(angle) * reach * 0.25,
-        Math.max(0.5, splash.size * 0.17 * fade),
-        0,
-        Math.PI * 2
-      );
-      context.fillStyle = color;
-      context.fill();
-    }
-    context.restore();
-  }
-}
-
-
+/** A room's hex as the three channels the drops are drawn with. */
 function toRgb(room: RoomColor): [number, number, number] {
   const hex = room.hex.replace('#', '');
   return [

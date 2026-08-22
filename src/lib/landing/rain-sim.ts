@@ -138,6 +138,50 @@ export function surfaceAt(surface: Surface, x: number): Contact {
   };
 }
 
+/**
+ * Where a drop ends up after travelling `distance` ALONG the surface.
+ *
+ * The reason this exists rather than `x += vx * dt`. A bead running off a pill
+ * was advanced in x and then dropped onto whatever the surface was doing at the
+ * new x — and x is a hopeless parameter for a shoulder. Approaching the side of
+ * the pill the tangent stands up, `cos(angle)` goes to nothing, and a fixed
+ * step along the SURFACE turns into almost no step in x at all. So the drop
+ * crawled to the shoulder, stopped dead while `along` went on accelerating it,
+ * and then tore off the side once the accumulated speed finally beat the arc.
+ * Stall, rev, snap — on every single drop, and no amount of retuning adhesion
+ * or gravity could fix it, because the problem was the parameter.
+ *
+ * On the arc the honest step is angular: `dθ = ds / r`. Then a drop moves the
+ * same distance of wet path every frame wherever it is on the button, which is
+ * what "smooth" actually means here.
+ */
+export function advanceAlong(
+  surface: Surface,
+  x: number,
+  distance: number,
+  downhill: number
+): number {
+  const radius = Math.max(
+    0,
+    Math.min(surface.radius, (surface.right - surface.left) / 2, (surface.bottom - surface.top) / 2)
+  );
+  const leftCentre = surface.left + radius;
+  const rightCentre = surface.right - radius;
+  const direction = downhill < 0 ? -1 : 1;
+
+  // The flat top: along the surface and along x are the same thing.
+  if (radius === 0 || (x >= leftCentre && x <= rightCentre)) {
+    return x + distance * direction;
+  }
+
+  const centre = x < leftCentre ? leftCentre : rightCentre;
+  const offset = Math.min(radius, Math.abs(x - centre));
+  // `surfaceAt` reports exactly this angle, measured from the top of the arc.
+  const theta = Math.asin(offset / Math.max(1e-6, radius));
+  const next = Math.min(Math.PI / 2, theta + distance / Math.max(1e-6, radius));
+  return centre + Math.sign(x - centre || direction) * radius * Math.sin(next);
+}
+
 export interface PoolColumn {
   /** Depth of paint above the floor, px. */
   h: number;
@@ -147,25 +191,41 @@ export interface PoolColumn {
   b: number;
 }
 
-/** A landing, for the moment it takes to spread and disappear. */
-export interface Splash {
+/**
+ * A drop that met the floor on this step.
+ *
+ * Landings are RECORDED rather than inferred, and that is the whole point of
+ * this type. The rain used to mark a drop `pooled` and leave the caller to work
+ * out afterwards, from the drop's position, whether that had just happened —
+ * which is not a question a position can answer. A drop parked off-screen by
+ * `recycle` is also `pooled`; so is one that landed nine seconds ago. Every
+ * attempt to separate those cases with a `y` threshold has eventually picked
+ * the wrong one, because the threshold has to encode an assumption about where
+ * the floor is and something else always moves it.
+ *
+ * Cleared at the top of every `step`, so this list is exactly the drops that
+ * arrived during the step the caller is looking at, and reading it twice is
+ * impossible.
+ */
+export interface Landing {
   readonly x: number;
-  /** Height above the floor the drop met the paint at. */
-  readonly y: number;
-  /** 0 at impact, 1 when finished. */
-  t: number;
-  /** How big the drop was, which is how big the ring gets. */
+  /** Index into the caller's palette. The simulation does not know colours. */
+  readonly color: number;
   readonly size: number;
-  readonly r: number;
-  readonly g: number;
-  readonly b: number;
 }
 
 export interface World {
   readonly drops: SimDrop[];
+  /**
+   * Paint gathered on the floor.
+   *
+   * Only worlds that DRAW a pool have any business filling this. The rain's own
+   * world leaves it empty: what the visitor sees gathering at the foot of the
+   * page is the footer's pool, poured by `pourInto` from the landings below.
+   */
   readonly pool: PoolColumn[];
-  /** Impacts currently spreading. Short-lived; culled every step. */
-  readonly splashes: Splash[];
+  /** Drops that met the floor during the current step. Cleared by `step`. */
+  readonly landed: Landing[];
   /**
    * Horizontal flow at each boundary BETWEEN columns, px/s — so there is one
    * more of these than there are columns, and `flow[i]` is the velocity across
@@ -188,6 +248,53 @@ export interface World {
   floor: number;
 }
 
+/**
+ * Puts pooled drops back at the top, keeping `target` of them in the air.
+ *
+ * Lives here rather than in the component because it is half of the drop
+ * lifecycle: `step` retires a drop at the floor and this is what brings it
+ * back. Split across two files that fact had no test that could see both ends,
+ * and the rain quietly stopped for eighty seconds at a time without one failing.
+ *
+ * The viewport is passed in rather than read off `window`, so the loop that
+ * decides how long it rains can be run for as many simulated minutes as anyone
+ * wants without a DOM.
+ */
+export function recycle(
+  drops: SimDrop[],
+  target: number,
+  width: number,
+  height: number
+): void {
+  let airborne = 0;
+  for (const drop of drops) {
+    if (drop.phase === 'falling' || drop.phase === 'resting') airborne += 1;
+  }
+
+  for (const drop of drops) {
+    if (airborne >= target) break;
+    if (drop.phase !== 'pooled') continue;
+    drop.phase = 'falling';
+    drop.x = Math.random() * width;
+    drop.y = -drop.size - Math.random() * height * 0.5;
+    drop.vy = drop.terminal * 0.7;
+    drop.vx = (Math.random() - 0.5) * 12;
+    drop.host = -1;
+    airborne += 1;
+  }
+
+  // Anything airborne beyond the target is parked off-screen until it is wanted
+  // again, so lowering the count thins the rain without deleting anyone's fall.
+  for (let i = drops.length - 1; i >= 0 && airborne > target; i -= 1) {
+    const drop = drops[i];
+    if (drop === undefined || drop.phase !== 'falling') continue;
+    if (drop.y < 0) {
+      drop.phase = 'pooled';
+      airborne -= 1;
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ physics */
 
 /**
@@ -206,11 +313,6 @@ export const TERMINAL_NEAR = 215;
 export const TERMINAL_FAR = 52;
 /** How long a drop sits where it landed before it starts to run off, ms. */
 export const REST_MS = 380;
-/** Seconds a splash takes to spread and fade. */
-export const SPLASH_LIFE = 0.9;
-/** Most splashes alive at once. Beyond this the oldest is dropped rather than
- *  letting a downpour turn the floor into a solid ring of foam. */
-export const MAX_SPLASHES = 26;
 /**
  * The creep along the flat top, px/s².
  *
@@ -238,6 +340,27 @@ export const ADHESION = 150;
  *  for legibility; a drop running off an edge should still look like it means
  *  it, so this one is nearer the truth. */
 export const SURFACE_GRAVITY = 900;
+
+/**
+ * How long adhesion can hold a drop before it must start moving, ms·mass.
+ *
+ * Was 1200, and at that value a small drop sat PERFECTLY STILL on a button for
+ * over five seconds — three-quarters of its whole time up there — and then all
+ * of them tore off at once. Stillness is the thing that read as broken: real
+ * beads on glass are always doing something, however slowly. So this is now
+ * short, and being pinned no longer means being frozen (see `PINNED_CREEP`).
+ */
+export const PIN_DWELL = 400;
+
+/**
+ * What a pinned drop still manages, as a fraction of its usual creep.
+ *
+ * The point of the pinned phase is that a small drop clings where a big one has
+ * already gone. That is a difference of SPEED, and it used to be modelled as a
+ * difference between moving and not moving at all — which is both wrong and,
+ * on screen, the whole problem.
+ */
+export const PINNED_CREEP = 0.06;
 /** Sideways drift while falling, px/s. */
 export const SWAY_SPEED = 26;
 
@@ -276,7 +399,7 @@ export function createWorld(width: number, height: number): World {
   return {
     drops: [],
     pool: createPool(),
-    splashes: [],
+    landed: [],
     flow: new Float64Array(POOL_COLUMNS + 1),
     flux: new Float64Array(POOL_COLUMNS + 1),
     width,
@@ -298,13 +421,16 @@ export function step(
   world: World,
   dt: number,
   surfaces: readonly Surface[],
-  colors: readonly [number, number, number][],
   time = 0
 ): void {
+  // Exactly one step's worth of arrivals, so a caller reading this after the
+  // call sees what just happened and never what happened before.
+  world.landed.length = 0;
+
   for (const drop of world.drops) {
     switch (drop.phase) {
       case 'falling':
-        stepFalling(drop, dt, world, surfaces, colors);
+        stepFalling(drop, dt, world, surfaces);
         break;
       case 'resting':
         stepResting(drop, dt, surfaces);
@@ -317,25 +443,24 @@ export function step(
     }
   }
   separate(world.drops, surfaces);
-  stepSplashes(world, dt);
-  stepPool(world, dt);
 }
 
-function stepSplashes(world: World, dt: number): void {
-  for (let i = world.splashes.length - 1; i >= 0; i -= 1) {
-    const splash = world.splashes[i];
-    if (splash === undefined) continue;
-    splash.t += dt / SPLASH_LIFE;
-    if (splash.t >= 1) world.splashes.splice(i, 1);
-  }
-}
+/*
+ * The pool is NOT advanced here.
+ *
+ * `step` moves drops; `stepPool` moves paint. They used to run together, which
+ * was harmless only for as long as one world did both jobs. It does not: the
+ * rain's world has no pool to run, and the footer — which does — calls
+ * `stepPool` on its own. Running it from here meant the rain quietly kept a
+ * second body of paint that nothing drew, and that pool is what eventually
+ * stopped the rain (see `land`).
+ */
 
 function stepFalling(
   drop: SimDrop,
   dt: number,
   world: World,
-  surfaces: readonly Surface[],
-  colors: readonly [number, number, number][]
+  surfaces: readonly Surface[]
 ): void {
   const previousBottom = drop.y + drop.size / 2;
 
@@ -402,16 +527,24 @@ function stepFalling(
     return;
   }
 
-  // Meets the PAINT, not the floor under it.
-  //
-  // Testing against `world.floor` meant a drop sank through the visible surface
-  // of the pool and only vanished at the true bottom, so as the paint deepened
-  // there appeared to be an invisible shelf some way below the waves. The
-  // surface a drop lands on is the top of whatever has already gathered in its
-  // own column.
-  const surfaceHere = world.floor - (world.pool[columnAt(world, drop.x)]?.h ?? 0);
-  if (bottom >= surfaceHere) {
-    addToPool(world, drop, colors);
+  /*
+   * The floor is the floor.
+   *
+   * This used to test against the top of whatever paint had already gathered in
+   * the drop's own column — right when one world both gathered and drew the
+   * pool, and the cause of the stall once that stopped being true. The rain's
+   * pool is no longer drawn, but it went on filling, levelling under
+   * `stepPool`, and lifting this line a little further every second. The
+   * landing test downstream ignored anything more than 80px above the floor, so
+   * once the invisible paint levelled past 80px the rain simply stopped
+   * arriving — after about eighty seconds, permanently, with the drops still
+   * falling in plain sight.
+   *
+   * If a pool is ever drawn in this world again, the surface belongs back here
+   * — together with something that drains it.
+   */
+  if (bottom >= world.floor) {
+    land(world, drop);
   }
 }
 
@@ -461,43 +594,57 @@ function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): v
   const mass = Math.max(0.05, (drop.size / 12) ** 2);
   const speed = Math.abs(drop.vx);
 
-  // PINNED: held until the pull along the surface beats adhesion.
+  /*
+   * PINNED: adhesion still has hold of the contact line.
+   *
+   * Scaled by mass, so a heavy drop that adhesion barely holds goes almost at
+   * once and a small one clings — which is what actually happens on glass, and
+   * why the buttons keep a scatter of small beads rather than shedding
+   * everything identically. What pinned no longer means is STOPPED: the drop
+   * goes on creeping, just very slowly.
+   */
   const pull = SURFACE_GRAVITY * Math.sin(contact.angle) + CREEP_ACCEL;
-  if (speed < 1 && pull < ADHESION / mass) {
-    drop.restLeft -= dt * 1000;
-    /*
-     * Still tips off eventually — but in its own time, scaled by mass.
-     *
-     * A flat surface is level, so strictly a pinned drop never moves and the
-     * buttons would silt up forever. This stands in for the surface not being
-     * perfectly level in practice. Dividing by mass is what keeps the
-     * size-dependence honest: a heavy drop that adhesion barely holds goes
-     * almost at once, a small one clings for many seconds. A single fixed dwell
-     * released them all together and quietly undid the adhesion model.
-     */
-    if (drop.restLeft > -1200 / mass) {
-      drop.y = contact.y - drop.size / 2;
-      return;
-    }
-  }
+  const pinned = speed < 1 && pull < ADHESION / mass && drop.restLeft > -PIN_DWELL / mass;
+  if (pinned) drop.restLeft -= dt * 1000;
 
   const downhill = contact.downhill !== 0 ? contact.downhill : drop.runoff;
-  const along = SURFACE_GRAVITY * Math.sin(contact.angle) + CREEP_ACCEL * 0.35;
+  const along =
+    (SURFACE_GRAVITY * Math.sin(contact.angle) + CREEP_ACCEL * 0.35) *
+    (pinned ? PINNED_CREEP : 1);
   drop.vx += along * downhill * dt;
 
-  // Travels along the surface, so a steep slope advances less in x per unit of
-  // path than a flat one does.
-  drop.x += drop.vx * Math.cos(contact.angle) * dt;
+  // Travels the WET PATH, not the horizontal. `advanceAlong` carries it the
+  // same distance of surface every frame whether it is on the flat or hard
+  // round the shoulder — see there for why x could never do this job.
+  drop.x = advanceAlong(surface, drop.x, Math.abs(drop.vx) * dt, downhill);
 
   const next = surfaceAt(surface, drop.x);
   drop.y = next.y - drop.size / 2;
 
   // THROWN: the arc can no longer supply the centripetal force to hold it.
   const v = Math.abs(drop.vx);
-  const holds = SURFACE_GRAVITY * Math.cos(next.angle);
+  /*
+   * Gravity holds it to the curve, and so does the contact line.
+   *
+   * Without the adhesion term every drop let go at the same place — about 41°
+   * round the shoulder — and left sideways at the same speed regardless of its
+   * size, which is what made the shedding look mechanical. Surface tension is
+   * exactly what lets a small bead follow a tight radius further than a heavy
+   * one, so with it in here they part company at different points and leave on
+   * different headings, which is what a windscreen actually looks like.
+   */
+  const holds = SURFACE_GRAVITY * Math.cos(next.angle) + ADHESION / mass;
   const needed = Number.isFinite(next.curvature) ? (v * v) / Math.max(1, next.curvature) : 0;
 
-  const separates = Number.isFinite(next.curvature) && needed > holds;
+  /*
+   * Past the widest point the surface has curved back UNDER the drop, and
+   * nothing holds it there at any speed. Leaving this to the centripetal test
+   * alone meant a slow bead crept to the equator, where `holds` is zero, and
+   * hung on the side of the button waiting for its own acceleration to throw
+   * it — which is the other half of what the stall looked like.
+   */
+  const atEquator = next.angle >= Math.PI / 2 - 0.02;
+  const separates = atEquator || (Number.isFinite(next.curvature) && needed > holds);
   const pastEnd = drop.x < surface.left - drop.size || drop.x > surface.right + drop.size;
 
   if (separates) {
@@ -513,7 +660,11 @@ function stepResting(drop: SimDrop, dt: number, surfaces: readonly Surface[]): v
      * invisible wall.
      */
     drop.vy = Math.max(20, v * Math.sin(next.angle));
-    drop.vx = downhill * Math.max(v * 0.35, v * Math.cos(next.angle));
+    // A small outward floor so a drop leaving at the very side is not launched
+    // dead straight down out of a surface it was visibly running around. It is
+    // a nudge clear, not a throw: at 0.35 the departure read as the drop being
+    // fired off the button sideways.
+    drop.vx = downhill * Math.max(v * 0.16, v * Math.cos(next.angle));
     return;
   }
 
@@ -674,66 +825,34 @@ function contain(drop: SimDrop, surface: Surface | undefined): void {
 
 /* -------------------------------------------------------------------- pool */
 
-function addToPool(
-  world: World,
-  drop: SimDrop,
-  colors: readonly [number, number, number][]
-): void {
+/**
+ * A drop has met the floor.
+ *
+ * It stops being weather and is announced; it does not become paint here. The
+ * paint is the footer's, poured by `pourInto` from the landing record, and one
+ * definition of how a drop turns into volume is all this page should have. The
+ * version of this function that ALSO poured — into a pool that nothing drew any
+ * more — is what silently stopped the rain after eighty seconds.
+ *
+ * The drop stays `pooled` and keeps its position. `recycle` is what puts it
+ * back at the top, and it is the only thing that should.
+ */
+function land(world: World, drop: SimDrop): void {
   drop.phase = 'pooled';
+  world.landed.push({ x: drop.x, color: drop.color, size: drop.size });
+}
 
-  const index = columnAt(world, drop.x);
-  const column = world.pool[index];
-  if (column === undefined) return;
-
-  const columnWidth = world.width / POOL_COLUMNS;
-  // Volume conserved: a drop's area spread across one column's width.
-  const volume = (Math.PI * (drop.size / 2) ** 2) / Math.max(1, columnWidth);
-
-  const wasEmpty = column.h < 0.05;
-  /*
-   * Adding volume IS the disturbance.
-   *
-   * The spring model needed an explicit downward kick to make a wave, which is
-   * backwards: a drop landing does not push the surface down, it puts more
-   * paint there. Under shallow water that raised column immediately has a slope
-   * against its neighbours, the slope drives flow, and the ring spreads on its
-   * own — which is why this line went away rather than being retuned.
-   */
-  column.h = Math.min(MAX_POOL, column.h + volume);
-
-  const rgb = colors[drop.color % Math.max(1, colors.length)] ?? [124, 92, 255];
-
-  // The landing itself: a ring spreading from where it met the paint.
-  world.splashes.push({
-    x: drop.x,
-    y: column.h,
-    t: 0,
-    size: drop.size,
-    r: rgb[0],
-    g: rgb[1],
-    b: rgb[2],
-  });
-  if (world.splashes.length > MAX_SPLASHES) world.splashes.shift();
-
-  if (wasEmpty) {
-    // The first drop in a column SETS the colour rather than blending toward it.
-    //
-    // Blending from the initial zero meant an empty column started at black and
-    // crawled out of it, so the shallow parts of the pool — which is most of it
-    // early on — rendered as a dark trough between the places it had rained
-    // hardest. Paint on a floor is the colour of the paint from the first drop.
-    column.r = rgb[0];
-    column.g = rgb[1];
-    column.b = rgb[2];
-    return;
-  }
-
-  // After that, weighted toward what is already there, so the pool takes on the
-  // colour of everything that has landed rather than flashing to the latest.
-  const mix = Math.min(0.5, volume / Math.max(1, column.h));
-  column.r += (rgb[0] - column.r) * mix;
-  column.g += (rgb[1] - column.g) * mix;
-  column.b += (rgb[2] - column.b) * mix;
+/**
+ * The volume one drop of this size adds to one column.
+ *
+ * Shared so the rain and the footer cannot disagree about how big a drop is:
+ * the rain reports a diameter, and this is the only place that turns it into
+ * paint. It was previously worked out once here and again in the footer, in two
+ * files, from two slightly different readings of the column width.
+ */
+export function dropVolume(size: number, width: number): number {
+  const columnWidth = width / POOL_COLUMNS;
+  return (Math.PI * (size / 2) ** 2) / Math.max(1, columnWidth);
 }
 
 /**

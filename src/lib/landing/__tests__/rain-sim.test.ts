@@ -3,12 +3,18 @@ import {
   MAX_POOL,
   POOL_COLUMNS,
   REST_MS,
+  TERMINAL_FAR,
   TERMINAL_NEAR,
+  advanceAlong,
   columnAt,
   createWorld,
+  dropVolume,
   poolVolume,
+  pourInto,
+  recycle,
   step,
   stepPool,
+  surfaceAt,
   type SimDrop,
   type Surface,
 } from '../rain-sim';
@@ -51,7 +57,7 @@ const SPONGE: Surface = {
 /** Runs the world for `seconds` in realistic frame-sized steps. */
 function run(world: ReturnType<typeof createWorld>, surfaces: Surface[], seconds: number) {
   const dt = 1 / 60;
-  for (let t = 0; t < seconds; t += dt) step(world, dt, surfaces, COLORS);
+  for (let t = 0; t < seconds; t += dt) step(world, dt, surfaces);
 }
 
 /**
@@ -70,7 +76,7 @@ function runUntil(
 ): boolean {
   const dt = 1 / 60;
   for (let t = 0; t < budgetSeconds; t += dt) {
-    step(world, dt, surfaces, COLORS);
+    step(world, dt, surfaces);
     if (done()) return true;
   }
   return false;
@@ -114,7 +120,17 @@ describe('landing on a surface', () => {
     expect(d.phase).toBe('resting');
   });
 
-  it('sits still before it starts to run off', () => {
+  it('dwells where it landed before it starts to run off', () => {
+    /*
+     * Dwells — it does not freeze.
+     *
+     * This asserted `d.x` was EXACTLY where it landed, and that exactness was
+     * the bug rather than the contract: a pinned drop held a coordinate to the
+     * bit for seconds at a time, and a field of perfectly motionless beads that
+     * then all leave together is what made the shedding look broken. Adhesion
+     * is a difference of speed, so what is checked now is that it has barely
+     * moved, not that it has not moved at all.
+     */
     const world = createWorld(1000, 800);
     const d = drop();
     world.drops.push(d);
@@ -124,9 +140,8 @@ describe('landing on a surface', () => {
     expect(d.restLeft).toBeGreaterThan(0);
     expect(d.restLeft).toBeLessThanOrEqual(REST_MS);
 
-    // Still exactly where it landed a few frames later.
     run(world, [BUTTON], 0.1);
-    expect(d.x).toBe(landedAt);
+    expect(Math.abs(d.x - landedAt)).toBeLessThan(0.5);
   });
 
   it('runs off the nearer edge and falls again', () => {
@@ -299,24 +314,278 @@ describe('absorption', () => {
   });
 });
 
-describe('the pool', () => {
-  it('collects drops that reach the floor', () => {
+describe('running off, smoothly', () => {
+  /*
+   * "Smooth" made measurable.
+   *
+   * A bead used to crawl along the flat, stop dead at the shoulder and then
+   * tear off the side, because the run was advanced in x and x stops moving
+   * when the tangent stands up. The symptom is a spike: one frame in the run
+   * covers many times the distance of a typical one. So that is what is
+   * asserted — not the fix, but the thing the fix was for.
+   */
+  function pathSteps(startX: number): number[] {
+    const world = createWorld(1000, 800);
+    const d = drop({ x: startX, y: 280, vy: 120 });
+    world.drops.push(d);
+
+    const steps: number[] = [];
+    let previous: { x: number; y: number } | null = null;
+    const dt = 1 / 60;
+    for (let frame = 0; frame < 60 * 12; frame += 1) {
+      step(world, dt, [BUTTON]);
+      if (d.phase === 'resting') {
+        if (previous !== null) steps.push(Math.hypot(d.x - previous.x, d.y - previous.y));
+        previous = { x: d.x, y: d.y };
+      } else if (previous !== null) {
+        break; // it has left the button
+      }
+    }
+    return steps.filter((s) => s > 0.001);
+  }
+
+  /** How the drop behaves on the button, and how it leaves it. */
+  function runOff(size: number) {
+    const world = createWorld(1000, 800);
+    const d = drop({ x: 455, y: 280, vy: 120, size });
+    world.drops.push(d);
+
+    let onButton = 0;
+    let stillest = 0;
+    let running = 0;
+    let previous: { x: number; y: number } | null = null;
+    let exit: { vx: number; vy: number; angle: number } | null = null;
+    const dt = 1 / 60;
+
+    for (let frame = 0; frame < 60 * 25; frame += 1) {
+      step(world, dt, [BUTTON]);
+      if (d.phase === 'resting') {
+        onButton += 1;
+        if (previous !== null) {
+          const moved = Math.hypot(d.x - previous.x, d.y - previous.y);
+          running = moved < 0.01 ? running + 1 : 0;
+          stillest = Math.max(stillest, running);
+        }
+        previous = { x: d.x, y: d.y };
+      } else if (previous !== null) {
+        exit = { vx: d.vx, vy: d.vy, angle: surfaceAt(BUTTON, previous.x).angle };
+        break;
+      }
+    }
+    return { onButton: onButton / 60, stillFor: stillest / 60, exit };
+  }
+
+  it('never sits perfectly still on a button', () => {
+    /*
+     * The thing that actually looked broken.
+     *
+     * A small drop used to be pinned for over five seconds — three-quarters of
+     * its time on the button — completely motionless, and then leave all at
+     * once with every other drop. Adhesion holding a bead is real; adhesion
+     * FREEZING it is not, and stillness is what the eye reads as a bug.
+     */
+    for (const size of [6, 12, 20]) {
+      const { stillFor } = runOff(size);
+      expect(stillFor, `size ${size} sat still for ${stillFor.toFixed(2)}s`).toBeLessThan(0.6);
+    }
+  });
+
+  it('lets a light drop cling further round the shoulder than a heavy one', () => {
+    /*
+     * Every drop used to part company at the same angle and leave on the same
+     * heading whatever its size, because only gravity was holding it to the
+     * arc. With the contact line in the balance too, a small bead follows the
+     * radius further — so they stop leaving in formation.
+     */
+    const light = runOff(6);
+    const heavy = runOff(20);
+    expect(light.exit).not.toBeNull();
+    expect(heavy.exit).not.toBeNull();
+    expect(light.exit!.angle).toBeGreaterThan(heavy.exit!.angle + 0.1);
+  });
+
+  it('dribbles off downward rather than being flung sideways', () => {
+    const { exit } = runOff(6);
+    expect(exit).not.toBeNull();
+    // Leaving the side of a pill, a bead falls. It does not get thrown.
+    expect(exit!.vy).toBeGreaterThan(Math.abs(exit!.vx) * 1.6);
+  });
+
+  it('never goes backwards while running off', () => {
+    const world = createWorld(1000, 800);
+    const d = drop({ x: 455, y: 280, vy: 120 });
+    world.drops.push(d);
+
+    let furthest = -Infinity;
+    const dt = 1 / 60;
+    for (let frame = 0; frame < 60 * 12; frame += 1) {
+      step(world, dt, [BUTTON]);
+      if (d.phase !== 'resting') continue;
+      // It runs off the nearer edge; whichever that is, it should keep going
+      // that way rather than doubling back.
+      const travelled = d.runoff * d.x;
+      expect(travelled).toBeGreaterThanOrEqual(furthest - 0.6);
+      furthest = Math.max(furthest, travelled);
+    }
+  });
+
+  it('steps the same distance of surface on the flat and on the shoulder', () => {
+    // The property the run depends on, stated directly against the geometry.
+    const flat = advanceAlong(BUTTON, 500, 4, 1) - 500;
+    const shoulderFrom = BUTTON.right - 6;
+    const shoulderTo = advanceAlong(BUTTON, shoulderFrom, 4, 1);
+    const before = surfaceAt(BUTTON, shoulderFrom);
+    const after = surfaceAt(BUTTON, shoulderTo);
+    const travelled = Math.hypot(shoulderTo - shoulderFrom, after.y - before.y);
+
+    expect(flat).toBeCloseTo(4, 1);
+    // Chord rather than arc, so a little under 4 — but nowhere near zero, which
+    // is what advancing in x used to give here.
+    expect(travelled).toBeGreaterThan(3);
+    expect(travelled).toBeLessThanOrEqual(4.05);
+  });
+});
+
+describe('the lifecycle, over time', () => {
+  /*
+   * The test this file was missing.
+   *
+   * Every other test here runs for a few seconds and asks whether the physics
+   * are right. The rain's worst failure was not a wrong force — it was that it
+   * simply stopped. On the real page it delivered paint for about eighty
+   * seconds and then delivered none, for as long as the tab stayed open, while
+   * the drops went on falling in plain sight. Nothing here could see that,
+   * because nothing here ran for eighty seconds and nothing here watched both
+   * ends of the drop lifecycle at once: `step` retires a drop at the floor and
+   * `recycle` brings it back, and those two lived in different files.
+   *
+   * So this runs the whole loop for five simulated minutes and asks the only
+   * question that mattered: is paint still arriving?
+   */
+  const FRAME = 1 / 60;
+  const MINUTE = 60 * 60;
+
+  /** A field of drops with a real spread of fall speeds, as the page builds. */
+  function field(count: number): SimDrop[] {
+    return Array.from({ length: count }, (_, i) => {
+      const depth = i / Math.max(1, count - 1);
+      return drop({
+        x: (i * 137.5) % 1440,
+        y: -20 - (i % 9) * 40,
+        depth,
+        terminal: TERMINAL_FAR + (1 - depth) * (TERMINAL_NEAR - TERMINAL_FAR),
+        size: 2.5 + (1 - depth) ** 1.5 * 19.5,
+      });
+    });
+  }
+
+  it('keeps delivering paint to the floor for five straight minutes', () => {
+    const width = 1440;
+    const height = 900;
+    const world = createWorld(width, height);
+    world.floor = height;
+    world.drops.push(...field(150));
+
+    const perMinute: number[] = [];
+    /*
+     * How far above the floor a drop was ever retired.
+     *
+     * Counting landings alone is not enough, and this is the assertion that
+     * actually pins the bug. The simulation went on recording landings the
+     * whole time it was broken — it just began retiring drops higher and higher
+     * above the floor as the hidden pool filled under them, until the footer
+     * stopped recognising them as arrivals. A drop is retired AT the floor or
+     * the join downstream is being asked to guess.
+     */
+    let highestRetirement = 0;
+
+    for (let minute = 0; minute < 5; minute += 1) {
+      let landings = 0;
+      for (let frame = 0; frame < MINUTE; frame += 1) {
+        recycle(world.drops, 22, width, height);
+        step(world, FRAME, []);
+        landings += world.landed.length;
+
+        for (const d of world.drops) {
+          // Drops parked above the viewport by `recycle` are also 'pooled'.
+          if (d.phase !== 'pooled' || d.y <= 0) continue;
+          highestRetirement = Math.max(highestRetirement, world.floor - (d.y + d.size / 2));
+        }
+      }
+      perMinute.push(landings);
+    }
+
+    expect(highestRetirement).toBeLessThan(2);
+
+    for (const [index, landings] of perMinute.entries()) {
+      expect(landings, `minute ${index + 1} of ${perMinute.join('/')}`).toBeGreaterThan(0);
+    }
+
+    // Not merely alive — still raining at the rate it started at. A slow drain
+    // that leaves one drop trickling through would pass the check above and
+    // still be the same bug.
+    const steady = perMinute.slice(1);
+    expect(Math.min(...steady) * 2).toBeGreaterThanOrEqual(Math.max(...steady));
+  });
+
+  it('does not quietly gather paint in a pool nobody draws', () => {
+    /*
+     * The mechanism itself, pinned.
+     *
+     * `step` used to pour every landing into `world.pool` — a pool that stopped
+     * being drawn but went on filling and levelling. It lifted the height drops
+     * came to rest at until the landing test downstream stopped recognising
+     * them. Whatever else changes, the rain's own world must arrive at the
+     * floor with nothing gathered on it.
+     */
+    const world = createWorld(1440, 900);
+    world.floor = 900;
+    world.drops.push(...field(60));
+
+    for (let frame = 0; frame < MINUTE * 2; frame += 1) {
+      recycle(world.drops, 22, 1440, 900);
+      step(world, FRAME, []);
+    }
+
+    expect(poolVolume(world)).toBe(0);
+  });
+
+  it('reports each landing exactly once', () => {
     const world = createWorld(1000, 800);
     const d = drop({ x: 500 });
     world.drops.push(d);
 
-    // Waits for the landing rather than guessing how long the fall takes: the
-    // rain was deliberately slowed to roughly a fifth of real gravity, and a
-    // fixed three seconds no longer reaches the floor.
-    expect(runUntil(world, [], () => d.phase === 'pooled', 30)).toBe(true);
-    expect(poolVolume(world)).toBeGreaterThan(0);
-  });
+    expect(runUntil(world, [], () => world.landed.length > 0, 30)).toBe(true);
+    expect(world.landed).toHaveLength(1);
+    expect(world.landed[0]!.x).toBeCloseTo(500, 0);
+    expect(d.phase).toBe('pooled');
+    // AT the floor, not somewhere above it. The announcement downstream used to
+    // allow 80px of slack for exactly this, and the slack is what ran out.
+    expect(d.y + d.size / 2).toBeGreaterThanOrEqual(world.floor - 1);
 
-  it('puts the paint in the column it landed in', () => {
+    // The record is the step's, not the drop's: one more step and it is gone.
+    step(world, FRAME, []);
+    expect(world.landed).toHaveLength(0);
+  });
+});
+
+describe('the pool', () => {
+  /*
+   * These pour through `pourInto` rather than by dropping a drop on the floor.
+   *
+   * That is not a convenience — it is the actual path. The rain reports a
+   * landing and the footer turns it into paint, so `pourInto` is the only thing
+   * on the page that puts volume in a column. Driving the pool through `step`
+   * instead used to work because `step` poured too, into a pool nobody drew,
+   * and that second pool is exactly the bug these tests failed to catch.
+   */
+  const pourDrop = (world: ReturnType<typeof createWorld>, x: number, color: number) =>
+    pourInto(world, x, dropVolume(12, world.width), COLORS[color]!);
+
+  it('puts the paint in the column it was poured into', () => {
     const world = createWorld(1000, 800);
-    const d = drop({ x: 120 });
-    world.drops.push(d);
-    runUntil(world, [], () => d.phase === 'pooled', 30);
+    pourDrop(world, 120, 0);
+    for (let i = 0; i < 60; i += 1) stepPool(world, 1 / 60);
 
     const target = columnAt(world, 120);
     // Waves spread it, so check the neighbourhood rather than one column.
@@ -328,9 +597,7 @@ describe('the pool', () => {
 
   it('takes on the colour of what landed in it', () => {
     const world = createWorld(1000, 800);
-    const d = drop({ x: 500, color: 1 }); // green
-    world.drops.push(d);
-    runUntil(world, [], () => d.phase === 'pooled', 30);
+    pourDrop(world, 500, 1); // green
 
     const column = world.pool[columnAt(world, 500)];
     expect(column).toBeDefined();
@@ -343,9 +610,7 @@ describe('the pool', () => {
     // is shallow early on that showed as a dark trough between the places it
     // had rained hardest. Paint on a floor is the colour of the paint.
     const world = createWorld(1000, 800);
-    const d = drop({ x: 500, color: 0 }); // pure red
-    world.drops.push(d);
-    runUntil(world, [], () => d.phase === 'pooled', 30);
+    pourDrop(world, 500, 0); // pure red
 
     const column = world.pool[columnAt(world, 500)];
     expect(column).toBeDefined();
@@ -485,9 +750,10 @@ describe('the pool', () => {
   it('cannot drown the page however hard it rains', () => {
     const world = createWorld(1000, 800);
     for (let i = 0; i < 4000; i += 1) {
-      world.drops.push(drop({ x: 500, y: 790, size: 22, color: i % 3 }));
+      pourInto(world, 500, dropVolume(22, world.width), COLORS[i % 3]!);
+      if (i % 8 === 0) stepPool(world, 1 / 60);
     }
-    run(world, [], 4);
+    for (let i = 0; i < 60 * 4; i += 1) stepPool(world, 1 / 60);
 
     for (const column of world.pool) {
       expect(column.h).toBeLessThanOrEqual(MAX_POOL + 1e-6);

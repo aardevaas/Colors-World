@@ -1,7 +1,7 @@
 /*
- * The paint run's canvas.
+ * The paint run's canvas, and the one control on it.
  *
- * Sits behind the footer's text rather than over it — the tube is scenery the
+ * Sits behind the footer's text rather than over it — the paint is scenery the
  * links are read against, not a layer on top of them.
  */
 
@@ -12,8 +12,66 @@
   pointer-events: none;
 }
 
+/*
+ * The faucet's handle, as a real button.
+ *
+ * Positioned from the same geometry the canvas draws the wheel with, so the
+ * target and the picture cannot drift apart. It carries no visible box of its
+ * own — what the visitor sees is the drawn handle — but it is focusable,
+ * labelled, and operable from a keyboard, which a canvas is not.
+ */
+.valve {
+  position: absolute;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* A hint that it is live, without drawing a second handle over the first. */
+.valve::after {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  background: radial-gradient(circle, oklch(100% 0 0 / 0.14), transparent 68%);
+  opacity: 0;
+  transition: opacity var(--duration-normal, 300ms) var(--ease-out-expo, ease);
+}
+
+.valve:hover::after {
+  opacity: 1;
+}
+
+.valve:focus-visible {
+  outline: 2px solid oklch(88% 0.05 200);
+  outline-offset: 3px;
+}
+
+/* Reachable by a screen reader, invisible on screen. */
+.valveLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * With motion suppressed there is no paint and no faucet, so there is nothing
+ * for the control to operate — it goes with the picture rather than sitting
+ * over an empty corner as an invisible target.
+ */
 @media (prefers-reduced-motion: reduce) {
-  .canvas {
+  .canvas,
+  .valve {
     display: none;
   }
 }

@@ -89,10 +89,12 @@ export function HeroHud({ ref, rooms }: HeroHudProps) {
             onPointerMove={handleTiltPointerMove}
             onPointerLeave={handleTiltPointerLeave}
           >
-            {/* The pane's own surface: what it reflects, and the hard streak
-                of light across it. Both decorative. */}
+            {/* The pane's own body. Decorative. There is no streak element
+                any more: every version of a diagonal light sweep across this
+                face has read as a line drawn through the middle of it rather
+                than as a reflection, because a gradient stop IS an edge. Glass
+                this thin, indoors, does not carry one. */}
             <span className={styles.glassReflection} aria-hidden="true" />
-            <span className={styles.glassStreak} aria-hidden="true" />
 
             {/* Decorative mounting hardware — carries no text, so it stays out
               of the link's accessible name ("Built by: aardevaas"). */}

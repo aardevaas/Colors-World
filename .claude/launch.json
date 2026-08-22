@@ -4,8 +4,9 @@
     {
       "name": "prism-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "-p", "4200"],
-      "port": 4200
+      "runtimeArgs": ["run", "dev", "--", "-p", "4250"],
+      "port": 4250,
+      "autoPort": false
     }
   ]
 }
