@@ -52,16 +52,15 @@ interface PaintRainProps {
 }
 
 /**
- * How hard the fan pulls a drop sideways, px/s².
+ * How hard the draught pushes a drop, px/s².
  *
- * Strong enough to visibly sweep the field toward the intake once a drop is in
- * range, gentle enough that the sweep reads as wind rather than as drops being
- * teleported into a funnel.
+ * Strong enough that the weather visibly leans away from the fan, gentle enough
+ * that it reads as air rather than as drops being flicked across the screen.
  */
-const FAN_FORCE = 900;
+const FAN_FORCE = 1250;
 
-/** How far above the fan its draw reaches, as a fraction of the viewport. */
-const FAN_REACH = 0.55;
+/** How far the draught carries, px. */
+const FAN_REACH = 340;
 
 /** Longest frame the simulation will accept, seconds. A backgrounded tab hands
  *  back a delta of several seconds, and every drop would teleport through every
@@ -133,7 +132,7 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
 
       const surfaces = readSurfaces(surfaceNodes);
       const palette = roomsRef.current.map(toRgb);
-      blowTowardIntake(world.drops, dt);
+
 
       // The floor is the foot of the DOCUMENT, not of the viewport: paint
       // gathers where the page ends, so it is only ever seen from the footer.
@@ -141,6 +140,7 @@ export function PaintRain({ count, rooms, reducedMotion = false }: PaintRainProp
 
       recycle(world.drops, countRef.current);
       step(world, dt, surfaces, palette, now / 1000);
+      blowAndLand(world.drops, dt, world.floor);
       handOverAbsorbed(world.drops, surfaceNodes);
       draw(context, world, surfaces, palette, dpr, countRef.current);
     };
@@ -229,54 +229,72 @@ function handOverAbsorbed(drops: SimDrop[], nodes: readonly HTMLElement[]): void
 }
 
 /**
- * The fan, doing what a fan does.
+ * The fan, doing what a fan does — and the floor, taking what lands on it.
  *
- * It was drawn spinning on the canvas and had no effect on anything, which is
- * the version of a fan that is a picture of a fan. This is the force: any drop
- * within reach above the intake is pushed sideways toward it, hard, and one
- * that arrives is handed to the ride and taken out of the field.
+ * A fan blows air AWAY from itself, so drops near it are pushed out and along
+ * rather than sucked in. That is the whole behaviour: the corner of the footer
+ * has a draught across it, the weather leans away from it, and the paint piles
+ * up down-wind.
  *
- * The intake is found from the DOM — the footer carries `data-rain-intake`
- * with the fraction of its width the fan sits at, and the run draws the fan at
- * the same fraction — so the wind and the machine cannot disagree about where
- * the opening is.
+ * The floor is announced from here rather than detected in the footer, because
+ * the rain already knows when a drop has run out of page and two definitions of
+ * where the floor is would eventually disagree.
  */
-function blowTowardIntake(drops: SimDrop[], dt: number): void {
-  const host = document.querySelector<HTMLElement>('[data-rain-intake]');
+function blowAndLand(drops: SimDrop[], dt: number, floor: number): void {
+  const host = document.querySelector<HTMLElement>('[data-paint-pool]');
   if (host === null) return;
 
   const rect = host.getBoundingClientRect();
   if (rect.width === 0) return;
-  const fraction = Number.parseFloat(host.dataset.rainIntake ?? '0.075');
-  const intakeX = rect.left + rect.width * fraction;
-  const intakeY = rect.top;
+  if (rect.top > window.innerHeight || rect.bottom < 0) return;
 
-  // Only when the fan is actually on screen; there is no wind on a page the
-  // reader has not scrolled to.
-  if (intakeY > window.innerHeight || rect.bottom < 0) return;
-  const reach = window.innerHeight * FAN_REACH;
+  const fanX = rect.left + Math.max(74, rect.width * 0.085);
+  const fanY = rect.bottom - 120;
 
   for (const drop of drops) {
     if (drop.phase !== 'falling') continue;
-    const above = intakeY - drop.y;
-    if (above < -40 || above > reach) continue;
 
-    // Stronger the closer it gets, so the field visibly converges on the mouth
-    // rather than drifting across at a constant rate.
-    const nearness = 1 - above / reach;
-    const dx = intakeX - drop.x;
-    const distance = Math.abs(dx) || 1;
-    drop.vx += Math.sign(dx) * FAN_FORCE * (0.25 + nearness) * dt;
-    // A little lift too: the fan blows across, not only sideways.
-    drop.vy -= FAN_FORCE * 0.12 * nearness * dt;
-
-    if (distance < 26 && above < 30) {
-      host.dispatchEvent(
-        new CustomEvent('rain:intake', { detail: { color: drop.color, size: drop.size } })
-      );
-      // Into the ride, and out of the weather.
-      drop.phase = 'pooled';
+    // The draught: strongest near the fan, falling away with distance.
+    const dx = drop.x - fanX;
+    const dy = drop.y - fanY;
+    const distance = Math.hypot(dx, dy);
+    if (distance < FAN_REACH) {
+      const strength = (1 - distance / FAN_REACH) ** 2;
+      // Blown away from the fan and lifted, as air off a blade does.
+      drop.vx += (Math.sign(dx) || 1) * FAN_FORCE * strength * dt;
+      drop.vy -= FAN_FORCE * 0.42 * strength * dt;
     }
+
+    // (Landings are announced in the pass below, not here.)
+  }
+
+  /*
+   * Drops that reached the floor this frame become paint.
+   *
+   * Announced in a second pass, and this ordering is the whole of it: the
+   * simulation marks a drop `pooled` the moment it meets the floor, which
+   * happens inside `step` — before this runs. A first attempt looked for
+   * still-falling drops below the floor line and never found one, so nothing
+   * ever reached the pool.
+   *
+   * `y` is what separates a real landing from a drop parked off-screen by
+   * `recycle`, which is also 'pooled' but sits above the viewport.
+   */
+  for (const drop of drops) {
+    if (drop.phase !== 'pooled') continue;
+    if (drop.y < floor - 80) continue;
+      host.dispatchEvent(
+        new CustomEvent('rain:land', {
+          detail: {
+            x: Math.max(0, Math.min(rect.width, drop.x - rect.left)),
+            color: drop.color,
+            size: drop.size,
+          },
+        })
+      );
+    // Moved out of the way so the next `recycle` sends it back to the top
+    // rather than announcing it again on the following frame.
+    drop.y = -9999;
   }
 }
 
