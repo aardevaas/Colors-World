@@ -46,61 +46,19 @@ const VALVE_TIME = 0.42;
  * dies away with the wheel instead of switching on at pressure.
  *
  * The turns are chosen against measured fill speeds. At 1440 the pool gains
- * roughly `rate / 24` px of mean depth a second, and the rain itself is worth
- * about 0.8 of that, which puts the three settings at 2.5, 4.5 and 6.2 px/s.
+ * about 0.8 of that. The relationship is SUBLINEAR at the top — past a point
+ * the column under the spout hits the cap and the surplus is thrown away, which
+ * is why the stream widens with the flow and why the top setting needs more
+ * rate than a straight line would suggest. Measured at 3, 6 and 10 px/s.
  */
-const MAX_POUR_RATE = 131;
+const MAX_POUR_RATE = 300;
 
 const STRENGTHS = [
   { turn: 0, label: 'off' },
-  { turn: 0.28, label: 'a trickle' },
-  { turn: 0.67, label: 'a steady run' },
+  { turn: 0.162, label: 'a trickle' },
+  { turn: 0.387, label: 'a steady run' },
   { turn: 1, label: 'full' },
 ] as const;
-/** Splash particles thrown up by one droplet meeting the paint. */
-const SPLASH_PER_DROP = 4;
-
-/** Mean depth, as a fraction of the cap, at which the pool counts as full. */
-const FULL_AT = 0.94;
-
-/** How fast the drain swallows paint at its own columns, px of depth a second. */
-const DRAIN_RATE = 1500;
-
-/**
- * How hard the floor is tilted toward the drain while it is running, px/s².
- *
- * Removing paint at the grate alone empties the pool at the speed the fluid can
- * carry it there, and shallow water carries MATERIAL slowly — the first version
- * took over ten seconds and had not finished. A real shallow pan does not wait
- * for that either: it gets tipped. So the whole surface is pulled toward the
- * grate, the paint runs visibly downhill, and the last of it slides across the
- * floor into the hole.
- */
-const DRAIN_PULL = 1400;
-
-/** Seconds one push of the plunger takes. */
-const PLUNGE_TIME = 0.55;
-
-/**
- * Where the drain and its plunger sit.
- *
- * The cup rests just CLEAR of a full pool. Standing it on the grate is what a
- * real plunger does and it put the thing underwater at the exact moment it
- * becomes usable — a control the visitor cannot see is not a control. So it
- * waits above the paint, and dives into it when pressed.
- */
-export function drainGeometry(width: number, height: number) {
-  const scale = Math.max(0.72, Math.min(1.25, width / 1440)) * 0.8;
-  return {
-    scale,
-    x: width - 132 * scale,
-    grateY: height - 6 * scale,
-    cupY: height - MAX_POOL - 14,
-    /** How far it drives down on the stroke. */
-    travel: 104 * scale,
-  };
-}
-
 interface Droplet {
   x: number;
   y: number;
@@ -148,6 +106,84 @@ export function faucetGeometry(width: number, height: number) {
   return { scale, wallY, spoutX, spoutY, handleX, handleY, pipe: 23 * scale };
 }
 
+/** Splash particles thrown up by one droplet meeting the paint. */
+const SPLASH_PER_DROP = 4;
+
+/** How fast the drain swallows paint at its own columns, px of depth a second. */
+const DRAIN_RATE = 2800;
+
+/**
+ * How hard the floor is tilted toward the drain while it is running, px/s².
+ *
+ * Removing paint at the grate alone empties the pool at the speed the fluid can
+ * carry it there, and shallow water carries MATERIAL slowly — the first version
+ * took over ten seconds and had not finished. A real shallow pan does not wait
+ * for that either: it gets tipped. So the whole surface is pulled toward the
+ * grate, the paint runs visibly downhill, and the last of it slides across the
+ * floor into the hole.
+ *
+ * Set so the flush BEATS the tap. At a gentler pull the two reached an
+ * equilibrium — the drain carrying away exactly what a wide-open tap delivered,
+ * the pool sitting at a steady 17px and never clearing. A flush that cannot
+ * empty the floor while the tap is running is not a flush.
+ */
+const DRAIN_PULL = 3400;
+
+/**
+ * How fast the last of the film is drawn down, per second.
+ *
+ * The tilt moves a POOL. It cannot move a film: `stepPool` limits each face to
+ * what the cell behind it can spare, so once the paint is a few pixels deep it
+ * stops being able to reach the grate quickly, and a running tap simply refills
+ * what the grate takes. The floor was left permanently wet at 17px.
+ */
+const DRAIN_SUCK = 3.6;
+
+/**
+ * Seconds the lever takes to whip down and settle.
+ *
+ * Long enough to see it bend. The lever is rubber, so it does not travel and
+ * stop — it overshoots, comes back past its rest, and rings down.
+ */
+const PULL_TIME = 1.05;
+
+/**
+ * The drain, dead centre at the foot of the page, and the lever beside it.
+ *
+ * The lever is a FIXTURE, like the faucet — it is there whether or not there is
+ * anything to flush. A control that appears only once some condition is met has
+ * to be discovered twice: once as a thing that exists, and again as a thing
+ * that can be pressed. Both of these are simply part of the room.
+ */
+export function drainGeometry(width: number, height: number) {
+  const scale = Math.max(0.72, Math.min(1.25, width / 1440)) * 0.8;
+  const base = height - 4 * scale;
+  /*
+   * The head waits clear of a FULL pool. Anything lower submerges itself at the
+   * exact moment there is most to flush, and a control you cannot see is not a
+   * control.
+   */
+  const head = height - MAX_POOL - 34 * scale;
+  return {
+    scale,
+    /** Aligned to the centre of the page. */
+    x: width / 2,
+    /** All the way at the bottom. */
+    grateY: height - 5 * scale,
+    /*
+     * Against the right-hand wall, opposite the tap.
+     *
+     * Beside the grate it stood in the middle of the footer's centred credit
+     * line and drew its shaft straight through it. Out here the room reads as
+     * what it is: paint in on the left, paint out on the right, and the hole in
+     * the floor between them.
+     */
+    leverX: width - 112 * scale,
+    leverBaseY: base,
+    leverLength: base - head,
+  };
+}
+
 export function PaintRun({ rooms }: PaintRunProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const roomsRef = useRef(rooms);
@@ -162,17 +198,7 @@ export function PaintRun({ rooms }: PaintRunProps) {
   const [hit, setHit] = useState({ x: 0, y: 0, size: 0 });
   const [drainHit, setDrainHit] = useState({ x: 0, y: 0, size: 0 });
 
-  /**
-   * Whether the pool has filled to the cap.
-   *
-   * State rather than a ref because it decides whether the plunger EXISTS: a
-   * control for emptying a pool that is not full has nothing to do, and a
-   * permanently present button that only sometimes works is worse than one that
-   * arrives when it is wanted.
-   */
-  const [full, setFull] = useState(false);
-  const fullRef = useRef(full);
-  fullRef.current = full;
+  /** Running while the paint is going down the drain. */
   const drainingRef = useRef(false);
 
   const toggle = useCallback(() => setLevel((was) => (was + 1) % STRENGTHS.length), []);
@@ -228,9 +254,13 @@ export function PaintRun({ rooms }: PaintRunProps) {
       setHit({ x: g.handleX - reach / 2, y: g.handleY - reach / 2, size: reach });
 
       const d = drainGeometry(width, height);
-      // Centred on the CUP, which is the part that looks grabbable.
-      const grip = 84 * d.scale;
-      setDrainHit({ x: d.x - grip / 2, y: d.cupY - grip * 0.62, size: grip });
+      // Centred on the head of the lever, which is the part you would grab.
+      const grip = 82 * d.scale;
+      setDrainHit({
+        x: d.leverX - grip / 2,
+        y: d.leverBaseY - d.leverLength - grip * 0.4,
+        size: grip,
+      });
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
@@ -250,7 +280,15 @@ export function PaintRun({ rooms }: PaintRunProps) {
 
     /** A droplet has met the paint: it becomes volume, a ring and a crown. */
     const impact = (x: number, y: number, size: number, rgb: [number, number, number]) => {
-      pourInto(pool, x, dropVolume(size, width), rgb);
+      /*
+       * With the drain open, what lands runs straight out.
+       *
+       * It still splashes and still rings — the paint is arriving and you can
+       * see it arrive. It simply does not gather, because the hole in the floor
+       * is open. Without this the tap and the drain reached a standstill and the
+       * floor never cleared, which is not what pulling a flush does.
+       */
+      if (!drainingRef.current) pourInto(pool, x, dropVolume(size, width), rgb);
       rings.push({ x, y, t: 0, size, rgb });
       if (rings.length > 18) rings.shift();
       for (let i = 0; i < SPLASH_PER_DROP; i += 1) {
@@ -290,8 +328,8 @@ export function PaintRun({ rooms }: PaintRunProps) {
     let pourDebt = 0;
     let colorCursor = 0;
     /** 0 at rest, running up on every push of the plunger. */
-    let plungeT = 0;
-    let plunges = 0;
+    /** 0 at rest; runs up while the lever is bending and ringing back. */
+    let pullT = 0;
 
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
@@ -314,9 +352,16 @@ export function PaintRun({ rooms }: PaintRunProps) {
           pourDebt -= 1;
           colorCursor += 1;
           droplets.push({
-            // A stream has width: jittered, so the column at the spout is not a
-            // single spike that the solver then has to flatten.
-            x: g.spoutX + (Math.random() - 0.5) * 14 * g.scale,
+            /*
+             * A stream has width, and a harder stream has MORE width.
+             *
+             * Not decoration. Every drop used to land within half a column of
+             * the spout, so at full blast the column under it hit the cap and
+             * the surplus was thrown away — the tap saturated at 7.2px/s however
+             * hard it was opened. Spreading the fall with the flow lets the
+             * paint actually arrive, and is what an open tap looks like.
+             */
+            x: g.spoutX + (Math.random() - 0.5) * (14 + flow * 78) * g.scale,
             y: g.spoutY + 6 * g.scale,
             vx: (Math.random() - 0.5) * 16,
             vy: 150 + Math.random() * 90,
@@ -363,43 +408,38 @@ export function PaintRun({ rooms }: PaintRunProps) {
       // --- the drain --------------------------------------------------------
       const d = drainGeometry(width, height);
       if (drainingRef.current) {
-        plungeT += dt / PLUNGE_TIME;
-        if (plungeT >= 1) {
-          plungeT = 0;
-          plunges += 1;
-        }
+        pullT += dt / PULL_TIME;
         /*
-         * The paint is not deleted — it is taken out at ONE COLUMN.
+         * The paint is not deleted — it is taken out at ONE PLACE and the floor
+         * is tipped toward it.
          *
-         * Emptying every column together would drop the surface like a lift and
-         * look like the pool being switched off. Removing it where the drain is
-         * leaves a hole for the solver to answer: the surface tilts, the paint
-         * runs downhill toward the grate, and the last of it slides across the
-         * floor. The draining is the fluid doing what it already knows how to
-         * do, which is why it looks like draining.
+         * Emptying every column together would drop the surface like a lift.
+         * Taking it at the grate alone is honest but far too slow: shallow water
+         * carries MATERIAL slowly, the same fact that governs the mixing, and
+         * the first version of this took over ten seconds and had not finished.
+         * A shallow pan does not wait for that either. It gets tipped.
          */
         const centre = columnAt(pool, d.x);
-        for (let i = centre - 2; i <= centre + 2; i += 1) {
+        for (let i = centre - 3; i <= centre + 3; i += 1) {
           const column = pool.pool[i];
           if (column === undefined) continue;
           column.h = Math.max(0, column.h - DRAIN_RATE * dt);
         }
-        // Tip the floor toward the grate. `flow` is the solver's own velocity
-        // field, so the paint answers this exactly as it answers a slope.
         for (let i = 0; i <= pool.pool.length; i += 1) {
           const toward = i <= centre ? 1 : -1;
           pool.flow[i] = (pool.flow[i] ?? 0) + toward * DRAIN_PULL * dt;
         }
+        const fade = Math.max(0, 1 - DRAIN_SUCK * dt);
+        for (const column of pool.pool) column.h *= fade;
+        // Cleared. The drain leads nowhere, and the floor starts filling again.
         if (poolVolume(pool) < 40) {
           drainingRef.current = false;
-          plungeT = 0;
-          plunges = 0;
-          if (fullRef.current) setFull(false);
+          pullT = 0;
         }
-      } else {
-        // Has it filled? Mean depth, because the pool levels as it goes.
-        const mean = poolVolume(pool) / Math.max(1, pool.pool.length);
-        if (!fullRef.current && mean >= MAX_POOL * FULL_AT) setFull(true);
+      } else if (pullT > 0) {
+        // Let the lever finish ringing even after the paint has gone.
+        pullT = Math.min(1, pullT + dt / PULL_TIME);
+        if (pullT >= 1) pullT = 0;
       }
 
       stepPool(pool, dt);
@@ -410,9 +450,7 @@ export function PaintRun({ rooms }: PaintRunProps) {
       drawRings(context, rings);
       drawDroplets(context, droplets, splashes);
       drawFaucet(context, g, flow);
-      if (fullRef.current || drainingRef.current) {
-        drawDrain(context, d, drainingRef.current, plungeT, plunges);
-      }
+      drawDrain(context, d, drainingRef.current, pullT);
     };
     frame = requestAnimationFrame(tick);
 
@@ -433,25 +471,23 @@ export function PaintRun({ rooms }: PaintRunProps) {
         stays what it is: a picture.
       */}
       {/*
-        The plunger arrives only when there is something to plunge. It is a
-        second real button for the same reason the valve is one: the drain is
-        drawn on a canvas, and a canvas cannot be tabbed to or named.
+        The flush lever. A fixture, like the tap — present whether or not there
+        is anything to flush, and a real button for the same reason the valve
+        is one: a canvas cannot be tabbed to or named.
       */}
-      {full ? (
-        <button
-          type="button"
-          className={styles.plunger}
-          style={{
-            left: `${drainHit.x}px`,
-            top: `${drainHit.y}px`,
-            width: `${drainHit.size}px`,
-            height: `${drainHit.size}px`,
-          }}
-          onClick={plunge}
-        >
-          <span className={styles.valveLabel}>The paint is full. Pull the plug.</span>
-        </button>
-      ) : null}
+      <button
+        type="button"
+        className={styles.plunger}
+        style={{
+          left: `${drainHit.x}px`,
+          top: `${drainHit.y}px`,
+          width: `${drainHit.size}px`,
+          height: `${drainHit.size}px`,
+        }}
+        onClick={plunge}
+      >
+        <span className={styles.valveLabel}>Pull the lever to empty the paint</span>
+      </button>
       <button
         type="button"
         className={styles.valve}
@@ -634,40 +670,41 @@ function drawFaucet(
 }
 
 /**
- * The drain, and the plunger standing over it.
+ * The drain in the floor, and the flush lever beside it.
  *
- * Both appear only once the floor is full, so this is drawn from the same
- * decision that renders the button — there is no state here, only the two
- * numbers the loop is already keeping.
+ * The lever is rubber and it behaves like rubber: pulled, it does not travel to
+ * a new position and stop, it WHIPS — bending hard, overshooting past its own
+ * rest, and ringing down. That bend is the whole character of the thing, so it
+ * is drawn as a curve whose control point carries the displacement rather than
+ * as a rigid arm on a hinge, which is the version of this that reads as a
+ * switch instead of as something with give in it.
  */
 function drawDrain(
   context: CanvasRenderingContext2D,
   d: ReturnType<typeof drainGeometry>,
   draining: boolean,
-  plungeT: number,
-  plunges: number
+  pullT: number
 ): void {
-  const { scale, x, grateY, cupY: rest, travel } = d;
-  const steel = (a: number) => `rgba(206,222,241,${a})`;
+  const { scale, x, grateY, leverX, leverBaseY, leverLength } = d;
 
   context.save();
   context.lineCap = 'round';
   context.lineJoin = 'round';
 
-  // The grate: an ellipse in the floor with bars across it.
+  // --- the grate ------------------------------------------------------------
   context.beginPath();
-  context.ellipse(x, grateY, 34 * scale, 11 * scale, 0, 0, Math.PI * 2);
-  context.fillStyle = 'rgba(12,16,22,0.96)';
+  context.ellipse(x, grateY, 40 * scale, 13 * scale, 0, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(8,11,16,0.97)';
   context.fill();
-  context.lineWidth = 2.6 * scale;
-  context.strokeStyle = steel(0.5);
+  context.lineWidth = 3 * scale;
+  context.strokeStyle = 'rgba(198,214,234,0.5)';
   context.stroke();
 
-  context.lineWidth = 2.2 * scale;
-  context.strokeStyle = steel(0.32);
-  for (let i = -2; i <= 2; i += 1) {
-    const bx = x + i * 11 * scale;
-    const span = 10 * scale * Math.sqrt(Math.max(0, 1 - (i / 3.2) ** 2));
+  context.lineWidth = 2.4 * scale;
+  context.strokeStyle = 'rgba(198,214,234,0.3)';
+  for (let i = -3; i <= 3; i += 1) {
+    const bx = x + i * 10 * scale;
+    const span = 12 * scale * Math.sqrt(Math.max(0, 1 - (i / 4.1) ** 2));
     context.beginPath();
     context.moveTo(bx, grateY - span);
     context.lineTo(bx, grateY + span);
@@ -675,77 +712,110 @@ function drawDrain(
   }
 
   /*
-   * The swirl, drawn only while it is actually draining.
+   * The vortex, drawn only while it is running.
    *
-   * Two turns of a spiral, spun by how many pushes have gone in, so the vortex
-   * keeps turning across pushes rather than restarting with each one.
+   * Two arms of a spiral tightening into the grate, turning fast. It sits on
+   * top of the paint because the paint is what is turning — the surface itself
+   * is already dipping here, because the solver is answering a hole.
    */
   if (draining) {
-    const spin = plunges * 2.1 + plungeT * 2.4;
-    context.lineWidth = 2 * scale;
-    for (let arm = 0; arm < 2; arm += 1) {
+    const spin = pullT * 26;
+    context.lineWidth = 2.6 * scale;
+    for (let arm = 0; arm < 3; arm += 1) {
       context.beginPath();
-      for (let t = 0; t <= 1.001; t += 0.06) {
-        const angle = spin + arm * Math.PI + t * Math.PI * 2.4;
-        const radius = 30 * scale * (1 - t);
+      for (let t = 0; t <= 1.001; t += 0.045) {
+        const angle = spin + (arm * Math.PI * 2) / 3 + t * Math.PI * 3.2;
+        const radius = 62 * scale * (1 - t) ** 1.2;
         const px = x + Math.cos(angle) * radius;
-        const py = grateY + Math.sin(angle) * radius * 0.36;
+        const py = grateY + Math.sin(angle) * radius * 0.34;
         if (t === 0) context.moveTo(px, py);
         else context.lineTo(px, py);
       }
-      context.strokeStyle = `rgba(255,255,255,${0.34 - arm * 0.12})`;
+      context.strokeStyle = `rgba(255,255,255,${0.4 - arm * 0.11})`;
       context.stroke();
     }
   }
 
-  // --- the plunger ---------------------------------------------------------
+  // --- the lever ------------------------------------------------------------
   //
-  // One push is a fast shove down and a slower draw back up, which is the
-  // rhythm of the real thing — the work is done on the downstroke.
-  const push = draining
-    ? plungeT < 0.4
-      ? (plungeT / 0.4) ** 0.6
-      : 1 - (plungeT - 0.4) / 0.6
+  // A damped ring rather than a travel-and-stop. Peaks almost at once, swings
+  // back through its rest and settles — which is what a rubber arm does and a
+  // hinged one does not.
+  const bend = draining || pullT > 0
+    ? Math.exp(-3.1 * pullT) * Math.sin(pullT * 11.5) * 1.35
     : 0;
-  const cupY = rest + push * travel;
 
-  // The handle.
-  context.beginPath();
-  context.moveTo(x, cupY - 12 * scale);
-  context.lineTo(x, cupY - 78 * scale);
-  context.lineWidth = 9 * scale;
-  context.strokeStyle = 'rgba(78,52,32,1)';
-  context.stroke();
-  context.lineWidth = 3 * scale;
-  context.strokeStyle = 'rgba(168,124,80,0.95)';
-  context.stroke();
+  const tipX = leverX - bend * 78 * scale;
+  const tipY = leverBaseY - leverLength + Math.abs(bend) * 34 * scale;
+  // The control point leads the tip, so the arm bows through its length instead
+  // of pivoting stiffly at the base.
+  const ctrlX = leverX - bend * 30 * scale;
+  const ctrlY = leverBaseY - leverLength * 0.52;
 
-  // The grip at the top.
+  // A collar bolting it to the floor.
   context.beginPath();
-  context.roundRect(x - 9 * scale, cupY - 92 * scale, 18 * scale, 16 * scale, 4 * scale);
-  context.fillStyle = 'rgba(150,108,68,1)';
+  context.ellipse(leverX, leverBaseY, 21 * scale, 7 * scale, 0, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(20,24,31,1)';
   context.fill();
+  context.lineWidth = 2.2 * scale;
+  context.strokeStyle = 'rgba(150,166,186,0.45)';
+  context.stroke();
 
-  // The rubber cup: a dome, squashed as it is pushed down.
-  const squash = 1 - push * 0.3;
+  // The shaft: black rubber, thick at the foot and tapering to the head.
+  for (const [width_, tint] of [
+    [15 * scale, 'rgba(10,12,16,1)'],
+    [9 * scale, 'rgba(38,42,50,1)'],
+    [3 * scale, 'rgba(96,104,118,0.55)'],
+  ] as const) {
+    context.beginPath();
+    context.moveTo(leverX, leverBaseY - 2 * scale);
+    context.quadraticCurveTo(ctrlX, ctrlY, tipX, tipY);
+    context.lineWidth = width_;
+    context.strokeStyle = tint;
+    context.stroke();
+  }
+
+  /*
+   * The head: a rubber cup, leaning the way the arm is bent.
+   *
+   * Squashed along its lean rather than drawn upright, so the whole thing reads
+   * as one flexible object under load instead of a solid shape sitting on a
+   * bent stick.
+   */
+  const lean = Math.atan2(tipX - ctrlX, ctrlY - tipY);
   context.save();
-  context.translate(x, cupY);
-  context.scale(1 + push * 0.16, squash);
+  context.translate(tipX, tipY);
+  context.rotate(-lean);
+  const r = 27 * scale;
   context.beginPath();
-  context.moveTo(-26 * scale, 0);
-  context.quadraticCurveTo(-26 * scale, -30 * scale, 0, -30 * scale);
-  context.quadraticCurveTo(26 * scale, -30 * scale, 26 * scale, 0);
-  context.quadraticCurveTo(26 * scale, 12 * scale, 0, 12 * scale);
-  context.quadraticCurveTo(-26 * scale, 12 * scale, -26 * scale, 0);
+  context.moveTo(-r, 6 * scale);
+  context.quadraticCurveTo(-r, -26 * scale, 0, -26 * scale);
+  context.quadraticCurveTo(r, -26 * scale, r, 6 * scale);
+  context.quadraticCurveTo(r, 17 * scale, 0, 17 * scale);
+  context.quadraticCurveTo(-r, 17 * scale, -r, 6 * scale);
   context.closePath();
-  const rubber = context.createLinearGradient(0, -30 * scale, 0, 12 * scale);
-  rubber.addColorStop(0, 'rgba(150,42,40,1)');
-  rubber.addColorStop(1, 'rgba(88,20,20,1)');
+  const rubber = context.createLinearGradient(0, -26 * scale, 0, 17 * scale);
+  rubber.addColorStop(0, 'rgba(46,50,58,1)');
+  rubber.addColorStop(0.55, 'rgba(16,18,23,1)');
+  rubber.addColorStop(1, 'rgba(6,7,10,1)');
   context.fillStyle = rubber;
   context.fill();
-  context.lineWidth = 2 * scale;
-  context.strokeStyle = 'rgba(212,120,110,0.5)';
+  context.lineWidth = 1.8 * scale;
+  context.strokeStyle = 'rgba(128,140,158,0.34)';
   context.stroke();
+
+  // A ring around the cup, and a highlight — the two details that stop black
+  // rubber rendering as a hole in the page.
+  context.beginPath();
+  context.ellipse(0, 4 * scale, r * 0.72, 5 * scale, 0, 0, Math.PI * 2);
+  context.lineWidth = 1.4 * scale;
+  context.strokeStyle = 'rgba(120,132,150,0.24)';
+  context.stroke();
+
+  context.beginPath();
+  context.ellipse(-r * 0.34, -14 * scale, r * 0.28, 6 * scale, -0.4, 0, Math.PI * 2);
+  context.fillStyle = 'rgba(196,210,230,0.16)';
+  context.fill();
   context.restore();
 
   context.restore();
