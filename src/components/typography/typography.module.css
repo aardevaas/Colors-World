@@ -312,6 +312,11 @@
 
 .field input[type='range'] {
   width: 100%;
+  /* The four sliders in this room were the one place the operating system's
+     own blue showed through — on a page about colour, next to a specimen the
+     visitor is choosing colours for. `accent-color` is what compose and the
+     merge lab already set; this room had been missed. */
+  accent-color: var(--accent);
 }
 
 .fieldValue {
