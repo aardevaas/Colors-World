@@ -32,8 +32,13 @@
  */
 
 import { contrastRatio, type Oklch } from '@/lib/color-engine';
-import type { RoleContrastMatrix } from '@/lib/roles/role-contrast';
-import { deriveRoles, type RoleAssignment, type SemanticRole } from '@/lib/roles/semantic-roles';
+import { requirementFor, type RoleContrastMatrix } from '@/lib/roles/role-contrast';
+import {
+  SEMANTIC_ROLES,
+  deriveRoles,
+  type RoleAssignment,
+  type SemanticRole,
+} from '@/lib/roles/semantic-roles';
 import {
   DEFAULT_NEUTRAL_LADDER,
   generatePalette,
@@ -52,16 +57,37 @@ export interface ContrastTarget {
 
 /**
  * What a usable interface actually requires, as opposed to what WCAG requires
- * of text alone. The two component-boundary targets at 3:1 come from WCAG
- * 1.4.11 and are the ones every generator in this category ignores — which is
- * why generated palettes so often produce cards you cannot see the edge of.
+ * of text alone. The component-boundary targets at 3:1 come from WCAG 1.4.11
+ * and are the ones every generator in this category ignores — which is why
+ * generated palettes so often produce cards you cannot see the edge of.
+ *
+ * DERIVED, not written out. This was four hand-picked pairs while the audit
+ * every other room ran checked eleven, so the solver optimised for one list
+ * and the product graded against another — and a palette could be solved here
+ * and failing two rooms later. Reading the list off `requirementFor` means the
+ * thing being searched for and the thing being measured cannot come apart
+ * again, whatever either of them becomes next.
+ *
+ * The labels are the audit's own wording rather than prose, for the same
+ * reason: a sentence naming "A visible panel edge" sent someone looking for a
+ * row that says `border on surface`.
+ *
+ * Repointing the solver at the full list was measured before and rejected — it
+ * dropped from 240 solved to 0, because `surface on background` was
+ * unreachable on a near-black ladder and the greedy repair burned its whole
+ * step budget there. With that pair made advisory (see `requirementFor`) the
+ * objection is gone and the same change now helps: over 400 seeds, clean
+ * palettes go from 261 to 296.
  */
-export const DEFAULT_CONTRAST_TARGETS: readonly ContrastTarget[] = [
-  { foreground: 'text', background: 'background', min: 4.5, label: 'Text on the page' },
-  { foreground: 'text', background: 'surface', min: 4.5, label: 'Text on a panel' },
-  { foreground: 'background', background: 'primary', min: 3, label: 'The brand against the page' },
-  { foreground: 'border', background: 'surface', min: 3, label: 'A visible panel edge' },
-];
+export const DEFAULT_CONTRAST_TARGETS: readonly ContrastTarget[] = SEMANTIC_ROLES.flatMap(
+  (foreground) =>
+    SEMANTIC_ROLES.flatMap((background) => {
+      const min = requirementFor(foreground, background);
+      return min === null
+        ? []
+        : [{ foreground, background, min, label: `${foreground} on ${background}` }];
+    })
+);
 
 export interface SolveOptions extends Omit<PaletteOptions, 'ladder'> {
   readonly targets?: readonly ContrastTarget[];

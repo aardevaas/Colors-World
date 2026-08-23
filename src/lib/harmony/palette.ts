@@ -50,10 +50,24 @@ export interface NeutralLadder {
   readonly text: number;
 }
 
+/**
+ * `border` sits at 0.53 rather than the 0.34 it shipped with.
+ *
+ * At 0.34 the edge measured 1.47:1 against the panel and 1.67:1 against the
+ * page — an invisible border on the app's own default palette, which is the
+ * exact defect the solver was written to fix and could not, because it starts
+ * from here. 0.53 clears 3:1 on both with about ten percent of headroom, which
+ * is enough to survive rounding to six-digit hex and the solver's own nudges
+ * without flipping a verdict.
+ *
+ * Only this rung moves. Background, surface and text keep the values the
+ * product was designed around; see `requirementFor` in roles/role-contrast for
+ * why lifting `surface` to satisfy panel-against-page was rejected.
+ */
 export const DEFAULT_NEUTRAL_LADDER: NeutralLadder = {
   background: 0.15,
   surface: 0.22,
-  border: 0.34,
+  border: 0.53,
   text: 0.95,
 };
 

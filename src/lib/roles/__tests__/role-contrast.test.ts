@@ -49,7 +49,20 @@ describe('requirementFor', () => {
     expect(requirementFor('primary', 'background')).toBe(COMPONENT_MINIMUM);
     expect(requirementFor('accent', 'surface')).toBe(COMPONENT_MINIMUM);
     expect(requirementFor('border', 'surface')).toBe(COMPONENT_MINIMUM);
-    expect(requirementFor('surface', 'background')).toBe(COMPONENT_MINIMUM);
+    expect(requirementFor('border', 'background')).toBe(COMPONENT_MINIMUM);
+  });
+
+  it('leaves a panel against the page advisory, and its edge required', () => {
+    /*
+     * The layer is discoverable by its EDGE. Requiring the fill itself to
+     * clear 3:1 against the page failed 400 of 400 generated palettes and the
+     * shipped fallback, and the only ladders that satisfy it put mid-grey
+     * panels on a near-black page. The border requirement is what carries the
+     * intent, so it is the one that stays enforced.
+     */
+    expect(requirementFor('surface', 'background')).toBeNull();
+    expect(requirementFor('border', 'surface')).toBe(COMPONENT_MINIMUM);
+    expect(requirementFor('border', 'background')).toBe(COMPONENT_MINIMUM);
   });
 
   it('asks nothing of a role against itself', () => {
@@ -89,7 +102,16 @@ describe('buildRoleContrastMatrix', () => {
     // The label on a button — carried by the fill's own ink, which is the only
     // way that requirement can ever be met.
     expect(pairs).toContain('onPrimary on primary');
-    expect(pairs).toContain('surface on background');
+    // A panel's edge against the page — the pair that stands in for "can you
+    // see the layer at all", and the one a hand-picked five left out.
+    expect(pairs).toContain('border on background');
+    // Still measured, just not scored: it appears in the grid, not the list.
+    expect(pairs).not.toContain('surface on background');
+    const cell = matrix.rows[SEMANTIC_ROLES.indexOf('surface')]![
+      SEMANTIC_ROLES.indexOf('background')
+    ]!;
+    expect(cell.required).toBeNull();
+    expect(cell.ratio).toBeGreaterThan(0);
   });
 
   it('scores the diagonal as 1:1 and requires nothing of it', () => {

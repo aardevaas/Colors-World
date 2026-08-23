@@ -70,7 +70,11 @@ const FALLBACK: RoleAssignment = {
   primary: neutral('#7C5CFF'),
   text: neutral('#F2F2F5'),
   accent: neutral('#FFB454'),
-  border: neutral('#2A2A30'),
+  // #2A2A30 measured 1.25:1 against this surface and 1.38:1 against this
+  // background — an edge nobody could see, on the set that fills in whenever a
+  // palette is too small to supply one. #6B6B72 keeps the hue and clears 3:1
+  // on both (3.38 and 3.72).
+  border: neutral('#6B6B72'),
   onPrimary: neutral('#FFFFFF'),
   onAccent: neutral('#0A0A0B'),
 };

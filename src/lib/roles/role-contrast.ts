@@ -95,9 +95,32 @@ export function requirementFor(
   if (FILLS.includes(foreground) && SURFACES.includes(background)) return COMPONENT_MINIMUM;
   // An edge has to be visible against the thing it encloses.
   if (foreground === 'border' && SURFACES.includes(background)) return COMPONENT_MINIMUM;
-  // A panel has to be distinguishable from the page behind it, or the
-  // interface loses its layers entirely.
-  if (foreground === 'surface' && background === 'background') return COMPONENT_MINIMUM;
+  /*
+   * A PANEL AGAINST THE PAGE IS ADVISORY, AND ITS EDGE IS NOT.
+   *
+   * This pair used to carry the same 3:1 the fills carry. It failed on every
+   * palette this product could produce — 400 of 400 generated, and the shipped
+   * fallback at 1.10:1 — so it was not reporting a defect, it was reporting a
+   * rule the whole app was built against.
+   *
+   * Enforcing it is possible, and the price was measured: the nearest feasible
+   * ladder moves `surface` #1b1b1b to #5d5d5d and drags `border` to #b0b0b0
+   * with it, which is mid-grey panels with light-grey edges on a near-black
+   * page, and cuts text-on-panel from 14.96:1 to 5.65:1. That is not an
+   * accessibility win, it is a different product.
+   *
+   * The requirement it was standing in for is the one directly above, and
+   * that one stays: a border has to clear 3:1 against BOTH panel and page. So
+   * a layer is always discoverable — by its edge, which is the thing that
+   * actually does that work, and what 1.4.11 asks be distinguishable. A fill
+   * that must itself be 3:1 from the page is stricter than the standard.
+   *
+   * Advisory rather than deleted: it is still measured, still in the grid, and
+   * still worth a designer's eye. It just no longer fails a palette on its own.
+   * Which is what this file already says it does with pairs nobody has a rule
+   * about — scoring them against a threshold invented here is the thing it
+   * exists to avoid.
+   */
 
   return null;
 }
