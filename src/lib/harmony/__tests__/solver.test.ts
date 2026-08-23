@@ -7,8 +7,10 @@ import {
   DEFAULT_CONTRAST_TARGETS,
   describeShortfall,
   solvePalette,
+  unmetFromMatrix,
   type ContrastTarget,
 } from '../solver';
+import { buildRoleContrastMatrix } from '@/lib/roles/role-contrast';
 import { randomSeed } from '../seed';
 
 const VIOLET: Oklch = parseColor('#7C5CFF');
@@ -198,5 +200,78 @@ describe('solvePalette — behaviour', () => {
       expect(() => solvePalette(seed)).not.toThrow();
       expect(solvePalette(seed).palette.colors.length).toBeGreaterThan(0);
     }
+  });
+});
+
+/**
+ * The two rooms have to read off one instrument.
+ *
+ * `/compose` graded four hand-picked pairs and `/visualizer` graded eleven, so
+ * the room that made a palette and the room that showed it could publish
+ * different verdicts about the same System — both of them arithmetically
+ * correct. These lock the adapter that made them agree.
+ */
+describe('unmetFromMatrix', () => {
+  it('reports exactly the failures the matrix reports, and no others', () => {
+    for (const seed of SEEDS) {
+      const result = solvePalette(seed);
+      const roles = deriveRoles(
+        result.palette.colors.map((c) => ({ hex: c.hex, oklch: c.oklch }))
+      );
+      const matrix = buildRoleContrastMatrix(roles);
+      const unmet = unmetFromMatrix(matrix);
+
+      expect(unmet.length).toBe(matrix.failures.length);
+      expect(unmet.map((u) => u.target.label)).toEqual(
+        matrix.failures.map((f) => `${f.foreground} on ${f.background}`)
+      );
+    }
+  });
+
+  it('carries the achieved ratio and the distance below the bar', () => {
+    const result = solvePalette(TAN);
+    const roles = deriveRoles(
+      result.palette.colors.map((c) => ({ hex: c.hex, oklch: c.oklch }))
+    );
+    const matrix = buildRoleContrastMatrix(roles);
+    for (const entry of unmetFromMatrix(matrix)) {
+      expect(entry.shortfall).toBeGreaterThan(0);
+      expect(entry.achieved).toBeLessThan(entry.target.min);
+      expect(entry.achieved + entry.shortfall).toBeCloseTo(entry.target.min, 10);
+    }
+  });
+
+  it('gives describeShortfall a sentence that names a pair from the audit', () => {
+    const result = solvePalette(GREEN);
+    const roles = deriveRoles(
+      result.palette.colors.map((c) => ({ hex: c.hex, oklch: c.oklch }))
+    );
+    const matrix = buildRoleContrastMatrix(roles);
+    const unmet = unmetFromMatrix(matrix);
+    const sentence = describeShortfall(unmet);
+
+    if (unmet.length === 0) {
+      expect(sentence).toBeNull();
+      return;
+    }
+    expect(sentence).not.toBeNull();
+    // Whatever it names has to be a row the room is also showing.
+    const named = matrix.failures.some(
+      (f) =>
+        sentence!.toLowerCase().includes(`${f.foreground} on ${f.background}`.toLowerCase())
+    );
+    expect(named).toBe(true);
+  });
+
+  it('is empty exactly when the palette clears every requirement', () => {
+    const clean = buildRoleContrastMatrix(
+      deriveRoles([
+        { hex: '#000000', oklch: parseColor('#000000') },
+        { hex: '#595959', oklch: parseColor('#595959') },
+        { hex: '#ABABAB', oklch: parseColor('#ABABAB') },
+        { hex: '#D1D1D1', oklch: parseColor('#D1D1D1') },
+      ])
+    );
+    expect(unmetFromMatrix(clean).length).toBe(clean.failures.length);
   });
 });

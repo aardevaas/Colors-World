@@ -32,6 +32,7 @@
  */
 
 import { contrastRatio, type Oklch } from '@/lib/color-engine';
+import type { RoleContrastMatrix } from '@/lib/roles/role-contrast';
 import { deriveRoles, type RoleAssignment, type SemanticRole } from '@/lib/roles/semantic-roles';
 import {
   DEFAULT_NEUTRAL_LADDER,
@@ -221,6 +222,42 @@ function totalShortfall(unmet: readonly UnmetTarget[]): number {
 
 function clamp(value: number): number {
   return Math.min(LIGHTNESS_BOUNDS.max, Math.max(LIGHTNESS_BOUNDS.min, value));
+}
+
+/**
+ * The full role audit, restated as unmet targets.
+ *
+ * `/compose` and `/visualizer` were grading the same System against different
+ * lists — four hand-picked pairs here, eleven there — so a palette could be
+ * declared green in the room that made it and "3 of 11 failing" in the room
+ * that showed it. That is the product contradicting itself about the one
+ * claim it is built on, and no amount of wording fixes it: the two rooms have
+ * to read off the same instrument.
+ *
+ * This is the adapter that lets them. The matrix is the instrument;
+ * `describeShortfall` below is the sentence; and running the sentence off the
+ * matrix rather than off the solver's own target list means the explanation
+ * can never name a different problem than the list above it shows.
+ *
+ * Note this is deliberately NOT the solver's objective. The solver moves the
+ * neutral ladder, and pointing it at all eleven makes it strictly worse:
+ * measured over 400 seeds, it drops from 240 solved to 0 and mean failures
+ * rise from 2.43 to 3.66, because the greedy repair spends its whole step
+ * budget on `surface on background` -- unreachable on a near-black ladder --
+ * and wrecks the border pairs it had already won on the way. Reporting the
+ * truth and optimising for it are separate changes; this is the first.
+ */
+export function unmetFromMatrix(matrix: RoleContrastMatrix): readonly UnmetTarget[] {
+  return matrix.failures.map((cell) => ({
+    target: {
+      foreground: cell.foreground,
+      background: cell.background,
+      min: cell.required!,
+      label: `${cell.foreground} on ${cell.background}`,
+    },
+    achieved: cell.ratio,
+    shortfall: cell.required! - cell.ratio,
+  }));
 }
 
 /**

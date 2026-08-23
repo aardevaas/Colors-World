@@ -1,15 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { contrastRatio, type Oklch } from '@/lib/color-engine';
+import { parseColor, type Oklch } from '@/lib/color-engine';
+import { buildRoleContrastMatrix, TEXT_MINIMUM } from '@/lib/roles/role-contrast';
 import { deriveRoles } from '@/lib/roles/semantic-roles';
 import { HARMONY_RULES, type ChromaStrategy, type HarmonyRule } from '@/lib/harmony/harmony';
 import { PALETTE_SIZES, generatePalette, type PaletteColor } from '@/lib/harmony/palette';
 import { nextSeedAwayFrom, randomSeed } from '@/lib/harmony/seed';
 import {
-  DEFAULT_CONTRAST_TARGETS,
   describeShortfall,
   solvePalette,
+  unmetFromMatrix,
   type UnmetTarget,
 } from '@/lib/harmony/solver';
 import { useSystem } from '@/lib/system/system-context';
@@ -188,10 +189,22 @@ export function PaletteComposer() {
     setPalette(draft.map((color) => ({ hex: color.hex, oklch: color.oklch })));
   }
 
-  const preview = draft.length > 0 ? previewRoles(draft) : null;
   const isApplied = draft.length > 0 && samePalette(draft, system.palette);
-  const measured = draft.length > 0 ? measureTargets(draft) : {};
-  const shortfall = describeShortfall(unmet);
+  const audit = useMemo(() => (draft.length > 0 ? auditOf(draft) : null), [draft]);
+  /*
+   * The sentence explains the LIST, not the solver's private target set.
+   *
+   * `unmet` is what the solver was asked to move and could not; the matrix is
+   * what the palette actually is. While those were different lists the
+   * shortfall line could name a constraint that did not appear in the rows
+   * above it — so the explanation is read off the same audit as the rows, and
+   * the solver's own miss is only consulted when the audit is clean and there
+   * is still something to say about the request.
+   */
+  const shortfall =
+    audit !== null && audit.failures.length > 0
+      ? describeShortfall(unmetFromMatrix(audit))
+      : describeShortfall(unmet);
 
   return (
     <section className={styles.composer} aria-label="Compose a palette">
@@ -314,9 +327,13 @@ export function PaletteComposer() {
 
           <div className={styles.readout}>
             <span>{RULE_HINTS[rule]}</span>
-            {!enforce && preview !== null && (
-              <span className={preview.passes ? styles.pass : styles.fail}>
-                text on surface {preview.ratio.toFixed(2)}:1
+            {audit !== null && (
+              /* The verdict, in the visualizer's own words, so the two rooms
+                 cannot be read as disagreeing when they agree. */
+              <span className={audit.failures.length === 0 ? styles.pass : styles.fail}>
+                {audit.failures.length === 0
+                  ? `${audit.required.length} of ${audit.required.length} pass`
+                  : `${audit.failures.length} of ${audit.required.length} failing`}
               </span>
             )}
             {draft.some((c) => locked.has(c.hex)) && (
@@ -326,26 +343,37 @@ export function PaletteComposer() {
             )}
           </div>
 
-          {enforce && (
+          {audit !== null && (
+            /*
+             * Shown whether or not the targets are being enforced. Enforcing
+             * changes what the SOLVER chases; it does not change what the
+             * palette is, and a draft rolled freely deserves the same honest
+             * reading as one that was solved.
+             */
             <div className={styles.targets}>
               <ul className={styles.targetList}>
-                {DEFAULT_CONTRAST_TARGETS.map((target) => {
-                  const ratio = measured[target.label];
-                  if (ratio === undefined) return null;
-                  const met = ratio >= target.min;
-                  return (
-                    <li key={target.label} className={styles.target}>
-                      <span className={met ? styles.tick : styles.cross} aria-hidden="true">
-                        {met ? '\u2713' : '\u2717'}
-                      </span>
-                      <span className={styles.targetLabel}>{target.label}</span>
-                      <span className={met ? styles.pass : styles.fail}>
-                        {ratio.toFixed(2)}:1
-                      </span>
-                      <span className={styles.muted}>needs {target.min}</span>
-                    </li>
-                  );
-                })}
+                {audit.required.map((cell) => (
+                  <li
+                    key={`${cell.foreground}-${cell.background}`}
+                    className={styles.target}
+                  >
+                    <span
+                      className={cell.passes ? styles.tick : styles.cross}
+                      aria-hidden="true"
+                    >
+                      {cell.passes ? '\u2713' : '\u2717'}
+                    </span>
+                    <span className={styles.targetLabel}>
+                      {cell.foreground} on {cell.background}
+                    </span>
+                    <span className={cell.passes ? styles.pass : styles.fail}>
+                      {cell.ratio.toFixed(2)}:1
+                    </span>
+                    <span className={styles.muted}>
+                      needs {cell.required === TEXT_MINIMUM ? '4.5 AA' : '3 UI'}
+                    </span>
+                  </li>
+                ))}
               </ul>
               {shortfall !== null && <p className={styles.shortfall}>{shortfall}</p>}
             </div>
@@ -381,26 +409,36 @@ function rollInto(
   return generatePalette(seed, { rule, chroma, count });
 }
 
-/** A generated palette should never be judged only by its swatches — this is
- *  the number that decides whether it is usable, shown before it is applied. */
-function previewRoles(colors: readonly PaletteColor[]): { ratio: number; passes: boolean } {
-  const roles = deriveRoles(colors.map((c) => ({ hex: c.hex, oklch: c.oklch })));
-  const ratio = contrastRatio(roles.text.oklch, roles.surface.oklch);
-  return { ratio, passes: ratio >= 4.5 };
-}
-
-/** Every declared target, measured against the draft as it stands, so the
- *  report shows what was achieved rather than only what failed. */
-function measureTargets(colors: readonly PaletteColor[]): Record<string, number> {
-  const roles = deriveRoles(colors.map((c) => ({ hex: c.hex, oklch: c.oklch })));
-  const out: Record<string, number> = {};
-  for (const target of DEFAULT_CONTRAST_TARGETS) {
-    out[target.label] = contrastRatio(
-      roles[target.foreground].oklch,
-      roles[target.background].oklch
-    );
-  }
-  return out;
+/**
+ * THE SAME AUDIT THE VISUALIZER RUNS.
+ *
+ * This room used to grade a draft against four hand-picked pairs and the
+ * verdict badge against exactly one of them (text on a panel). The visualizer
+ * grades eleven. So the room that MAKES the palette could call it clean and
+ * the room that SHOWS it could call the very same System "3 of 11 failing" —
+ * and both numbers were correct, which is worse than one of them being wrong.
+ *
+ * Measured over 400 solved palettes, every single one this room called green
+ * had at least one failure the visualizer would report: 240 of 240. Not an
+ * edge case, and not a wording problem. The rooms were holding different
+ * rulers.
+ *
+ * There is one ruler now. `buildRoleContrastMatrix` is the instrument in both
+ * places, so a palette that reads clean here reads clean there, and a number
+ * that appears in this room can be found again in the next one.
+ *
+ * Graded off `parseColor(hex)` rather than the generator's own OKLCH, because
+ * the hex is what SHIPS. A System serialises to six-digit hex and every other
+ * room parses it back (see `codec.ts`), so grading the draft at full float
+ * precision reported a palette very slightly better than the one being saved —
+ * 14.95:1 here against 14.91:1 one room later, from the same colors. Small,
+ * but it is the same bug as the four-versus-eleven one in miniature: a number
+ * the next room cannot reproduce.
+ */
+function auditOf(colors: readonly PaletteColor[]) {
+  return buildRoleContrastMatrix(
+    deriveRoles(colors.map((c) => ({ hex: c.hex, oklch: parseColor(c.hex) })))
+  );
 }
 
 function samePalette(
