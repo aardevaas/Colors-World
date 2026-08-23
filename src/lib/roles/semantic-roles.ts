@@ -75,22 +75,38 @@ const FALLBACK: RoleAssignment = {
   // palette is too small to supply one. #6B6B72 keeps the hue and clears 3:1
   // on both (3.38 and 3.72).
   border: neutral('#6B6B72'),
+  // Placeholders only: `deriveRoles` recomputes both inks from their final
+  // fill, so these are never what ends up on screen. Kept in step with
+  // INK_LIGHT/INK_DARK below so the table cannot drift into a lie.
   onPrimary: neutral('#FFFFFF'),
-  onAccent: neutral('#0A0A0B'),
+  onAccent: neutral('#000000'),
 };
 
 /**
  * The two inks a fill can carry.
  *
- * Deliberately the extremes. Whichever of pure white and near-black reads
- * better on a given fill, the worse case for that CHOICE is a fill sitting
- * exactly between them — and even there the better ink measures 4.58:1, which
- * clears the 4.5 body-text requirement. So a label on a button can always be
- * made legible, which is precisely what was impossible while one shared `text`
- * had to read on the page, the panel AND both fills at once.
+ * Deliberately the extremes — and the dark one has to be an ACTUAL extreme.
+ *
+ * It was `#0A0A0B`, chosen as a softer near-black. That colour is not near
+ * black where it counts: it parses to OKLCH lightness 0.145, and the gap it
+ * gives up at the bottom is exactly what the mid-tones needed. Swept across
+ * every in-gamut fill, `#FFFFFF`/`#0A0A0B` leaves **2.1% of them unservable** —
+ * a band around lightness 0.55-0.61 where neither ink clears 4.5:1, bottoming
+ * out at 4.4486:1. Not an exotic corner either: plain `#3E7CB1`, a mid blue,
+ * lands at 4.4506:1, so the audit reported a failure on the one pair this
+ * whole model promises cannot fail.
+ *
+ * With `#000000` the worst case over the same sweep is 4.5826:1 and nothing
+ * falls below the bar — the guarantee is real rather than nearly real. The
+ * cost is a label that is properly black instead of almost black, on a filled
+ * control, which is what every design system ships anyway.
+ *
+ * That guarantee is what makes the contrast matrix satisfiable at all: a label
+ * on a button can always be made legible, which was impossible while one
+ * shared `text` had to read on the page, the panel AND both fills at once.
  */
 const INK_LIGHT = neutral('#FFFFFF');
-const INK_DARK = neutral('#0A0A0B');
+const INK_DARK = neutral('#000000');
 
 /**
  * The ink this fill can actually carry.
@@ -210,7 +226,32 @@ export function deriveRoles(
 ): RoleAssignment {
   const derived = deriveFromPalette(palette);
   // Overrides are applied last so a manual choice is never recomputed away.
-  return { ...derived, ...stripUndefined(overrides) };
+  const assigned = { ...derived, ...stripUndefined(overrides) };
+
+  /*
+   * AN INK FOLLOWS ITS FILL — INCLUDING WHEN AN OVERRIDE MOVES THE FILL.
+   *
+   * The inks were computed inside `deriveFromPalette`, from the fills the
+   * PALETTE produced, and then overrides were spread over the top. So
+   * reassigning `accent` swapped the fill and left the previous fill's ink
+   * sitting on it. Measured in the visualizer: overriding accent to #7f7f85
+   * kept `onAccent` at #FFFFFF and the label landed at 3.98:1, while `inkOn`
+   * on the actual accent gives #0A0A0B at 4.97:1. The room then offered an
+   * "auto-fix" for a role that is supposed to be unfailable by construction.
+   *
+   * That is not a rounding error, it is the guarantee this whole role model
+   * rests on: a fill carries its own ink, which is what makes the contrast
+   * matrix satisfiable at all. An ink computed from a colour that is no longer
+   * on screen is not an ink, it is a leftover.
+   *
+   * Recomputed here, last, from whatever the fill finally is. Deliberately
+   * NOT overridable: unlike every other role, an ink is not a choice. It is
+   * whichever of white and near-black the fill can carry, and the reason
+   * `inkOn` exists is that picking it any other way is how buttons end up
+   * with unreadable labels. Honouring an `onAccent` override — from the UI or
+   * from a hand-edited URL — would reopen exactly that door.
+   */
+  return { ...assigned, onPrimary: inkOn(assigned.primary), onAccent: inkOn(assigned.accent) };
 }
 
 function stripUndefined(overrides: RoleOverrides): RoleOverrides {

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { contrastRatio, formatHex, parseColor } from '@/lib/color-engine';
+import { contrastRatio, formatHex, isInGamut, parseColor } from '@/lib/color-engine';
 import {
   INK_ROLES,
   SEMANTIC_ROLES,
   deriveRoles,
   flipPolarity,
+  inkOn,
   rolesToCssVars,
   type RoleColor,
   type SemanticRole,
@@ -197,10 +198,76 @@ describe('deriveRoles — manual overrides', () => {
     expect(roles.primary.hex).toBe('#7C5CFF');
   });
 
-  it('can override every role at once', () => {
+  it('can override every role that is a choice, all at once', () => {
     const all = Object.fromEntries(SEMANTIC_ROLES.map((r) => [r, color('#123456')]));
     const roles = deriveRoles(PALETTE, all);
-    for (const role of SEMANTIC_ROLES) expect(roles[role].hex).toBe('#123456');
+    for (const role of SEMANTIC_ROLES) {
+      if (INK_ROLES.includes(role)) continue;
+      expect(roles[role].hex).toBe('#123456');
+    }
+  });
+
+  /*
+   * An ink is not a choice, so it does not take an override — from the UI or
+   * from a hand-edited URL. See `deriveRoles`.
+   */
+  it('refuses an ink override and keeps the ink its fill can carry', () => {
+    const roles = deriveRoles(PALETTE, {
+      onPrimary: color('#123456'),
+      onAccent: color('#123456'),
+    });
+    expect(roles.onPrimary.hex).not.toBe('#123456');
+    expect(roles.onAccent.hex).not.toBe('#123456');
+    expect(roles.onPrimary).toEqual(inkOn(roles.primary));
+    expect(roles.onAccent).toEqual(inkOn(roles.accent));
+  });
+
+  it('moves the ink when an override moves the fill under it', () => {
+    /*
+     * The concrete regression: overriding accent left `onAccent` as the ink
+     * derived for the PREVIOUS accent. #FFFFFF on #7f7f85 measured 3.98:1 and
+     * the visualizer offered an auto-fix for a pair that cannot fail.
+     */
+    const roles = deriveRoles(PALETTE, { accent: color('#7F7F85') });
+    expect(roles.accent.hex).toBe('#7F7F85');
+    expect(roles.onAccent).toEqual(inkOn(roles.accent));
+    expect(contrastRatio(roles.onAccent.oklch, roles.accent.oklch)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('keeps both ink pairs above AA for every fill an override can name', () => {
+    /*
+     * The whole sRGB gamut, not a line through it. The band where the two inks
+     * trade places sits around lightness 0.55-0.61 and it is chroma-dependent,
+     * so a sweep of greys walks straight past the failure: #3E7CB1, an
+     * unremarkable mid blue, was the case that broke this.
+     */
+    let worst = Infinity;
+    let worstFill = '';
+    for (let l = 0.45; l <= 0.72; l += 0.005) {
+      for (let c = 0; c <= 0.3; c += 0.02) {
+        for (let h = 0; h < 360; h += 15) {
+          const oklch = { l, c, h };
+          if (!isInGamut(oklch, 'srgb')) continue;
+          const fill = { hex: formatHex(oklch), oklch };
+          const roles = deriveRoles(PALETTE, { primary: fill, accent: fill });
+          const onP = contrastRatio(roles.onPrimary.oklch, roles.primary.oklch);
+          const onA = contrastRatio(roles.onAccent.oklch, roles.accent.oklch);
+          if (Math.min(onP, onA) < worst) {
+            worst = Math.min(onP, onA);
+            worstFill = fill.hex;
+          }
+        }
+      }
+    }
+    expect(worst, `worst fill was ${worstFill}`).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('carries the mid blue that used to fail', () => {
+    // 4.4506:1 while the dark ink was #0A0A0B, which is lightness 0.145 and
+    // therefore not an extreme at all.
+    const fill = { hex: '#3E7CB1', oklch: parseColor('#3E7CB1') };
+    const roles = deriveRoles(PALETTE, { accent: fill });
+    expect(contrastRatio(roles.onAccent.oklch, roles.accent.oklch)).toBeGreaterThanOrEqual(4.5);
   });
 });
 

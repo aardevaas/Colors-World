@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'r
 import { CVD_TYPES, contrastRatio, formatHex, simulateCvd, type CvdType } from '@/lib/color-engine';
 import { useSystem } from '@/lib/system/system-context';
 import {
+  INK_ROLES,
   SEMANTIC_ROLES,
   rolesToCssVars,
   type RoleColor,
@@ -164,6 +165,10 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
               key={entry.id}
               type="button"
               title={`Stresses ${entry.stresses}`}
+              /* Which template is showing was carried by a class name alone,
+                 so it existed for people who can see the highlight and for
+                 nobody else. */
+              aria-pressed={entry.id === templateId}
               className={entry.id === templateId ? `${styles.templateTab} ${styles.templateTabActive}` : styles.templateTab}
               onClick={() => setTemplateId(entry.id)}
             >
@@ -242,24 +247,55 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
           )}
 
           <ul className={styles.roleList}>
-            {SEMANTIC_ROLES.map((role) => (
-              <li key={role} className={styles.roleRow}>
-                <button
-                  type="button"
-                  className={styles.roleSwatch}
-                  style={{ background: shownRoles[role].hex }}
-                  onClick={() => setAssigningRole(assigningRole === role ? null : role)}
-                  aria-label={`Reassign ${role}`}
-                />
-                <span className={styles.roleName}>{role}</span>
-                <span className={styles.roleHex}>{shownRoles[role].hex}</span>
-                {overrides[role] !== undefined && (
-                  <button type="button" className={styles.resetButton} onClick={() => clearOverride(role)}>
-                    reset
-                  </button>
-                )}
-              </li>
-            ))}
+            {SEMANTIC_ROLES.map((role) => {
+              /*
+               * An ink is shown, not offered.
+               *
+               * These two rows used to carry the same "reassign" button as the
+               * rest, which invited someone to drop any dock colour onto a
+               * button label — the precise failure `inkOn` exists to prevent,
+               * and one the audit would then have reported as unfixable. They
+               * are a consequence of their fill, so the row says which fill
+               * and leaves it at that.
+               */
+              const isInk = INK_ROLES.includes(role);
+              return (
+                <li key={role} className={styles.roleRow}>
+                  {isInk ? (
+                    <span
+                      className={styles.roleSwatch}
+                      style={{ background: shownRoles[role].hex }}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.roleSwatch}
+                      style={{ background: shownRoles[role].hex }}
+                      onClick={() => setAssigningRole(assigningRole === role ? null : role)}
+                      aria-label={`Reassign ${role}`}
+                    />
+                  )}
+                  <span className={styles.roleName}>{role}</span>
+                  <span className={styles.roleHex}>{shownRoles[role].hex}</span>
+                  {isInk ? (
+                    <span className={styles.derivedTag}>
+                      follows {role === 'onPrimary' ? 'primary' : 'accent'}
+                    </span>
+                  ) : (
+                    overrides[role] !== undefined && (
+                      <button
+                        type="button"
+                        className={styles.resetButton}
+                        onClick={() => clearOverride(role)}
+                      >
+                        reset
+                      </button>
+                    )
+                  )}
+                </li>
+              );
+            })}
           </ul>
 
           {assigningRole !== null && (
