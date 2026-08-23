@@ -432,11 +432,11 @@ function of that position.
 
 | Component | Appears in |
 |---|---|
-| **A logo / primary mark** | **89%** (17 of 19), all 9 sectors |
-| **A typeface** | **74%** (14 of 19), 8 sectors |
-| **A colour palette** | **68%** (13 of 19), 8 sectors |
-| ~~usage rules~~ | 37% |
-| ~~a name / naming principles~~ | 16% |
+| **A logo / primary mark** | **88%** (22 of 25), 12 of 13 sectors |
+| **A typeface** | **80%** (20 of 25), 12 sectors |
+| **A colour palette** | **72%** (18 of 25), 11 sectors |
+| ~~usage rules~~ | 32% |
+| ~~a name / naming principles~~ | 12% |
 
 **A brand book with only those three is legitimate and shippable** — and it is
 close to what the palette-only user ends up with for free. Note the awkward
@@ -617,7 +617,7 @@ largest sections in the books that have them:
 
 | Missing component | Found in | Why it matters here |
 |---|---|---|
-| **Data visualisation system** | IBM (first-class section) | Categorical, sequential and diverging palettes with CVD safety. *I called this "the single biggest miss" — **the frequency data does not support that**: 1 of 19, see Part 14. It is a differentiation bet, not table stakes.* |
+| **Data visualisation system** | IBM (first-class section) | Categorical, sequential and diverging palettes with CVD safety. *I called this "the single biggest miss" — **the frequency data does not support that**: 1 of 25, see Part 14. It is a differentiation bet, not table stakes.* |
 | **Third-party usage rights & approvals** | NASA (its largest section) | *Who may use the mark at all* — distinct from misuse, which is about how |
 | **Co-branding / partner / JV lockups** | NASA, MemorialCare | Both devote whole sections; we had only parent/sub-brand |
 | **Supporting graphic device** | NASA "supporting elements", MemorialCare "connection graphic" | A recurring non-logo mark. Also a Romaniuk distinctive asset |
@@ -669,91 +669,105 @@ the component list is the last place that should be taken on faith.
 
 ---
 
-## Part 14 · The frequency table — 19 books, 9 sectors
+## Part 14 · The frequency table — 25 books, 13 sectors
 
 Run it yourself: `node scripts/brand-book-frequency.mjs`. Sample data lives in
-`docs/research/brand-book-sample.json` and is designed to be widened.
+`docs/research/brand-book-sample.json` and is built to be widened further.
 
 **Method.** Each entry records sections *observed* in a published guideline's
 own table of contents or navigation. Nothing is inferred from what a book of
-that type probably contains. `depth: full` means a complete ToC was read;
-`partial` means only a nav list or excerpt was available — so **absence in a
-partial entry is not evidence of absence**, and every number below is a floor.
+that type probably contains. `depth: full` means a complete ToC was read
+(14 of 25); `partial` means only a nav list or excerpt (11 of 25) — so
+**absence in a partial entry is not evidence of absence**, and every number
+below is a floor.
 
 Wheeler's *Designing Brand Identity* "Standards content" composite (p.185) is
 counted **separately**: a practitioner reference is evidence of what *should*
 be there, not of what an organisation shipped.
 
-### The result that matters
+**Two exclusions worth stating.** Several search results purporting to be Air
+France and United Airlines brand guidelines are **LLM-generated SEO filler** —
+they open plausibly and trail off into unrelated eBook sales copy. They were
+not recorded. And `brandingstyleguides.com`, an archive of ~4,000 real manuals,
+is **gated**: it gives page counts and sector tags but not contents, so its
+documents could be identified and not observed.
+
+### The result
 
 | Band | Threshold | Count | Components |
 |---|---|---|---|
-| **CORE** | ≥70% | **2** | `logo.primary` (89%) · `type.families` (74%) |
-| **COMMON** | 40–69% | 5 | `colour.palette` (68%) · `imagery.graphic-device` (47%) · `logo.architecture` · `logo.cobranding` · `logo.variants` (42%) |
-| **SECTORAL** | 20–39% | 10 | usage rights, misuse, contact, legal/IP, approvals, voice, tagline, photography, iconography, placement |
+| **CORE** | ≥70% | **3** | `logo.primary` **88%** (12 sectors) · `type.families` **80%** (12) · `colour.palette` **72%** (11) |
+| **COMMON** | 40–69% | 4 | `logo.misuse` 48% · `logo.variants` 48% · `imagery.graphic-device` 44% · `logo.cobranding` 40% |
+| **SECTORAL** | 20–39% | 14 | legal/IP, architecture, placement, approvals, contact, usage rights, tagline, photography, clear space, voice, signage, iconography, min-size, colour-across-mediums |
 | **RARE** | <20% | 33 | everything else |
 
-### Four things the data says that I had wrong
+Sectors: government · tech · public-health · education · healthcare · finance ·
+transport · tourism · media · retail-DTC · retail-food · nonprofit · NGO.
 
-**1. The universal core is three components, not five.** Logo, typeface,
-colour. Naming (16%) and usage rules (37%) are not close to universal, though
-I asserted both. Part 10 is corrected.
+### What widening the sample changed
 
-**2. Data visualisation is not "the single biggest miss."** I called it that.
-It appears in **1 of 19** books — only IBM. It is genuinely rare in practice,
-which makes it a *differentiation bet* rather than table stakes. The reading
-that it is underserved may still be right; the reading that it is *expected*
-was wrong, and came from a tech-heavy first sample.
+The sample went from 19 books / 9 sectors to **25 / 13**, adding the retail,
+DTC, hospitality, media and luxury-adjacent gaps that were flagged as bias.
 
-**3. Sonic identity is aspirational, not established.** Wheeler prescribes it,
-Romaniuk counts it as a distinctive asset, and **0 of 19** real books ship it.
-Keep it, label it honestly.
+**The "irreducible three" correction held — and got stronger.** `colour.palette`
+crossed the CORE threshold (68% → 72%), so the universal set is now firmly
+**logo, typeface, colour**. Naming (12%) and usage rules (32%) remain nowhere
+near, which is what I originally and wrongly asserted.
 
-**4. `imagery.graphic-device` is more common than logo clear-space.**
-A supporting non-logo graphic — NASA's "supporting elements", MemorialCare's
-"connection graphic", NHS's "caring hands" — appears in **47%** across 6
-sectors, versus 16% for clear space. It was a late afterthought in this
-document and it should not have been.
+**`logo.misuse` jumped 37% → 48%** and is now COMMON across 9 sectors. The
+consumer and food-service books that were missing are heavy on don'ts.
 
-### The whitespace, and it is large
+**`dataviz` did not move: still 1 of 25 (4%).** The correction stands — it is a
+differentiation bet, not table stakes.
 
-Eight components Wheeler prescribes that **none of the 19 sampled organisations
-shipped**:
+**And the surprise: `collateral.packaging` is still 1 of 25 (4%)** *even after
+deliberately adding retail, DTC and food-service books.* KFC's manual is about
+signage and trade dress, not packaging; only Mirabella covers pack. The
+plausible reading is that packaging specs live in a separate document from the
+brand book — which, if true, means §8 was never really brand-book territory and
+deferring it was righter than I knew.
 
-`brand.positioning` · `collateral.packaging` · `gov.launch` · **`gov.metrics`** ·
-**`gov.taxonomy`** · **`gov.version-changelog`** · `marketing.email` ·
-`sound.sonic`
+### The whitespace — narrower, and much sharper
 
-**Three of those are governance, and they are the three we are already built
-for.** Nobody versions their brand book. Nobody tracks whether their assets are
-working. Nobody publishes a naming taxonomy. Colors World has branch, merge, a
-version DAG and share links *today* — and Romaniuk's Fame × Uniqueness grid is
-exactly the missing `gov.metrics`.
+Widening dropped `brand.positioning`, `collateral.packaging` and
+`marketing.email` off the never-shipped list. **Five remain, and three of them
+are the same three:**
 
-**That is a stronger position than data visualisation, and it is evidenced
-rather than asserted.**
+| Never shipped in 25 books | Wheeler prescribes it |
+|---|---|
+| **`gov.metrics`** | yes |
+| **`gov.taxonomy`** | yes |
+| **`gov.version-changelog`** | yes |
+| `gov.launch` | yes |
+| `sound.sonic` | yes |
 
-### And the uncomfortable one
+**Nobody versions their brand book. Nobody tracks whether their assets are
+working. Nobody publishes a naming taxonomy.** Zero out of twenty-five, across
+thirteen sectors, and the practitioner reference says all three belong.
 
-The component appearing in **89% of real brand books — the single most
-universal thing in the entire corpus — is the logo.** It is also the one thing
-Colors World cannot do at all today. That is the strongest argument in this
-document for prioritising M1, and it did not come from taste.
+Colors World has branch, merge, a version DAG and share links **today**, and
+Romaniuk's Fame × Uniqueness grid is precisely the missing `gov.metrics`. This
+survived a sample widening that moved almost everything else, which makes it
+the most durable finding in this document.
 
-### Honest limits of this sample
+### The uncomfortable one, restated
 
-- **19 books, 11 of them partial observations.** Every frequency is a floor.
-- **Education is over-represented** (5 of 19), and school/sport-club books are
-  thin, which drags the RARE band down.
-- **No retail, DTC, hospitality, media, luxury or automotive** in the sample.
-  Those are exactly the sectors that would lift packaging, photography and
-  environmental design.
-- **Survivorship bias:** books that are public are disproportionately from
-  organisations that must publish them — government, health, education. Private
-  corporate books are the ones with the deepest §7 and §8 sections.
+The most universal component in the corpus — **88%, twelve sectors** — is the
+logo, and it is the one thing Colors World cannot do at all. Typeface and
+colour, the other two CORE components, we already do better than anyone in the
+sample. **Two of three, missing the biggest.**
 
-Widening to 30+ with those sectors is the obvious next pass, and the script
-takes the new data without changes.
+### Remaining limits
+
+- **11 of 25 are partial observations.** Every frequency is still a floor.
+- **Luxury proper is still absent.** LVMH, Ferrari, Harrods and Marchay manuals
+  exist in the gated archive; none could be read. Luxury may well weight
+  packaging, materials and retail environment far higher.
+- **Small-organisation bias persists** — sport clubs and schools have thin books
+  and pull the RARE band down.
+- **Public availability is not random.** Organisations obliged to publish
+  (government, health, education) are over-represented; private corporate books
+  have the deepest marketing and collateral sections and are the hardest to get.
 
 ---
 

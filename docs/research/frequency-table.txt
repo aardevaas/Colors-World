@@ -1,74 +1,75 @@
 
-Sample: 19 published brand books across 9 sectors
-(8 full ToC, 11 partial — absence in a partial is NOT evidence of absence)
+Sample: 25 published brand books across 13 sectors
+(14 full ToC, 11 partial — absence in a partial is NOT evidence of absence)
 
 COMPONENT                        N    %  SECTORS  WHEELER  BAND
 --------------------------------------------------------------------------
-logo.primary                    17  89%        9      yes  CORE
-type.families                   14  74%        8      yes  CORE
-colour.palette                  13  68%        8      yes  COMMON
-imagery.graphic-device           9  47%        6        -  COMMON
-logo.architecture                8  42%        5      yes  COMMON
-logo.cobranding                  8  42%        5        -  COMMON
-logo.variants                    8  42%        4      yes  COMMON
-gov.contact                      7  37%        5      yes  SECTORAL
-gov.usage-rights                 7  37%        5        -  SECTORAL
-logo.misuse                      7  37%        5      yes  SECTORAL
-logo.placement-backgrounds       7  37%        3        -  SECTORAL
-gov.legal-ip                     6  32%        6      yes  SECTORAL
-gov.approvals                    5  26%        4      yes  SECTORAL
-voice.tone                       5  26%        3      yes  SECTORAL
-brand.tagline                    4  21%        3      yes  SECTORAL
-imagery.iconography              4  21%        1        -  SECTORAL
-imagery.photography              4  21%        3      yes  SECTORAL
-brand.naming                     3  16%        2      yes  RARE
-brand.story                      3  16%        3      yes  RARE
-collateral.signage               3  16%        3      yes  RARE
-collateral.uniforms              3  16%        3      yes  RARE
-colour.values-mediums            3  16%        3      yes  RARE
-logo.clear-space                 3  16%        2      yes  RARE
-logo.min-size                    3  16%        2      yes  RARE
-web.accessibility                3  16%        2        -  RARE
-web.components                   3  16%        1        -  RARE
-web.grid                         3  16%        2      yes  RARE
-brand.mission-vision             2  11%        2      yes  RARE
-collateral.stationery            2  11%        2      yes  RARE
-collateral.swag                  2  11%        2      yes  RARE
-collateral.vehicles              2  11%        2      yes  RARE
-gov.suppliers                    2  11%        2        -  RARE
-marketing.social                 2  11%        2        -  RARE
-motion.animation                 2  11%        1      yes  RARE
-voice.grammar                    2  11%        1      yes  RARE
-brand.boilerplate                1   5%        1      yes  RARE
-brand.values                     1   5%        1      yes  RARE
-collateral.product-design        1   5%        1      yes  RARE
-colour.accessibility-contrast    1   5%        1        -  RARE
-colour.tints                     1   5%        1        -  RARE
-dataviz                          1   5%        1        -  RARE
-gov.file-formats                 1   5%        1      yes  RARE
-gov.forms                        1   5%        1      yes  RARE
-imagery.illustration             1   5%        1        -  RARE
-imagery.texture                  1   5%        1        -  RARE
-logo.construction                1   5%        1        -  RARE
-marketing.advertising            1   5%        1      yes  RARE
-marketing.decks                  1   5%        1      yes  RARE
-motion.video                     1   5%        1        -  RARE
-web.navigation                   1   5%        1      yes  RARE
+logo.primary                    22  88%       12      yes  CORE
+type.families                   20  80%       12      yes  CORE
+colour.palette                  18  72%       11      yes  CORE
+logo.misuse                     12  48%        9      yes  COMMON
+logo.variants                   12  48%        8      yes  COMMON
+imagery.graphic-device          11  44%        7        -  COMMON
+logo.cobranding                 10  40%        6        -  COMMON
+gov.legal-ip                     9  36%        7      yes  SECTORAL
+logo.architecture                9  36%        5      yes  SECTORAL
+logo.placement-backgrounds       9  36%        5        -  SECTORAL
+gov.approvals                    8  32%        6      yes  SECTORAL
+gov.contact                      8  32%        6      yes  SECTORAL
+gov.usage-rights                 8  32%        6        -  SECTORAL
+brand.tagline                    7  28%        6      yes  SECTORAL
+imagery.photography              7  28%        6      yes  SECTORAL
+logo.clear-space                 7  28%        6      yes  SECTORAL
+voice.tone                       7  28%        5      yes  SECTORAL
+collateral.signage               6  24%        6      yes  SECTORAL
+imagery.iconography              6  24%        3        -  SECTORAL
+logo.min-size                    6  24%        5      yes  SECTORAL
+colour.values-mediums            5  20%        5      yes  SECTORAL
+brand.story                      4  16%        4      yes  RARE
+collateral.stationery            4  16%        4      yes  RARE
+collateral.uniforms              4  16%        4      yes  RARE
+marketing.advertising            4  16%        4      yes  RARE
+web.accessibility                4  16%        3        -  RARE
+web.components                   4  16%        2        -  RARE
+web.grid                         4  16%        3      yes  RARE
+brand.mission-vision             3  12%        3      yes  RARE
+brand.naming                     3  12%        2      yes  RARE
+brand.values                     3  12%        3      yes  RARE
+collateral.swag                  3  12%        3      yes  RARE
+collateral.vehicles              3  12%        3      yes  RARE
+imagery.texture                  3  12%        3        -  RARE
+marketing.social                 3  12%        3        -  RARE
+gov.suppliers                    2   8%        2        -  RARE
+motion.animation                 2   8%        1      yes  RARE
+motion.video                     2   8%        2        -  RARE
+voice.grammar                    2   8%        1      yes  RARE
+web.navigation                   2   8%        2      yes  RARE
+brand.boilerplate                1   4%        1      yes  RARE
+brand.positioning                1   4%        1      yes  RARE
+collateral.packaging             1   4%        1      yes  RARE
+collateral.product-design        1   4%        1      yes  RARE
+colour.accessibility-contrast    1   4%        1        -  RARE
+colour.tints                     1   4%        1        -  RARE
+dataviz                          1   4%        1        -  RARE
+gov.file-formats                 1   4%        1      yes  RARE
+gov.forms                        1   4%        1      yes  RARE
+imagery.illustration             1   4%        1        -  RARE
+logo.construction                1   4%        1        -  RARE
+marketing.decks                  1   4%        1      yes  RARE
+marketing.email                  1   4%        1      yes  RARE
+type.formatting                  1   4%        1        -  RARE
 
-In Wheeler's composite but in NONE of the 19 sampled books:
-  brand.positioning
-  collateral.packaging
+In Wheeler's composite but in NONE of the 25 sampled books:
   gov.launch
   gov.metrics
   gov.taxonomy
   gov.version-changelog
-  marketing.email
   sound.sonic
 
 Bands:
-  CORE       2
-  COMMON     5
-  SECTORAL   10
+  CORE       3
+  COMMON     4
+  SECTORAL   14
   RARE       33
-  TOTAL      50 distinct components observed
+  TOTAL      54 distinct components observed
 
