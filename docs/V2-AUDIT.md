@@ -1,5 +1,16 @@
 # Colors World — V2 audit
 
+> ## ⚠️ SUPERSEDED — 2026-08-23
+>
+> Every 🔴 in this document has been fixed: skip links work in all six rooms,
+> role derivation no longer collides below six colours, `/library` is navigable
+> by keyboard, `/typography` shares the one role model, and the globe this
+> document critiques was removed entirely.
+>
+> **Current ground truth: [`AUDIT-2026-08-23.md`](AUDIT-2026-08-23.md).**
+> Kept for the reasoning and for the record of what was found.
+
+
 **Date:** 2026-08-19 · **Scope:** landing page, cross-tab UX, user-friendliness
 **Method:** every finding below was reproduced live in a browser against the running
 app, or measured in code. No finding here is inferred from reading source alone.

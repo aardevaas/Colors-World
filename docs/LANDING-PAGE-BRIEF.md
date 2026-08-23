@@ -1,5 +1,18 @@
 # Landing Page — Locked Brief & Decisions
 
+> ## ⚠️ HISTORICAL — 2026-08-23
+>
+> This brief describes a **WebGL** landing page. The globe and the whole
+> three.js stack were removed on instruction; the landing is now a hand-written
+> 2D canvas simulation (rain, a liquid pill, a pool you can fill and drain).
+>
+> **It is still worth reading** — the founder's answers and, especially, the
+> list of rejected ideas remain authoritative about what NOT to rebuild.
+> Its architecture and technique sections do not describe what ships.
+>
+> Current ground truth: [`AUDIT-2026-08-23.md`](AUDIT-2026-08-23.md).
+
+
 > **Status: authoritative.** This file is the single source of truth for the
 > WebGL landing page. It captures the full question set put to the founder and
 > the answers given, verbatim in substance, plus every architectural decision

@@ -1,6 +1,14 @@
-# PRISM — Architecture Proposal
+# Colors World — Architecture
 
-_Working name. A private color-intelligence platform: perceptual engine, knowledge graph, infinite canvas, token studio._
+_Design reasoning and the decisions behind the engine. "PRISM" was the working
+name and is retired; the product is Colors World._
+
+> **This is a design document, not a status report.** Its later sections are a
+> chronological build log from July 2026 and its §9 "Roadmap" and §10 "running
+> total" are both superseded — they described a five-tab product.
+>
+> For what exists today: [`docs/AUDIT-2026-08-23.md`](docs/AUDIT-2026-08-23.md).
+> For what happens next: [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -169,7 +177,7 @@ Anchoring a very light color (like `#f5d90a`, L=88) at step 5 compresses steps 0
 
 ---
 
-## 9. Roadmap
+## 9. Roadmap *(superseded — see ROADMAP.md)*
 
 **Phase 1 — Library** _(engine complete; persistence next)_
 Supabase schema, multi-scale palettes, auto-suggested anchor step, ASE + Procreate export.
@@ -191,7 +199,7 @@ Ollama prompt→palette, vision model for image→palette, explanations from the
 
 ---
 
-## 10. What's built and verified (running total)
+## 10. What's built and verified (running total) *(superseded — see docs/AUDIT-2026-08-23.md)*
 
 ```
 src/lib/color-engine/     63 tests · 97.0% coverage

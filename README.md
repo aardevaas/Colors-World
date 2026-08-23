@@ -62,35 +62,48 @@ That engine underneath is the real work, and it is the part you can take:
 
 ---
 
-## The studio, tab by tab
+## The studio, room by room
 
-Colors World is five workspaces that share one color engine and one collector dock. **Three are live today; two are in active development.** Each tab has its own typographic and atmospheric identity — the shell stays constant, the world inside it changes.
+Colors World is **six workspaces** that share one color engine and one collector dock — **all six are live**. Each room has its own typographic and atmospheric identity: the shell stays constant, the world inside it changes.
 
-### ✅ 01 · Library — `/library`
+They are meant to be walked in order. A color becomes a palette, a palette becomes scales, scales become an interface, an interface gets type, and the whole thing lands on a wall you can arrange.
+
+### 01 · Library — `/library`
 Wander a continuous, infinite field of every color there is.
 - **Vibe search** — type a mood (*"ocean at dusk"*, *"1970s Italian cafe"*) and get a genuinely varied palette back, not twelve near-identical hexes
 - **Color genetics** — open any color to see its family, harmonies, and perceptual neighbours
-- **Harmonic Dock** — collect as you browse; the dock follows you across every tab
+- **Harmonic Dock** — collect as you browse; the dock follows you across every room
 
-### ✅ 02 · Builder — `/builder`
-Turn one anchor color into a complete, production-ready scale.
+### 02 · Compose — `/compose`
+Start from one color, get a whole system.
+- **Harmony rules** — monochromatic through square, reconciled against the gamut so a locked color never shifts under you
+- **Roll and lock** — the loop the category proved, but constrained to seeds worth building from
+- **Contrast as an input, not a dice roll** — declare what the palette must survive and the solver moves the neutral ladder until it does, or names the constraint that blocked it
+
+### 03 · Scales — `/scales`
+Turn one anchor color into a complete, production-ready ramp.
 - **Curve manipulation** — shape lightness, chroma and hue torsion independently across the ramp
 - **Contrast matrix** — every step against every other, WCAG and APCA, directional
 - **Export vault** — CSS variables, Tailwind v4 `@theme`, shadcn tokens, JSON. Honest about the tokens it *can't* derive rather than inventing plausible ones.
 
-### ✅ 03 · Studio — `/studio`
+### 04 · Visualizer — `/visualizer`
+Put the palette on real UI and audit it where it actually lives.
+- **Four templates** chosen to stress different parts of a palette — dashboard, product card, editorial hero, mobile screen
+- **Eleven-pair role audit** — every requirement a standard actually has an opinion about, with the pairs nobody has a rule about marked advisory rather than scored against an invented threshold
+- **Auto-fix** that preserves hue, and **color-vision checks** across four types
+
+### 05 · Typography — `/typography`
+Pair type with color and find out where it stops being legible.
+- **Legibility field** — a grid of size against weight, shaded where the current pair carries text, so a failure reads as a *position with visible ways out* rather than a red number
+- **Fluid scales** — eight ratios, live `clamp()` output
+- **Local fonts** via `queryLocalFonts()` — $0 hosting, zero copyright exposure
+
+### 06 · Studio — `/studio`
 An infinite spatial canvas where a brand actually comes together.
 - **Real pan and zoom** — zoom-to-cursor, rubber-banded bounds, minimap, fly-to
 - **Drop an image** → its palette extracts automatically (k-means clustered in OKLab, so perceptually distinct colors don't get merged)
-- **Bento snapping** and editorial palette docking along an image's edge
-- **Ambient radiance** — color cards glow in their own hue
+- **Bento snapping**, editorial palette docking, and **ambient radiance** — cards glow in their own hue
 - **Export a watermarked PNG** of the whole board, at world-natural resolution
-
-### 🚧 04 · Visualizer — `/visualizer`
-*In development.* Test palettes on real UI templates, audit contrast live, auto-fix failures while preserving hue, and export Tailwind/shadcn code.
-
-### 🚧 05 · Typography — `/typography`
-*In development.* Pair type with color, scan your local system fonts via `queryLocalFonts()`, drive variable-font axes, and generate fluid `clamp()` scales.
 
 ---
 
@@ -100,9 +113,9 @@ An infinite spatial canvas where a brand actually comes together.
 
 <img src="./docs/assets/library.png" alt="Colors World Library — an infinite grid of computed colors with vibe search" width="100%" />
 
-**Builder** — a ten-step scale with per-channel curve control and live gamut badges.
+**Scales** — a ten-step ramp with per-channel curve control and live gamut badges.
 
-<img src="./docs/assets/builder.png" alt="Colors World Builder — a ten-step violet scale with lightness, chroma and hue-torsion curves" width="100%" />
+<img src="./docs/assets/builder.png" alt="Colors World Scales — a ten-step violet scale with lightness, chroma and hue-torsion curves" width="100%" />
 
 > Screenshots are reproducible: `node scripts/capture-screenshots.mjs` drives headless Chrome over CDP and rewrites `docs/assets/`. A short demo GIF is still wanted — see [contributing](#contributing).
 
@@ -110,7 +123,9 @@ An infinite spatial canvas where a brand actually comes together.
 
 ## Tech
 
-**Next.js 15** (App Router, RSC) · **TypeScript** strict · **Supabase** (Postgres + RLS + Storage) · **React Three Fiber** for the landing globe · **Vitest**
+**Next.js 15** (App Router, RSC) · **TypeScript** strict · **Supabase** (Postgres + RLS + Storage) · **Vitest**
+
+The landing page's weather — rain that beads on the buttons, runs the real rounded silhouette, and pours into a pool you can drain — is a hand-written 2D simulation on `<canvas>`, not a 3D library.
 
 Color work is pure and isolated in `src/lib/` with unit tests; UI is verified live in a browser before anything is called done. Every dependency is permissively licensed by policy.
 
