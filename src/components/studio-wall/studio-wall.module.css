@@ -111,6 +111,36 @@
 
 /* ── The wall itself — an infinite, camera-driven canvas ──── */
 
+/*
+ * THE ROOM'S <main> IS THE CANVAS, NOT A COLUMN INSIDE IT.
+ *
+ * `.shell` is `grid-template-rows: auto 1fr` and `.viewport` was written to BE
+ * that 1fr row — it takes its height from the grid and has none of its own,
+ * because every card in it is absolutely positioned in world space.
+ *
+ * Then `RoomMain` was introduced between the two, to give every room a <main>
+ * and to reserve dock clearance. The grid row became <main>; the viewport
+ * became a plain block child of it with no height and no in-flow content, and
+ * collapsed to ZERO. Nothing looked broken, because the canvas has no visible
+ * box of its own — but `useCanvasCamera` measures this element, so
+ * `viewportSize.height` was 0 and the world transform's centring term
+ * (`height / 2 - camera.y`) came out 480px too high. Every card the room
+ * created landed above the top of the window. Clicking "+ note" appeared to
+ * do nothing at all: the card existed, the minimap drew it, and the wall was
+ * empty.
+ *
+ * So the wall's <main> is a grid that hands its whole row to the viewport, and
+ * cancels the clearance: this room is full-bleed with a fixed HUD of its own,
+ * and has no scrolling content for the dock to cover. Doubled class name to
+ * out-specify `.roomMain` without depending on which stylesheet the bundler
+ * happens to emit first.
+ */
+.canvasMain.canvasMain {
+  display: grid;
+  padding-bottom: 0;
+  min-height: 0;
+}
+
 .viewport {
   position: relative;
   overflow: hidden;

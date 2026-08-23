@@ -39,7 +39,7 @@ export default async function StudioWallPage() {
         <AccountStatus />
       </TabNav>
 
-      <RoomMain>
+      <RoomMain className={styles.canvasMain}>
         <StudioWallBoard initialCards={cards} />
       </RoomMain>
     </div>
