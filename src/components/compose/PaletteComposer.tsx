@@ -126,8 +126,18 @@ export function PaletteComposer() {
   }, [system.anchorHex, system.palette]);
 
   useEffect(() => {
-    if (seed !== null || anchorSeed === null) return;
-    build(anchorSeed, locked, draft);
+    if (seed !== null) return;
+    /*
+     * And with nothing to start from, start from something anyway.
+     *
+     * Cold, this room was a headline, a control bar and a line of grey text over
+     * five hundred pixels of empty black — a page that looks unfinished, gating
+     * everything it can do behind a button the visitor has no reason yet to
+     * trust. Nothing is committed by rolling: the draft is local until "Apply to
+     * System" is pressed. So the room shows its work immediately and the first
+     * question becomes "what would I change" rather than "what is this".
+     */
+    build(anchorSeed ?? randomSeed(Math.random), locked, draft);
     // Deliberately not keyed on `locked`/`draft`: this runs once, on arrival,
     // and both are empty at that point by construction.
     // eslint-disable-next-line react-hooks/exhaustive-deps

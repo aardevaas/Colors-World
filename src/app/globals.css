@@ -18,7 +18,19 @@
 
   --text-primary: oklch(95% 0.004 265);
   --text-secondary: oklch(70% 0.012 265);
-  --text-tertiary: oklch(54% 0.012 265);
+  /*
+   * Raised from 54%, which did not clear AA anywhere it was used.
+   *
+   * Measured off rendered pixels — not computed styles, which cannot be parsed
+   * naively when the colour is authored in oklch — the small labels this token
+   * paints came out at 3.92:1 against the void and 3.97:1 on a panel, where
+   * normal text needs 4.5:1. Twelve of the twenty-four text runs on Compose
+   * alone were under target, and this token is used in twenty files.
+   *
+   * On the page that prints "needs 4.5" beside its own measurements, its labels
+   * have to make it.
+   */
+  --text-tertiary: oklch(63% 0.013 265);
 
   --accent: oklch(74% 0.15 250);
   --warn: oklch(78% 0.15 75);

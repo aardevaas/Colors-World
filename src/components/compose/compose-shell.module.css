@@ -105,3 +105,10 @@
     transition: none;
   }
 }
+
+/* Names the control by the words written on it, so the sentence and the button
+   agree and nobody has to hunt for what "apply" means. */
+.handoffStrong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

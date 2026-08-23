@@ -69,11 +69,20 @@ export function ComposeShell({ accountSlot }: ComposeShellProps) {
             </div>
           </>
         ) : (
+          /*
+           * Says what to do NEXT, not what has not happened.
+           *
+           * This read "Roll a palette above, or start from a color you already
+           * like in Library" — written when the room opened empty and waited to
+           * be asked. It now rolls on sight, so that sentence told a visitor to
+           * do the thing already done, in front of the result of doing it.
+           */
           <p className={styles.handoffCopy}>
-            Nothing applied yet. Roll a palette above, or start from a color you already
-            like in{' '}
+            This palette is a draft — nothing has left this room yet.{' '}
+            <strong className={styles.handoffStrong}>Apply to System</strong> to carry it
+            everywhere else, or{' '}
             <SystemLink href="/library" className={styles.inlineLink}>
-              Library
+              start from a color in Library
             </SystemLink>
             .
           </p>
