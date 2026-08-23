@@ -182,6 +182,7 @@ Legend — **Have**: shipping · **Part**: partially built · **New**: not start
 | Primary logo | M1 | upload | New |
 | Secondary / alternate / marks | M1 | primary | New |
 | Brand architecture & lockups | M1 | marks | New |
+| **Co-branding / partner / JV lockups** | M1 | marks | New — *NASA, MemorialCare* |
 | Construction & geometry grid | M1 | primary | New |
 | **Clear space** | M1 | primary | New — *derivable* |
 | **Minimum sizing** | M1+M2 | primary | New — *computable* |
@@ -220,6 +221,11 @@ Legend — **Have**: shipping · **Part**: partially built · **New**: not start
 | Icon states (outline/filled/duotone) | M2 | roles | New |
 | Motion: easing curves & duration scale | M2 | — | New — *computable* |
 | Logo animation lockup | M1+M2 | primary | New |
+| **Data visualisation system** | M2 | roles | New — *first-class in IBM; our strongest unclaimed ground* |
+| **Supporting graphic device** | M4 | palette | New — *NASA "supporting elements", MemorialCare "connection graphic"* |
+| **Texture & pattern** | M4 | palette | New — *MemorialCare* |
+| **Pictograms** (distinct grid from UI icons) | M2 | — | New — *IBM separates the two* |
+| **Sonic / audio identity** | M4 | — | New — *a Romaniuk distinctive asset* |
 
 ### §6 Web / UX / product design system — *M2*
 | Component | Machine | Needs | State |
@@ -230,11 +236,14 @@ Legend — **Have**: shipping · **Part**: partially built · **New**: not start
 | Navigation architecture | M2 | components | New |
 | Elevation, radius, shadow scales | M2 | — | New |
 | Interactive accessibility (focus, targets) | M2 | components | **Part** |
+| **Data-viz colour palettes** (categorical/sequential/diverging, CVD-safe) | M2 | roles | New — *engine work we are already built for* |
 
 ### §7 Editorial & marketing — *M3 + M5*
 | Component | Machine | Needs | State |
 |---|---|---|---|
 | Grammar & style rules | M3 | voice | New |
+| **UI microcopy / action labels** | M3 | voice | New — *Carbon treats separately from voice* |
+| **Application examples per audience** | M5 | full system | New — *MemorialCare splits consumer vs clinician* |
 | Social templates + safe zones | M5 | logo + palette + type | New |
 | Email system (incl. dark mode) | M5 | roles + type | New |
 | Presentation decks | M5 | full system | New |
@@ -246,6 +255,7 @@ Legend — **Have**: shipping · **Part**: partially built · **New**: not start
 | Stationery & corporate identity | M5 | logo + palette + type | New |
 | Packaging & dielines | M5 | full system | New |
 | Swag & apparel | M5 | logo | New |
+| **Signage, environmental & wayfinding** | M5 | logo + type | New — *NASA: signage, liveries, uniforms* |
 
 ### §9 Governance & infrastructure — *M6*
 | Component | Machine | Needs | State |
@@ -254,9 +264,14 @@ Legend — **Have**: shipping · **Part**: partially built · **New**: not start
 | Format decision matrix (SVG/PNG/WebP/PDF) | M6 | — | New |
 | **DAM** | M6 | assets | **Part** — `/assets` is the seed |
 | **Licensing & IP** (fonts, stock, ™/®) | M6 | fonts + assets | **Part** — font licences arrive free with Fontsource |
+| **Third-party usage rights & approvals** | M6 | logo | New — *NASA's largest section; who may use the mark at all* |
 | Version control & changelog | M6 | — | **Have** — branch/merge/DAG already exist |
 
-**Totals: 9 sections · 54 components. Have 9 · Part 12 · New 33.**
+**Totals: 9 sections · 65 components. Have 9 · Part 13 · New 43.**
+
+The eleven marked *"NASA / IBM / MemorialCare"* were **not in the original list
+and were not mine.** They were found by checking real published brand books —
+see Part 13, which is the honest account of where this taxonomy came from.
 
 ---
 
@@ -559,6 +574,91 @@ precisely the shape of thing this codebase is already good at. It turns the
 vaguest part of branding ("is our identity working?") into something with an
 axis, and it is the single strongest argument that this product is
 evidence-based rather than decorative.
+
+---
+
+## Part 13 · Provenance — where this taxonomy actually came from
+
+**Asked directly: how were these picked, and on what basis?** The honest answer,
+because the alternative is a list that looks authoritative and isn't.
+
+### Version 1 of this taxonomy was not researched. It was transcribed.
+
+| Origin | Count |
+|---|---|
+| **The founder's own 9-section list**, flattened and restructured | **50** |
+| Added by me (WCAG 1.4.12 text spacing, elevation/radius/shadow scales, icon states, paragraph spacing split out) | 4 |
+| **Validated against any external source** | **0** |
+
+What I contributed was *structure* — mapping each item to a machine, drawing the
+dependency graph, marking what is computable. That is real work, and it is also
+what made the list **look** externally grounded when it was not. By this
+document's own `evidence` rule (Part 9), the entire taxonomy was `declared`.
+
+**That is the exact failure the `evidence` field exists to catch, and I should
+have applied it to my own document first.**
+
+### Version 2 was checked against real brand books
+
+Sampled published guidelines with a stated structure — **NASA Graphics
+Standards Manual** (1976 + the current Brand Center), **IBM Design Language /
+Carbon**, **Atlassian Design System**, **Shopify Polaris**, and a full
+98-page corporate identity manual (**MemorialCare**) as a non-tech control.
+
+**Eleven components were missing.** Not edge cases — several are among the
+largest sections in the books that have them:
+
+| Missing component | Found in | Why it matters here |
+|---|---|---|
+| **Data visualisation system** | IBM (first-class section) | Categorical, sequential and diverging palettes with CVD safety. **This is the single biggest miss** — it is pure M2 engine work and we are better equipped for it than anyone |
+| **Third-party usage rights & approvals** | NASA (its largest section) | *Who may use the mark at all* — distinct from misuse, which is about how |
+| **Co-branding / partner / JV lockups** | NASA, MemorialCare | Both devote whole sections; we had only parent/sub-brand |
+| **Supporting graphic device** | NASA "supporting elements", MemorialCare "connection graphic" | A recurring non-logo mark. Also a Romaniuk distinctive asset |
+| **Signage, environmental, wayfinding** | NASA (signage, liveries, uniforms) | §8 had stationery/packaging/swag and nothing environmental |
+| **Pictograms** as distinct from UI icons | IBM (separate grids, separate libraries) | Different optical rules; we had one "iconography" |
+| **Texture & pattern** | MemorialCare | Has its own misuse rules |
+| **UI microcopy / action labels** | Carbon (separate from voice & tone) | Error and button copy is a different craft from brand voice |
+| **Application examples per audience** | MemorialCare (consumer vs clinician) | How the system *flexes*, which is not the same as a template |
+| **Sonic / audio identity** | Romaniuk; emerging practice | Explicitly a distinctive asset; absent from our list |
+| **Data-viz colour palettes** | IBM Carbon | The colour half of the above, and squarely our home ground |
+
+**54 → 65.** The list grew by 20% from one afternoon of checking, which is the
+best evidence that a component registry needs provenance tracked permanently
+rather than as a one-off exercise.
+
+### So the registry needs a second label
+
+Alongside `evidence` (how strong is the *rule*), each component carries
+`provenance` — how strong is our reason for *including it at all*:
+
+```ts
+provenance: {
+  origin:  'founder' | 'observed' | 'derived' | 'proposed';
+  seenIn:  string[];   // ['NASA', 'IBM', 'MemorialCare']
+  frequency: number;   // how many sampled books contain it
+}
+```
+
+`frequency` is what makes scope selection defensible later: a component in 5 of
+5 real brand books belongs in the irreducible core; one in 1 of 5 is a
+specialist item for a particular coordinate. **Right now most of the 65 have a
+frequency of 0 because the sample is five books, chosen by me, in an afternoon.**
+
+### What would make this genuinely solid
+
+1. **Widen the sample to 20–30 published brand books**, across tech, public
+   sector, healthcare, retail, education and non-profit — the tech-heavy sample
+   above is exactly why data visualisation showed up and packaging did not.
+2. **Record the ToC of each**, so `frequency` is a real count.
+3. **Cross-check against the practitioner reference** — Wheeler's *Designing
+   Brand Identity* has an explicit contents structure to diff against.
+4. **Publish the frequency table.** "Appears in 24 of 30 real brand books" is a
+   defensible reason for a component to exist. "It felt right" is not — and
+   that is all the first version had.
+
+This is a day of work and it is the difference between a taxonomy we assert and
+one we can show. Given this product's entire thesis is *measured, not typed*,
+the component list is the last place that should be taken on faith.
 
 ---
 
