@@ -28,7 +28,23 @@ export function SwatchRow({ scale, gamut, cvd }: SwatchRowProps) {
       {scale.steps.map((step) => {
         const displayed = cvd === 'none' ? step.oklch : simulateCvd(step.oklch, cvd);
         return (
-          <Swatch key={step.step} background={formatOklchCss(displayed)} hex={step.hex}>
+          <Swatch
+            key={step.step}
+            background={formatOklchCss(displayed)}
+            hex={step.hex}
+            /*
+             * The step's own lightness decides which way its labels read.
+             *
+             * The hex and gamut chips sat on a fixed 35–40% black scrim with
+             * near-white text, which works over the dark half of a ramp and
+             * fails over the light half — measured from 2.42:1 at the top of a
+             * blue scale, where 4.5:1 is required. A scrim heavy enough to
+             * rescue white text over a near-white swatch is about 84% black,
+             * which is a black box sitting on the colour you came to look at.
+             * So the chips flip instead, which is what this room is for.
+             */
+            isLight={displayed.l > 0.62}
+          >
             <span className={styles.swatchStep}>{step.step}</span>
             {step.isAnchor && (
               <span className={styles.swatchAnchorMark} title="Primary Anchor for this scale">
@@ -58,12 +74,14 @@ export function SwatchRow({ scale, gamut, cvd }: SwatchRowProps) {
 interface SwatchProps {
   readonly background: string;
   readonly hex: string;
+  /** Whether this step is light enough that its labels must run dark. */
+  readonly isLight: boolean;
   readonly children: ReactNode;
 }
 
 const COPIED_FEEDBACK_MS = 1200;
 
-function Swatch({ background, hex, children }: SwatchProps) {
+function Swatch({ background, hex, isLight, children }: SwatchProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -82,6 +100,7 @@ function Swatch({ background, hex, children }: SwatchProps) {
       type="button"
       className={styles.swatch}
       style={{ background }}
+      data-on-light={isLight}
       onClick={() => void handleCopy()}
       aria-label={`${hex} — click to copy`}
       data-copied={copied}

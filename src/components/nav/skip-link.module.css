@@ -1,0 +1,17 @@
+/*
+ * Room content keeps clear of the System dock.
+ *
+ * The dock is `position: fixed` at the foot of the window, so it sits over
+ * whatever the page happens to have scrolled under it. Measured on a populated
+ * Scales at five scroll positions, it covered content at four of them — the
+ * cross-display swatch comparison near the top, and at the bottom of the page a
+ * BUTTON, which is not merely something you cannot read but something you
+ * cannot press.
+ *
+ * Reserved here rather than in each room because `RoomMain` is the one wrapper
+ * every room already shares, so the clearance cannot be forgotten by the next
+ * one.
+ */
+.roomMain {
+  padding-bottom: var(--dock-clearance, 6rem);
+}

@@ -93,16 +93,9 @@
   border-radius: 8px;
 }
 
-.emptyState {
-  position: relative;
-  z-index: 1;
-  padding: 4rem 2rem;
-  text-align: center;
-  color: oklch(75% 0.006 265 / 0.8);
-  font-size: 0.95rem;
-  max-width: 32rem;
-  margin: 0 auto;
-}
+/* The empty state is defined once, further down with the intro it belongs to.
+   Two rules for one class is how a `text-align` survives a rewrite and centres
+   something nobody asked to be centred. */
 
 .scaleList {
   position: relative;
@@ -726,4 +719,125 @@
   font-size: var(--text-micro, 0.7rem);
   line-height: 1.55;
   color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------------- intro */
+
+.intro {
+  max-width: 46rem;
+  padding: var(--space-vast) var(--space-wide) var(--space-base);
+}
+
+.introTitle {
+  margin: 0 0 var(--space-tight);
+  font-size: var(--text-display);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.introLede {
+  margin: 0;
+  max-width: 42rem;
+  font-size: var(--text-small);
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/*
+ * The empty state, as a panel rather than a sentence in a void.
+ *
+ * The two ways into this room are controls now: naming another room in prose
+ * leaves the visitor to find it in the navigation and work out what to do when
+ * they arrive.
+ */
+.emptyState {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: var(--space-wide);
+  max-width: 42rem;
+  margin: var(--space-vast) var(--space-wide);
+  padding: var(--space-vast);
+  border: 1px solid var(--hairline);
+  border-radius: 0.75rem;
+  background: var(--surface-panel);
+}
+
+.emptyLead {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.emptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-snug);
+}
+
+.emptyPrimary,
+.emptySecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.5rem;
+  font-size: var(--text-small);
+  text-decoration: none;
+  transition:
+    background var(--duration-fast, 150ms) ease,
+    border-color var(--duration-fast, 150ms) ease;
+}
+
+.emptyPrimary {
+  background: var(--text-primary);
+  color: var(--surface-void);
+  font-weight: 600;
+}
+
+.emptyPrimary:hover {
+  background: oklch(100% 0 0);
+}
+
+.emptySecondary {
+  border: 1px solid var(--hairline-bright);
+  color: var(--text-primary);
+}
+
+.emptySecondary:hover {
+  border-color: var(--text-secondary);
+}
+
+.emptyPrimary:focus-visible,
+.emptySecondary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/*
+ * Labels that read on their own swatch.
+ *
+ * A ramp runs from near-white to near-black, so no single label colour clears
+ * 4.5:1 against all of it — the light half was measuring 2.4:1. The chips take
+ * their polarity from the step they sit on: dark ink on a light scrim over a
+ * light swatch, light ink on a dark scrim over a dark one. Which is the same
+ * decision this room exists to help anyone else make.
+ */
+.swatch[data-on-light='true'] .swatchHex,
+.swatch[data-on-light='true'] .swatchBadge {
+  background: oklch(100% 0 0 / 0.82);
+  color: oklch(22% 0.01 265);
+}
+
+.swatch[data-on-light='true'] .swatchStep,
+.swatch[data-on-light='true'] .swatchCopyHint {
+  color: oklch(22% 0.01 265);
+}
+
+.swatch[data-on-light='true'] .swatchAnchorMark {
+  color: oklch(30% 0.09 85);
 }

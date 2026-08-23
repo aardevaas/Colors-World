@@ -1,3 +1,5 @@
+import styles from './skip-link.module.css';
+
 /**
  * The one control provided specifically for keyboard and screen-reader
  * visitors: a way past the navigation to the content.
@@ -30,7 +32,11 @@ interface RoomMainProps {
  */
 export function RoomMain({ children, className }: RoomMainProps) {
   return (
-    <main id="main" tabIndex={-1} className={className}>
+    <main
+      id="main"
+      tabIndex={-1}
+      className={className === undefined ? styles.roomMain : `${styles.roomMain} ${className}`}
+    >
       {children}
     </main>
   );

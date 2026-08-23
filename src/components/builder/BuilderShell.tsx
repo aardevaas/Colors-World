@@ -30,6 +30,7 @@ import { GamutTriptych } from './GamutTriptych';
 import { ExportVault } from './ExportVault';
 import styles from './builder.module.css';
 import { RoomMain, SkipLink } from '@/components/nav/SkipLink';
+import { SystemLink } from '@/components/system/SystemLink';
 
 const GAMUT_OPTIONS: readonly Gamut[] = ['srgb', 'p3', 'rec2020'];
 const CVD_OPTIONS: readonly { readonly value: CvdMode; readonly label: string }[] = [
@@ -191,6 +192,20 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
       <SkipLink />
       <TabNav current="scales">{accountSlot}</TabNav>
       <RoomMain>
+        {/*
+          Every other room says what it is; this one dropped you straight into a
+          toolbar. With an empty System that left a row of controls above six
+          hundred pixels of nothing, and no answer anywhere on the page to the
+          only question a first visitor has, which is what a scale is FOR.
+        */}
+        <header className={styles.intro}>
+          <h2 className={styles.introTitle}>One color, all the way up and down.</h2>
+          <p className={styles.introLede}>
+            A scale is a color taken from its lightest usable step to its darkest, with
+            every step measured — so you can see which of them your screen can actually
+            show, and which are being clamped to fit.
+          </p>
+        </header>
 
       <div className={styles.globalControls}>
         <StepControls
@@ -253,10 +268,28 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
       {saveError !== null && <p className={styles.saveError}>⚠ {saveError}</p>}
 
       {state.scales.length === 0 ? (
-        <p className={styles.emptyState}>
-          Every color in your System becomes a scale here, and the first one is the
-          anchor. Make a palette in Compose, or collect colors in Library.
-        </p>
+        /*
+         * An empty room should still be legible.
+         *
+         * This was one grey sentence centred in a void — accurate, and no help:
+         * it named two other rooms without saying why you would want what this
+         * one makes. It now explains the thing and offers the two ways in as
+         * controls rather than as prose.
+         */
+        <div className={styles.emptyState}>
+          <p className={styles.emptyLead}>
+            Nothing to build from yet. Every color in your System becomes a scale here,
+            and the first one is the anchor.
+          </p>
+          <div className={styles.emptyActions}>
+            <SystemLink href="/library" className={styles.emptyPrimary}>
+              Pick a color in Library
+            </SystemLink>
+            <SystemLink href="/compose" className={styles.emptySecondary}>
+              Build a palette in Compose
+            </SystemLink>
+          </div>
+        </div>
       ) : (
         <div className={styles.scaleList}>
           {state.scales.map((entry, i) => (
