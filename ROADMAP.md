@@ -60,9 +60,23 @@ That is the thesis. Everything below serves it.
 book, guideline or style guide across 33,506 lines. Six rooms produce *inputs*
 to an artifact that does not exist.
 
-This is a bigger gap than any of the four room defects below, and it should be
-built early rather than last — because it is what turns six good rooms into one
-product, and because every room's export target becomes obvious once it exists.
+**→ [`docs/BRAND-BOOK-SPEC.md`](docs/BRAND-BOOK-SPEC.md) is now the defining
+document for that artifact:** all 54 components across 9 sections, the
+readiness graph, and the six machines that build them.
+
+Three decisions from it that shape everything below:
+
+1. **The book is a VIEW, not a container.** Nothing is put in it; it renders
+   the System at any moment. This is what lets a palette-only user finish in
+   ten minutes with a real two-page colour spec and never learn the other
+   fifty-two components exist.
+2. **Guidance is readiness, not a checklist.** At most three unlockable things,
+   ordered by a dependency graph that is genuinely real — you cannot specify
+   clear space before there is a logo. **No completeness percentage** unless
+   the user opts into a scope kit.
+3. **Nineteen unhoused features are six machines.** Ingest & Derive · Compute
+   & Verify · Author · Direct · Template · Govern. M2 already exists and is
+   world-class; M6 has real foundations.
 
 ---
 
@@ -128,7 +142,20 @@ Chromium-only and permission-gated, so most visitors see four options.
 | Files | jsDelivr CDN, or self-host via npm |
 
 It is open-source, needs no key, and **carries the licence per family** — which
-brand-book §9 requires anyway. Google's own API needs a key and gives less.
+brand-book §9 requires anyway.
+
+**But stacking font sources does not add fonts.** Verified live: Fontsource
+2,096 · Bunny 1,967 · Google ~1,800 — and 1,976 of Fontsource's 2,096 are
+`type: google`. They are the same corpus. Integrate the others for **facets**,
+not coverage: Google's API for popularity ranking (Fontsource has none), Bunny
+for GDPR-safe serving with no Google request from the visitor's browser, and a
+small **curated set from indie open foundries** (Velvetyne, Uncut.wtf,
+Collletttttivo) — which is the only one of the four that stops every brand book
+made here from looking identical. Fontshare returned 502 when checked; single
+foundry, no stable API, do not depend on it.
+
+Build a font-source adapter (`list · get · cssUrl · licence`) so catalogue,
+ranking and delivery host stay three independent choices.
 
 ---
 
@@ -155,51 +182,47 @@ absent in §1, §5, §7, §8.
 
 ## The path
 
-Ordered so each step makes the next one cheaper, and so the product is
-coherent at every stop rather than only at the end.
+Full detail in [`docs/BRAND-BOOK-SPEC.md`](docs/BRAND-BOOK-SPEC.md) §8. Each
+phase leaves the product coherent; each makes the next cheaper.
 
-### Phase A — make every room finishable *(weeks, not months)*
+### Phase 1 — every room finishes its own job
+Exports in `/compose` · the `/scales` star bug · the Fontsource catalogue ·
+`/visualizer` full-bleed. **No book yet** — just stop losing users at the exit.
 
-1. **`/compose` gets exports.** Wire `src/lib/exporters/` in. Smallest change
-   with the largest effect on "I came for a palette and got one."
-2. **Fix the star**, and make the anchor a System-level concept every room
-   honours.
-3. **Font library in `/typography`** via Fontsource — search, filter by
-   category and variable, preview, licence shown.
-4. **`/visualizer` goes full-bleed** and responsive. Resizing is the cheap half;
-   editing-in-place is Phase C.
+### Phase 2 — the spine
+The Book as a view over the System. A persistent Book rail (the Harmonic Dock
+pattern, one level up) plus a `/brand` page. Render to web URL, PDF and tokens.
+**Ship it with only §3 colour and §4 typography populated** — that is already a
+real deliverable, and it proves the model before a single new machine is built.
 
-### Phase B — the spine
+### Phase 3 — M1, the biggest unlock in the graph
+Logo ingest and derivation: clear space from the mark's own geometry, minimum
+legible sizes, monochrome and reversed variants, background safety *proved* with
+the contrast engine, and **generated misuse examples**. One upload opens six
+sections. `/assets` becomes the DAM and stops being an orphan.
 
-5. **Build the Brand Book object.** A real document: sections, ordering, a
-   live-linked value for every rule, versioned like everything else here.
-   Every room gains one verb — *send to brand book*.
-6. **Export it.** Web (a shareable, always-current URL), PDF, and tokens.
-   The share-link and PNG-export machinery already exists.
-7. **Adopt `/assets`** into the book as §2, and give it the landmarks it never
-   got.
+### Phase 4 — M3, the second front door
+Values, archetype, voice, grammar. These have **no prerequisites**, so they open
+the product to founders and marketers who have no palette yet — a far larger
+audience than people who arrive wanting OKLCH.
 
-### Phase C — depth where we already win
+### Phase 5 — M2 extended
+Component library in `/visualizer` (§6), iconography grid, motion tokens.
+Engine work, where we are strongest.
 
-8. **`/scales` reworked** to ramp the palette, with presets first and curves
-   behind "advanced".
-9. **`/visualizer` becomes the editable interface** — the component library
-   surface for §6, with states and tokens.
-10. **Iconography and motion** as computed systems (grid, stroke, optical
-    volume; easing curves and duration scale). Both are engine work, which is
-    where we are strongest.
+### Phase 6 — M5, templates
+Social, email, decks and ads in Studio. Then stationery, packaging, swag.
 
-### Phase D — articulate
+### Phase 7 — M6 completed
+Taxonomy, naming lint, format matrix, full licence tracking.
 
-11. **Voice, tone and narrative** (§1) — guided, AI-assisted, with the output
-    living in the book. This is the section competitors do worst and the one
-    that makes the book feel complete rather than a token dump.
-12. **Editorial and marketing templates** (§7).
+**§8 physical collateral stays last, deliberately** — furthest from the engine,
+heaviest to do well, does not compound.
 
-### Not now — and say so
-
-§8 physical collateral. Furthest from the engine, heaviest to do well, and it
-does not compound. Revisit once the book exists and people ask.
+### Nav pressure — flagged
+This takes the product from 6 tabs to 8 (`/brand`, and `/assets` promoted from
+orphan). That is the ceiling. Anything further has to live inside a room or in
+the Book rail, not in the nav.
 
 ---
 
