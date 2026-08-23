@@ -1049,11 +1049,23 @@ export function StudioWallBoard({ initialCards, readOnly = false }: StudioWallBo
               }}
             />
           )}
+          {/*
+            * Out of the tab order and out of the accessibility tree.
+            *
+            * This input is never operated directly — the "+ image" button
+            * beside it calls .click() on it. Left reachable, it was a real tab
+            * stop that is one pixel of clipped nothing with no accessible
+            * name: a keyboard user tabbing the board landed on an invisible
+            * control, and a screen reader announced a file field belonging to
+            * nothing. The visible button is the control; this is plumbing.
+            */}
           <input
             ref={imageInputRef}
             type="file"
             accept="image/*"
             className={styles.hiddenFileInput}
+            tabIndex={-1}
+            aria-hidden="true"
             onChange={(event) => void handleAddImage(event)}
           />
           <button type="button" className={styles.addButton} onClick={() => imageInputRef.current?.click()}>
