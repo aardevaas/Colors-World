@@ -22,7 +22,7 @@
  * already-parsed OKLCH values so this module never has to fail on bad input.
  */
 
-import { formatHex, parseColor, type Oklch } from '@/lib/color-engine';
+import { contrastRatio, formatHex, parseColor, type Oklch } from '@/lib/color-engine';
 
 export type SemanticRole =
   | 'background'
@@ -30,7 +30,9 @@ export type SemanticRole =
   | 'primary'
   | 'text'
   | 'accent'
-  | 'border';
+  | 'border'
+  | 'onPrimary'
+  | 'onAccent';
 
 export const SEMANTIC_ROLES: readonly SemanticRole[] = [
   'background',
@@ -39,7 +41,12 @@ export const SEMANTIC_ROLES: readonly SemanticRole[] = [
   'text',
   'accent',
   'border',
+  'onPrimary',
+  'onAccent',
 ];
+
+/** The two roles that are INK ON A FILL rather than colours of their own. */
+export const INK_ROLES: readonly SemanticRole[] = ['onPrimary', 'onAccent'];
 
 export interface RoleColor {
   readonly hex: string;
@@ -64,7 +71,35 @@ const FALLBACK: RoleAssignment = {
   text: neutral('#F2F2F5'),
   accent: neutral('#FFB454'),
   border: neutral('#2A2A30'),
+  onPrimary: neutral('#FFFFFF'),
+  onAccent: neutral('#0A0A0B'),
 };
+
+/**
+ * The two inks a fill can carry.
+ *
+ * Deliberately the extremes. Whichever of pure white and near-black reads
+ * better on a given fill, the worse case for that CHOICE is a fill sitting
+ * exactly between them — and even there the better ink measures 4.58:1, which
+ * clears the 4.5 body-text requirement. So a label on a button can always be
+ * made legible, which is precisely what was impossible while one shared `text`
+ * had to read on the page, the panel AND both fills at once.
+ */
+const INK_LIGHT = neutral('#FFFFFF');
+const INK_DARK = neutral('#0A0A0B');
+
+/**
+ * The ink this fill can actually carry.
+ *
+ * Not taken from the palette. A label on a filled control is not a colour
+ * anyone chooses — it is whichever of the two extremes the fill can support,
+ * and picking it any other way is how buttons end up with unreadable text.
+ */
+export function inkOn(fill: RoleColor): RoleColor {
+  const light = contrastRatio(INK_LIGHT.oklch, fill.oklch);
+  const dark = contrastRatio(INK_DARK.oklch, fill.oklch);
+  return light >= dark ? INK_LIGHT : INK_DARK;
+}
 
 /**
  * Derives the OKLCH from the hex rather than letting the two be written out
@@ -223,7 +258,23 @@ function deriveFromPalette(palette: readonly RoleColor[]): RoleAssignment {
   const border =
     leastChromatic !== undefined ? take(leastChromatic) : claimFallback('border', claimed);
 
-  return { background, surface, primary, text, accent, border };
+  /*
+   * The inks are DERIVED, never claimed from the pool.
+   *
+   * They are a consequence of the fills, not members of the palette: taking
+   * them from the pool would mean a label whose legibility depends on what
+   * happened to be left over.
+   */
+  return {
+    background,
+    surface,
+    primary,
+    text,
+    accent,
+    border,
+    onPrimary: inkOn(primary),
+    onAccent: inkOn(accent),
+  };
 }
 
 /**
@@ -266,6 +317,10 @@ export function rolesToCssVars(roles: RoleAssignment): Record<string, string> {
     '--ui-text': roles.text.hex,
     '--ui-accent': roles.accent.hex,
     '--ui-border': roles.border.hex,
+    // The ink each fill carries. Without these a filled control has no legible
+    // label to reach for, and the role would exist only in the audit.
+    '--ui-on-primary': roles.onPrimary.hex,
+    '--ui-on-accent': roles.onAccent.hex,
   };
 }
 

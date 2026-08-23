@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, formatHex, parseColor } from '@/lib/color-engine';
 import {
+  INK_ROLES,
   SEMANTIC_ROLES,
   deriveRoles,
   flipPolarity,
@@ -73,9 +74,19 @@ describe('deriveRoles — every role resolves to a distinct color', () => {
    */
   const COLLECTED = ['#5A3F73', '#19D368', '#CFA15D', '#0B0B0C', '#F2F2F5', '#2A2A30'];
 
+  /*
+   * Distinctness is asked of the PALETTE roles, not of the inks.
+   *
+   * `onPrimary` and `onAccent` are whichever of white and near-black their
+   * fill can carry. Two light fills legitimately share the same dark ink, and
+   * an ink legitimately equals `text` when the text is also near-white —
+   * demanding they differ would be demanding an unreadable label.
+   */
+  const PALETTE_ROLES = SEMANTIC_ROLES.filter((role) => !INK_ROLES.includes(role));
+
   function collisions(roles: ReturnType<typeof deriveRoles>): string[] {
     const byHex = new Map<string, SemanticRole[]>();
-    for (const role of SEMANTIC_ROLES) {
+    for (const role of PALETTE_ROLES) {
       const hex = roles[role].hex.toLowerCase();
       byHex.set(hex, [...(byHex.get(hex) ?? []), role]);
     }
@@ -89,8 +100,8 @@ describe('deriveRoles — every role resolves to a distinct color', () => {
     it(`assigns six different colors for a ${size}-color palette`, () => {
       const roles = deriveRoles(COLLECTED.slice(0, size).map(color));
       expect(collisions(roles)).toEqual([]);
-      expect(new Set(SEMANTIC_ROLES.map((r) => roles[r].hex.toLowerCase())).size).toBe(
-        SEMANTIC_ROLES.length
+      expect(new Set(PALETTE_ROLES.map((r) => roles[r].hex.toLowerCase())).size).toBe(
+        PALETTE_ROLES.length
       );
     });
   }
@@ -137,7 +148,10 @@ describe('deriveRoles — every role resolves to a distinct color', () => {
     // colors every role is a collected one, and nothing neutral leaks in.
     const supplied = new Set(COLLECTED.map((hex) => hex.toLowerCase()));
     const roles = deriveRoles(COLLECTED.map(color));
-    for (const role of SEMANTIC_ROLES) {
+    // The inks are excluded on purpose: they are white or near-black by
+    // derivation, so requiring them to come from the palette would require the
+    // palette to contain one of those, which has nothing to do with this rule.
+    for (const role of PALETTE_ROLES) {
       expect(supplied.has(roles[role].hex.toLowerCase())).toBe(true);
     }
   });

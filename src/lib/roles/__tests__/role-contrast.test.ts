@@ -25,10 +25,24 @@ const GOOD_ROLES = deriveRoles([
 ]);
 
 describe('requirementFor', () => {
-  it('asks 4.5 of text on anything text is set on', () => {
-    for (const bg of ['background', 'surface', 'primary', 'accent'] as const) {
+  it('asks 4.5 of body text on the surfaces it is set on', () => {
+    for (const bg of ['background', 'surface'] as const) {
       expect(requirementFor('text', bg)).toBe(TEXT_MINIMUM);
     }
+  });
+
+  it('asks 4.5 of a fill’s own ink rather than of the body text', () => {
+    /*
+     * Body text used to be required to clear 4.5:1 on the fills as well, and
+     * that is what made the matrix unsatisfiable: text is already far from the
+     * surfaces, so demanding a fill be far from TEXT drags the fill back toward
+     * the surfaces it must also be 3:1 from. No fill lightness satisfies both.
+     * A filled control carries its own ink now.
+     */
+    expect(requirementFor('onPrimary', 'primary')).toBe(TEXT_MINIMUM);
+    expect(requirementFor('onAccent', 'accent')).toBe(TEXT_MINIMUM);
+    expect(requirementFor('text', 'primary')).toBeNull();
+    expect(requirementFor('text', 'accent')).toBeNull();
   });
 
   it('asks 3 of the things that only have to be distinguishable', () => {
@@ -63,7 +77,7 @@ describe('buildRoleContrastMatrix', () => {
     const matrix = buildRoleContrastMatrix(GOOD_ROLES);
     expect(matrix.rows).toHaveLength(SEMANTIC_ROLES.length);
     for (const row of matrix.rows) expect(row).toHaveLength(SEMANTIC_ROLES.length);
-    expect(matrix.rows.flat()).toHaveLength(36);
+    expect(matrix.rows.flat()).toHaveLength(SEMANTIC_ROLES.length ** 2);
   });
 
   it('audits far more than the five pairs that used to be checked', () => {
@@ -72,7 +86,9 @@ describe('buildRoleContrastMatrix', () => {
     const matrix = buildRoleContrastMatrix(GOOD_ROLES);
     expect(matrix.required.length).toBeGreaterThan(5);
     const pairs = matrix.required.map((c) => `${c.foreground} on ${c.background}`);
-    expect(pairs).toContain('text on primary');
+    // The label on a button — carried by the fill's own ink, which is the only
+    // way that requirement can ever be met.
+    expect(pairs).toContain('onPrimary on primary');
     expect(pairs).toContain('surface on background');
   });
 

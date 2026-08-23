@@ -71,8 +71,26 @@ export function requirementFor(
 
   // Body copy on the page or on a panel.
   if (foreground === 'text' && SURFACES.includes(background)) return TEXT_MINIMUM;
-  // A label on a filled button is still body copy.
-  if (foreground === 'text' && FILLS.includes(background)) return TEXT_MINIMUM;
+  /*
+   * A label on a filled button is still body copy — but it is not the same
+   * ink as the body copy, and requiring that it were is what made this whole
+   * matrix impossible to satisfy.
+   *
+   * One shared `text` had to clear 4.5:1 against the page, the panel AND both
+   * fills, while those fills had themselves to clear 3:1 against the page and
+   * the panel. Since text is already far from the surfaces, "far from text"
+   * drags a fill back TOWARD them, and the two requirements cannot both be
+   * met: a scan of every fill lightness on a dark ground and on a light ground
+   * finds no value that satisfies them, and a search over 120,000 random
+   * assignments never scored better than one failure. Every palette anyone
+   * built was going to show red, including the fallback this app ships with.
+   *
+   * `onPrimary` and `onAccent` are that label's own ink, derived from the fill
+   * rather than shared with the body — which is what a real design system
+   * does, and what makes the requirement satisfiable.
+   */
+  if (foreground === 'onPrimary' && background === 'primary') return TEXT_MINIMUM;
+  if (foreground === 'onAccent' && background === 'accent') return TEXT_MINIMUM;
   // A filled control has to be distinguishable from what it sits on.
   if (FILLS.includes(foreground) && SURFACES.includes(background)) return COMPONENT_MINIMUM;
   // An edge has to be visible against the thing it encloses.

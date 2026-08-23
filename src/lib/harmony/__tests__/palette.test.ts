@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, isInGamut, parseColor, type Oklch } from '@/lib/color-engine';
-import { SEMANTIC_ROLES, deriveRoles } from '@/lib/roles/semantic-roles';
+import { INK_ROLES, SEMANTIC_ROLES, deriveRoles } from '@/lib/roles/semantic-roles';
 import { HARMONY_RULES } from '../harmony';
 import { PALETTE_SIZES, generatePalette } from '../palette';
 
@@ -61,8 +61,11 @@ describe('generatePalette — it has to feed the role model', () => {
         for (const seed of SEEDS) {
           const palette = generatePalette(seed, { rule, count: size });
           const roles = deriveRoles(palette.colors.map((c) => ({ hex: c.hex, oklch: c.oklch })));
-          const used = SEMANTIC_ROLES.map((r) => roles[r].hex.toLowerCase());
-          expect(new Set(used).size).toBe(SEMANTIC_ROLES.length);
+          // The inks are excluded: they are white or near-black by derivation,
+          // so two light fills correctly share one dark ink.
+          const paletteRoles = SEMANTIC_ROLES.filter((r) => !INK_ROLES.includes(r));
+          const used = paletteRoles.map((r) => roles[r].hex.toLowerCase());
+          expect(new Set(used).size).toBe(paletteRoles.length);
         }
       }
     }

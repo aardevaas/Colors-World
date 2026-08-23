@@ -33,7 +33,7 @@
  */
 
 import { CVD_TYPES, deltaEOk, simulateCvd, type CvdType } from '@/lib/color-engine';
-import { SEMANTIC_ROLES, type RoleAssignment, type SemanticRole } from './semantic-roles';
+import { INK_ROLES, SEMANTIC_ROLES, type RoleAssignment, type SemanticRole } from './semantic-roles';
 
 /**
  * Below this, two colors read as one.
@@ -92,10 +92,21 @@ export interface CvdReport {
 }
 
 export function buildCvdReport(roles: RoleAssignment): CvdReport {
+  /*
+   * The inks are not part of this.
+   *
+   * `onPrimary` and `onAccent` are whichever of white and near-black their
+   * fill can carry, and they are only ever seen ON that fill. Pairing them
+   * with everything else asks whether a button's label could be confused with
+   * the page behind the button — which is not a comparison anyone makes, and
+   * which reported a near-black ink merging with a near-black background as a
+   * colour-vision failure on a palette that has none.
+   */
+  const compared = SEMANTIC_ROLES.filter((role) => !INK_ROLES.includes(role));
   const pairs: (readonly [SemanticRole, SemanticRole])[] = [];
-  for (let i = 0; i < SEMANTIC_ROLES.length; i += 1) {
-    for (let j = i + 1; j < SEMANTIC_ROLES.length; j += 1) {
-      pairs.push([SEMANTIC_ROLES[i]!, SEMANTIC_ROLES[j]!]);
+  for (let i = 0; i < compared.length; i += 1) {
+    for (let j = i + 1; j < compared.length; j += 1) {
+      pairs.push([compared[i]!, compared[j]!]);
     }
   }
 
