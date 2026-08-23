@@ -450,6 +450,13 @@
   color: oklch(96% 0.004 265);
 }
 
+/* The last two sliders in the building still rendering in the host operating
+   system's blue — on the room that shapes chroma and hue. Same fix as compose,
+   typography and the merge lab, which all set this already. */
+.scaleSliderField input[type='range'] {
+  accent-color: var(--accent);
+}
+
 /* ---------- contrast matrix ---------- */
 
 .matrixPanel {
