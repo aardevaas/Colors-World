@@ -144,9 +144,15 @@ export function LibraryShell() {
       <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
         <input
           className={styles.searchInput}
-          type="text"
+          type="search"
           value={queryInput}
           onChange={(event) => setQueryInput(event.target.value)}
+          /* A placeholder is not a name: it is a hint, it disappears the
+             moment anyone types, and this room's primary control had nothing
+             else. The placeholder keeps doing what it is good at — showing
+             the KIND of query this accepts — and the label says what the
+             field is. */
+          aria-label="Search colors by vibe"
           placeholder="search by vibe — “ocean at dusk”, “cyberpunk Tokyo alley”, “matcha latte”…"
         />
         <button type="submit" className={styles.searchSubmit} disabled={feedState.vibeStatus === 'loading'}>

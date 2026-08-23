@@ -214,6 +214,38 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
             {semanticMatch.name}
           </span>
         )}
+
+        <div className={styles.hoverActions} onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className={styles.hoverActionButton}
+            onClick={handleDock}
+            aria-label={`Add ${displayed.hex} to dock`}
+            title="Add to Harmonic Dock"
+          >
+            + Dock
+          </button>
+          <button
+            type="button"
+            className={styles.hoverActionButton}
+            onClick={handlePinToStudio}
+            disabled={pinned}
+            aria-label={`Pin ${displayed.hex} to Studio canvas`}
+            title={pinError ?? 'Pin to Canvas (/studio)'}
+            data-error={pinError !== null}
+          >
+            {pinError !== null ? 'Pin failed' : pinned ? 'Pinned ✓' : 'Pin'}
+          </button>
+          <button
+            type="button"
+            className={styles.hoverActionButton}
+            onClick={() => setTeleportOpen(true)}
+            aria-label="Open teleport menu"
+            title="Send this color elsewhere"
+          >
+            ⋯
+          </button>
+        </div>
       </div>
 
       <div className={styles.cardFooter}>
@@ -262,37 +294,6 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
         </div>
       </div>
 
-      <div className={styles.hoverActions} onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          className={styles.hoverActionButton}
-          onClick={handleDock}
-          aria-label={`Add ${displayed.hex} to dock`}
-          title="Add to Harmonic Dock"
-        >
-          + Dock
-        </button>
-        <button
-          type="button"
-          className={styles.hoverActionButton}
-          onClick={handlePinToStudio}
-          disabled={pinned}
-          aria-label={`Pin ${displayed.hex} to Studio canvas`}
-          title={pinError ?? 'Pin to Canvas (/studio)'}
-          data-error={pinError !== null}
-        >
-          {pinError !== null ? 'Pin failed' : pinned ? 'Pinned ✓' : 'Pin'}
-        </button>
-        <button
-          type="button"
-          className={styles.hoverActionButton}
-          onClick={() => setTeleportOpen(true)}
-          aria-label="Open teleport menu"
-          title="Send this color elsewhere"
-        >
-          ⋯
-        </button>
-      </div>
 
       {teleportOpen && (
         <div

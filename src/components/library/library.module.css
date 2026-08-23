@@ -275,6 +275,26 @@
   box-shadow: 0 0 0 1px oklch(100% 0 0 / 0.55);
 }
 
+/*
+ * OVER THE SWATCH, NOT OVER THE CONTROLS.
+ *
+ * This bar is `bottom: 0` and used to be positioned against the whole card,
+ * which put it at 186-225px on a 220px card — directly on top of the family
+ * stepper at 191-209. Every one of the ninety lightness ticks in the room was
+ * unreachable by mouse: at rest, on hover, and with the pointer sitting
+ * exactly on a tick, the element that received the click was always the "⋯"
+ * button. Keyboard users could reach them (the ramp has its own roving
+ * tabindex); nobody else could.
+ *
+ * It is a child of the swatch now, so `bottom: 0` means the bottom of the
+ * COLOUR — which is where a card's hover actions belong anyway, and where the
+ * 160px of empty swatch above the footer was waiting for them. The footer
+ * keeps its hex and its ramp, and both stay clickable.
+ *
+ * `pointer-events` follows the fade. An element at opacity 0 that still takes
+ * clicks is a trapdoor, and this one was: it was intercepting them even while
+ * completely invisible.
+ */
 .hoverActions {
   position: absolute;
   bottom: 0;
@@ -285,6 +305,7 @@
   padding: 0.4rem;
   background: linear-gradient(to top, oklch(0% 0 0 / 0.55), transparent);
   opacity: 0;
+  pointer-events: none;
   transform: translateY(6px);
   transition: opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
     transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -293,6 +314,7 @@
 .card:hover .hoverActions,
 .card:focus-within .hoverActions {
   opacity: 1;
+  pointer-events: auto;
   transform: translateY(0);
 }
 
