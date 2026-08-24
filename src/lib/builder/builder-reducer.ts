@@ -86,7 +86,6 @@ export type BuilderAction =
     }
   | { readonly type: 'hydrateSpecs'; readonly specs: readonly ScaleSpec[] }
   | { readonly type: 'setStepCount'; readonly count: number }
-  | { readonly type: 'setPrimary'; readonly hex: string }
   | { readonly type: 'renameScale'; readonly hex: string; readonly name: string }
   | { readonly type: 'setChromaIntensity'; readonly hex: string; readonly value: number }
   | { readonly type: 'setHueTorsion'; readonly hex: string; readonly value: number }
@@ -297,15 +296,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
           ...scale,
           anchorStep: Math.min(scale.anchorStep, nextCount - 1),
         })),
-      };
-    }
-
-    case 'setPrimary': {
-      if (!state.scales.some((scale) => scale.hex === action.hex)) return state;
-      return {
-        ...state,
-        primaryHex: action.hex,
-        scales: withDerivedNames(state.scales, action.hex),
       };
     }
 

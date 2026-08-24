@@ -176,3 +176,21 @@ describe('systemReducer — immutability', () => {
     expect(JSON.stringify(before)).toBe(snapshot);
   });
 });
+
+describe('setAnchor is the only way the anchor moves', () => {
+  /*
+   * The Builder used to carry its own `setPrimary`, which moved its marker and
+   * re-derived its names without ever writing `system.anchorHex` — so the star
+   * reset on reload and every other room, all of which read the anchor, never
+   * heard about it. That action was removed on 2026-08-24 and the star writes
+   * here instead.
+   *
+   * The dangling-anchor guard is already covered above; what was NOT covered is
+   * case, and the star hands over whatever case the palette entry happens to
+   * carry.
+   */
+  it('accepts a palette hex whatever its case, and normalises it', () => {
+    const before = threeColors();
+    expect(systemReducer(before, { type: 'setAnchor', hex: TAN.toUpperCase() }).anchorHex).toBe(TAN);
+  });
+});

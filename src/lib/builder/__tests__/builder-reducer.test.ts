@@ -120,29 +120,45 @@ describe('builderReducer — setStepCount clamps anchors (the regression this ex
   });
 });
 
-describe('builderReducer — setPrimary re-derives auto-names but respects custom ones', () => {
-  it('re-labels primary/accent when the primary anchor changes', () => {
+describe('builderReducer — a changed anchor re-derives auto-names but respects custom ones', () => {
+  /*
+   * These used to drive a local `setPrimary` action. That action was removed
+   * on 2026-08-24: it moved the marker and re-derived the names but never wrote
+   * `system.anchorHex`, so the star reset on reload and every other room — all
+   * of which read the anchor — never heard about it. The star now writes to the
+   * System and the anchor arrives here through `syncFromDock`, which is the
+   * only path there is. Keeping a second one is what allowed them to diverge.
+   */
+  it('re-labels primary/accent when the anchor changes', () => {
     const state = synced([BLUE, GREEN], BLUE.hex);
-    const swapped = builderReducer(state, { type: 'setPrimary', hex: GREEN.hex });
+    const swapped = builderReducer(state, {
+      type: 'syncFromDock',
+      items: [BLUE, GREEN],
+      primaryAnchorHex: GREEN.hex,
+    });
     expect(swapped.scales.find((s) => s.hex === GREEN.hex)!.name).toBe('primary');
     expect(swapped.scales.find((s) => s.hex === BLUE.hex)!.name).toBe('accent-1');
   });
 
-  it('does not overwrite a custom name when primary changes', () => {
+  it('does not overwrite a custom name when the anchor changes', () => {
     const state = synced([BLUE, GREEN], BLUE.hex);
-    const renamed = builderReducer(state, {
-      type: 'renameScale',
-      hex: BLUE.hex,
-      name: 'sky',
+    const renamed = builderReducer(state, { type: 'renameScale', hex: BLUE.hex, name: 'sky' });
+    const swapped = builderReducer(renamed, {
+      type: 'syncFromDock',
+      items: [BLUE, GREEN],
+      primaryAnchorHex: GREEN.hex,
     });
-    const swapped = builderReducer(renamed, { type: 'setPrimary', hex: GREEN.hex });
     expect(swapped.scales.find((s) => s.hex === BLUE.hex)!.name).toBe('sky');
   });
 
-  it('ignores setPrimary for a hex not present in the dock', () => {
-    const state = synced([BLUE], BLUE.hex);
-    const unchanged = builderReducer(state, { type: 'setPrimary', hex: '#000000' });
-    expect(unchanged).toBe(state);
+  it('holds its identity when the anchor has not moved, so the sync cannot oscillate', () => {
+    const state = synced([BLUE, GREEN], BLUE.hex);
+    const again = builderReducer(state, {
+      type: 'syncFromDock',
+      items: [BLUE, GREEN],
+      primaryAnchorHex: BLUE.hex,
+    });
+    expect(again).toBe(state);
   });
 });
 

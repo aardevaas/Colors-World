@@ -75,7 +75,7 @@ interface BuilderShellProps {
 
 export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellProps) {
   const router = useRouter();
-  const { system, addColor, setScale, setScaleGlobals } = useSystem();
+  const { system, addColor, setAnchor, setScale, setScaleGlobals } = useSystem();
   const [state, dispatch] = useReducer(builderReducer, EMPTY_BUILDER_STATE);
   const [paletteName, setPaletteName] = useState('brand');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -301,7 +301,17 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
               gamut={state.gamut}
               cvd={state.cvd}
               onRename={(name) => dispatch({ type: 'renameScale', hex: entry.hex, name })}
-              onSetPrimary={() => dispatch({ type: 'setPrimary', hex: entry.hex })}
+              /*
+               * Writes to the SYSTEM, not to local state. The sync effect above
+               * carries `system.anchorHex` back down into `primaryHex`, so the
+               * star has one source of truth and cannot diverge from it.
+               *
+               * It used to dispatch the Builder's own `setPrimary`, which moved
+               * the marker and re-derived the names but never wrote
+               * `system.anchorHex` — so it reset on reload and every other room,
+               * all of which read the anchor, never heard about it.
+               */
+              onSetPrimary={() => setAnchor(entry.hex)}
               onSetChromaIntensity={(value) =>
                 dispatch({ type: 'setChromaIntensity', hex: entry.hex, value })
               }
