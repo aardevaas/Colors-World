@@ -349,10 +349,23 @@ idempotent layer and the truth.
 ### Days 14–15 · Sep 6–7 — Polish
 - ~~PDF, design tokens, and a share link.~~ **DONE 2026-08-24** — pulled
   forward into the Days 3–5 slack when the Book landed on day one of three.
-  See that section for what shipped and what it cost.
-- Version stamp and changelog on the guideline itself. Nobody in the 25-book
-  sample versions their brand; we already have the DAG.
+- ~~Version stamp on the guideline.~~ **DONE 2026-08-24** (`3c5de0e`). A
+  fingerprint of the canonical System encoding, so it is derived rather than
+  declared and survives a round trip through a shared link. §9 is 1 of 12.
+  **Changelog is NOT done and needs an account** — remembering previous
+  versions needs somewhere to keep them.
 - Accessibility pass, responsive pass, production build in a throwaway copy.
+
+#### Also done 2026-08-24, outside the phase plan
+
+- **Light mode fixed** (`fb47249`). Reported as a light-mode fault; it was not.
+  `text on surface` failed in BOTH polarities — 2.85:1 dark, 2.17:1 light —
+  because `surface` took whichever palette colour was left over. A palette
+  colour becomes the panel only if text can be read on it; otherwise the panel
+  is derived from the page. Now 13.25 and 8.33 AAA.
+- **Library's Pin button removed** (`b8625bd`). It wrote to the retired Studio
+  canvas, so the result was invisible. Also took Library's last dependency on
+  `pinColorAction`, which unblocks deleting Studio after launch.
 
 ---
 
