@@ -93,6 +93,19 @@ export interface Provenance {
   readonly wheeler: boolean;
   /** True when `observedAs` is shared with another component. */
   readonly sharedObservation?: boolean;
+  /**
+   * Manuals in `docs/research/internal-grain-sample.json` that state this
+   * sub-rule explicitly.
+   *
+   * A SECOND, FINER evidence base than `observedAs`, and the two must never be
+   * mixed. `observedAs` keys into the 25-book study, which recorded which
+   * *sections* a guideline contains; this keys into the grain study, which
+   * recorded which *rules* a section states. The first was blind to depth —
+   * `colour.palette` scored the same for a manual giving one hex as for one
+   * giving hex, RGB, CMYK, Pantone, tints, proportions, pairings and misuse.
+   * That blindness is why the taxonomy had to be re-cut.
+   */
+  readonly grainSources?: readonly string[];
   /** Why this component exists, when the count alone does not explain it. */
   readonly note?: string;
 }

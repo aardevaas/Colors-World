@@ -31,6 +31,18 @@
  *
  * 66 + 13 + 1 = **80 components.**
  *
+ * ## Revised 2026-08-24 — the grain was wrong
+ *
+ * The 25-book study recorded which *sections* a guideline contains, never what
+ * a section *states*. `colour.palette` scored identically for a manual giving
+ * one hex and one giving hex, RGB, CMYK, Pantone, tint steps, a proportion
+ * rule, approved pairings and a misuse list. The product's whole value is that
+ * depth, so §3 and §4 were re-cut against
+ * `docs/research/INTERNAL-GUIDELINE-GRAIN.md`.
+ *
+ * §3 colour: 8 → **15**. `colour.dataviz` moved in from §6 (it is a colour
+ * concern, not a web one). The other 51 components are untouched and dormant.
+ *
  * ## The prefix is a namespace, not a section
  *
  * `voice.grammar` and `voice.microcopy` live in §7 Editorial, not §1, because
@@ -82,15 +94,22 @@ export const COMPONENT_IDS = [
   'logo.placement-backgrounds',
   'logo.misuse',
 
-  // §3 Colour architecture
+  // §3 Colour architecture — revised 2026-08-24 to internal-guideline grain
   'colour.palette',
+  'colour.tiers',
   'colour.values',
   'colour.print',
   'colour.tints',
+  'colour.proportions',
+  'colour.order',
   'colour.surfaces',
   'colour.state',
   'colour.themes',
   'colour.contrast-pairs',
+  'colour.dataviz',
+  'colour.gradients',
+  'colour.misuse',
+  'colour.exceptions',
 
   // §4 Typography system
   'type.families',
@@ -123,7 +142,6 @@ export const COMPONENT_IDS = [
   'web.navigation',
   'web.elevation',
   'web.accessibility',
-  'web.dataviz-palettes',
 
   // §7 Editorial & marketing
   'voice.grammar',
@@ -190,13 +208,20 @@ export const SECTION_OF: Readonly<Record<ComponentId, SectionId>> = {
   'logo.misuse': 2,
 
   'colour.palette': 3,
+  'colour.tiers': 3,
   'colour.values': 3,
   'colour.print': 3,
   'colour.tints': 3,
+  'colour.proportions': 3,
+  'colour.order': 3,
   'colour.surfaces': 3,
   'colour.state': 3,
   'colour.themes': 3,
   'colour.contrast-pairs': 3,
+  'colour.dataviz': 3,
+  'colour.gradients': 3,
+  'colour.misuse': 3,
+  'colour.exceptions': 3,
 
   'type.families': 4,
   'type.hierarchy': 4,
@@ -226,7 +251,6 @@ export const SECTION_OF: Readonly<Record<ComponentId, SectionId>> = {
   'web.navigation': 6,
   'web.elevation': 6,
   'web.accessibility': 6,
-  'web.dataviz-palettes': 6,
 
   'voice.grammar': 7,
   'voice.microcopy': 7,

@@ -125,7 +125,9 @@ describe('the two claims about the logo', () => {
      * can be restored to the documents with a number behind it.
      */
     expect(unlockCount('logo.primary')).toBe(22);
-    expect(unlockCount('colour.palette')).toBe(28);
+    // 28 before §3 was re-cut to internal grain; the six new colour
+    // sub-components all hang off the palette, so the gap widened.
+    expect(unlockCount('colour.palette')).toBe(34);
     expect(unlockCount('colour.palette')).toBeGreaterThan(unlockCount('logo.primary'));
   });
 

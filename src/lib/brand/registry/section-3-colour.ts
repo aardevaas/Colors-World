@@ -16,14 +16,21 @@
 
 import {
   auditContrast,
+  CVD_TYPES,
+  deltaEOk,
+  formatHex,
+  shortestHueDelta,
+  simulateCvd,
+  type Oklch,
   formatCmyk,
   formatHsl,
   formatOklchCss,
   formatRgb,
   toCmyk,
 } from '@/lib/color-engine';
-import { absent, arr, finding, num, obj, present, str } from '../block';
-import { hasPalette, systemRoles } from '../colour';
+import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived, str } from '../block';
+import { hasPalette, paletteColors, systemRoles } from '../colour';
+import type { RoleColor } from '@/lib/roles/semantic-roles';
 import type { BookEntry, BrandComponent, Finding } from '../types';
 
 /** WCAG 1.4.3 AA for normal text. The one threshold this section defends. */
@@ -36,6 +43,73 @@ const CHECKED_PAIRS = [
   { fg: 'text', bg: 'background', label: 'Text on background' },
   { fg: 'text', bg: 'surface', label: 'Text on surface' },
 ] as const;
+
+
+/**
+ * How far apart two categorical colours must stay once a deficiency is
+ * simulated, as a distance in OKLab.
+ *
+ * **This threshold is ours, not a standard.** No specification states a minimum
+ * ΔE for two series in a chart. The distance is measured; the line drawn
+ * through it is a judgement, and the book says so rather than letting anyone
+ * quote it as a published requirement.
+ */
+const CATEGORICAL_MIN_DELTA_E = 0.1;
+
+/** Pairs of palette colours that collapse under any simulated deficiency. */
+function collapsingPairs(
+  palette: readonly { hex: string; oklch: Oklch }[]
+): readonly { a: string; b: string; type: string; delta: number }[] {
+  const out: { a: string; b: string; type: string; delta: number }[] = [];
+  for (let i = 0; i < palette.length; i += 1) {
+    for (let j = i + 1; j < palette.length; j += 1) {
+      for (const type of CVD_TYPES) {
+        const delta = deltaEOk(
+          simulateCvd(palette[i]!.oklch, type),
+          simulateCvd(palette[j]!.oklch, type)
+        );
+        if (delta < CATEGORICAL_MIN_DELTA_E) {
+          out.push({ a: palette[i]!.hex, b: palette[j]!.hex, type, delta });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The colour a person gets when they mix two brand colours to "make a new one".
+ *
+ * Averaged in OKLab rather than sRGB, because that is the space the rest of the
+ * engine reasons in and it is the one where a midpoint looks like a midpoint.
+ * Hue is averaged the short way round the wheel; two colours more than 180°
+ * apart have no meaningful midpoint hue, and the ΔE reported beside the result
+ * is what makes that visible rather than hidden.
+ */
+function midpointOf(a: Oklch, b: Oklch): Oklch {
+  const dh = shortestHueDelta(a.h, b.h);
+  return { l: (a.l + b.l) / 2, c: (a.c + b.c) / 2, h: (a.h + dh / 2 + 360) % 360 };
+}
+
+/** How far a colour sits from the nearest thing actually in the palette. */
+function distanceFromPalette(colour: Oklch, palette: readonly RoleColor[]): number {
+  return Math.min(...palette.map((p) => deltaEOk(colour, p.oklch)));
+}
+
+/** The worst text/background pairing the palette can produce. */
+function worstPairing(
+  palette: readonly RoleColor[]
+): { fg: string; bg: string; ratio: number } | null {
+  let worst: { fg: string; bg: string; ratio: number } | null = null;
+  for (const a of palette) {
+    for (const b of palette) {
+      if (a.hex === b.hex) continue;
+      const ratio = auditContrast(a.oklch, b.oklch).ratio;
+      if (!worst || ratio < worst.ratio) worst = { fg: a.hex, bg: b.hex, ratio };
+    }
+  }
+  return worst;
+}
 
 export const SECTION_3: readonly BrandComponent[] = [
   {
@@ -60,6 +134,7 @@ export const SECTION_3: readonly BrandComponent[] = [
       frequency: 18,
       sectors: 11,
       wheeler: true,
+      grainSources: ['monash', 'irba', 'commonwealth', 'regus', 'ptc'],
       note: 'One of the three CORE components, and one of the two this product already has.',
     },
     render: (state) => {
@@ -108,6 +183,7 @@ export const SECTION_3: readonly BrandComponent[] = [
       frequency: 5,
       sectors: 5,
       wheeler: true,
+      grainSources: ['monash', 'irba', 'commonwealth', 'regus', 'ptc'],
       sharedObservation: true,
       note: 'Shares its observation with colour.print: sampled books carry one "colour values across media" section covering both screen and print. One sighting, two rules — not two sightings.',
     },
@@ -141,6 +217,7 @@ export const SECTION_3: readonly BrandComponent[] = [
       frequency: 5,
       sectors: 5,
       wheeler: true,
+      grainSources: ['monash', 'irba', 'commonwealth', 'regus', 'ptc', 'aludium'],
       sharedObservation: true,
       note: 'Shares its observation with colour.values — see the note there. Spot-colour (Pantone) values are deliberately absent: the library is licensed and cannot ship.',
     },
@@ -175,6 +252,7 @@ export const SECTION_3: readonly BrandComponent[] = [
       frequency: 1,
       sectors: 1,
       wheeler: false,
+      grainSources: ['commonwealth', 'irba', 'monash', 'regus'],
       note: 'Observed once, but had no row in the spec’s taxonomy. Placed here because the scale engine already produces exactly this and it was going unclaimed.',
     },
     render: (state) => {
@@ -207,6 +285,7 @@ export const SECTION_3: readonly BrandComponent[] = [
       frequency: 0,
       sectors: 0,
       wheeler: false,
+      grainSources: ['monash', 'ptc'],
       note: 'The spec\u2019s taxonomy calls this row "Neutral & grey scale". Renamed 2026-08-23 because that is not what it can render. The role model orders by OKLCH lightness, so on a palette with no low-chroma member it will hand back a saturated colour as the surface \u2014 a green was appearing under a heading that said "greys". What the System genuinely holds is the three structural roles, so that is what this states. A true neutral ramp is a real brand-book concept and the System has no such object; giving it a component here would be the exact overclaim the evidence field exists to prevent.',
     },
     render: (state) => {
@@ -307,6 +386,7 @@ export const SECTION_3: readonly BrandComponent[] = [
       frequency: 1,
       sectors: 1,
       wheeler: false,
+      grainSources: ['monash', 'ptc'],
       note: 'Measured in only one of 25 books — which is precisely the opening. Every other book asserts accessibility; this one computes it and re-checks it on render.',
     },
     render: (state) => {
@@ -348,6 +428,293 @@ export const SECTION_3: readonly BrandComponent[] = [
         }
       }
       return findings;
+    },
+  },
+
+  /* ------------------------------------------------------------------------
+   * Added 2026-08-24 when §3 was re-cut to internal-guideline grain. See
+   * docs/research/INTERNAL-GUIDELINE-GRAIN.md — the 25-book study recorded
+   * which sections a manual has, never what a section states, and every rule
+   * below is one a real manual states and no colour tool can check.
+   * --------------------------------------------------------------------- */
+  {
+    id: 'colour.tiers',
+    name: 'Palette hierarchy',
+    section: 3,
+    requires: ['colour.palette'],
+    machine: 'M2',
+    storage: 'system',
+    produces: obj({
+      primary: arr(str()),
+      secondary: arr(str()),
+      accent: arr(str()),
+      utility: arr(str('Data-viz only — never a substitute for the palette')),
+    }),
+    evidence: 'declared',
+    provenance: {
+      origin: 'observed',
+      observedAs: [],
+      frequency: 0,
+      sectors: 0,
+      wheeler: false,
+      grainSources: ['monash', 'irba', 'ptc', 'commonwealth', 'regus'],
+      note: 'Having colours and ranking them are two different rules, and every manual sampled states both. IRBA runs primary/secondary/accent; Monash primary/secondary/tertiary plus a separate utility set; PTC two primary, seven secondary, seven tertiary.',
+    },
+    render: renderDerived<{ primary?: readonly string[]; secondary?: readonly string[]; accent?: readonly string[] }>(
+      'colour.tiers',
+      'Palette hierarchy',
+      'declared',
+      'Not ranked yet. A palette without a hierarchy tells nobody which colour leads.',
+      (d) => [
+        ...(d.primary?.length ? [{ label: 'Primary', value: d.primary.join(' · ') }] : []),
+        ...(d.secondary?.length ? [{ label: 'Secondary', value: d.secondary.join(' · ') }] : []),
+        ...(d.accent?.length ? [{ label: 'Accent', value: d.accent.join(' · ') }] : []),
+      ]
+    ),
+  },
+  {
+    id: 'colour.proportions',
+    name: 'Colour proportions',
+    section: 3,
+    requires: ['colour.tiers'],
+    machine: 'M2',
+    storage: 'system',
+    produces: arr(
+      obj({ tier: str(), minPct: num(), maxPct: num(), measuredPct: num() }, ['tier', 'minPct'])
+    ),
+    evidence: 'measured',
+    provenance: {
+      origin: 'observed',
+      observedAs: [],
+      frequency: 0,
+      sectors: 0,
+      wheeler: false,
+      grainSources: ['irba', 'regus', 'monash'],
+      note: 'THE primitive nobody has. IRBA states primary 50% / secondary 20% / accent 20%. Regus states 60% white / 20% black / 10% red / 5% / 5%. Monash mandates a minimum 25% primary across all audiences. All three state a ratio; none of the three can check whether a given layout obeys it. "This surface is 8% primary against your 25% floor" is arithmetic.',
+    },
+    render: renderDerived<readonly { tier: string; minPct: number; maxPct?: number; measuredPct?: number }[]>(
+      'colour.proportions',
+      'Colour proportions',
+      'measured',
+      'No ratio set. State how much of a surface each tier should occupy and every layout becomes checkable.',
+      (rows) =>
+        rows.map((r) => ({
+          label: r.tier,
+          value:
+            r.measuredPct === undefined
+              ? `target ${r.minPct}%${r.maxPct ? `–${r.maxPct}%` : ' minimum'}`
+              : `${r.measuredPct.toFixed(1)}% against a ${r.minPct}% floor`,
+          ...(r.measuredPct === undefined ? { evidence: 'declared' as const } : {}),
+        }))
+    ),
+    validate: (state): readonly Finding[] => {
+      const rows = state.project?.data['colour.proportions'] as
+        | readonly { tier: string; minPct: number; measuredPct?: number }[]
+        | undefined;
+      if (!rows) return [];
+      return rows
+        .filter((r) => r.measuredPct !== undefined && r.measuredPct < r.minPct)
+        .map((r) =>
+          finding('colour.proportions', 'warn', `${r.tier} is under its stated floor on this surface.`, {
+            measured: `${r.measuredPct!.toFixed(1)}%`,
+            expected: `≥ ${r.minPct}%`,
+          })
+        );
+    },
+  },
+  {
+    id: 'colour.order',
+    name: 'Application order',
+    section: 3,
+    requires: ['colour.tiers'],
+    machine: 'M2',
+    storage: 'system',
+    produces: obj({ sequence: arr(str()), rule: str() }),
+    evidence: 'declared',
+    provenance: {
+      origin: 'observed',
+      observedAs: [],
+      frequency: 0,
+      sectors: 0,
+      wheeler: false,
+      grainSources: ['monash', 'irba'],
+      note: 'Monash: "Use primary colours first, then secondary, then tertiary. Introduce utility colours only if additional colours are required."',
+    },
+    render: renderDerived<{ sequence?: readonly string[]; rule?: string }>(
+      'colour.order',
+      'Application order',
+      'declared',
+      'Not set. Which tier is reached for first, and what has to be exhausted before the next.',
+      (d) => [
+        ...(d.sequence?.length ? [{ label: 'Sequence', value: d.sequence.join(' → ') }] : []),
+        ...(d.rule ? [{ label: 'Rule', value: d.rule }] : []),
+      ]
+    ),
+  },
+  {
+    id: 'colour.gradients',
+    name: 'Gradients',
+    section: 3,
+    requires: ['colour.tiers'],
+    machine: 'M2',
+    storage: 'system',
+    produces: obj({ allowed: str('yes | no'), maxColours: num(), rules: arr(str()) }),
+    evidence: 'declared',
+    provenance: {
+      origin: 'observed',
+      observedAs: [],
+      frequency: 0,
+      sectors: 0,
+      wheeler: false,
+      grainSources: ['monash', 'commonwealth'],
+      note: 'Monash: limit to two colours per gradient, never overpower the content, keep the primary prominent.',
+    },
+    render: renderDerived<{ allowed?: string; maxColours?: number; rules?: readonly string[] }>(
+      'colour.gradients',
+      'Gradients',
+      'declared',
+      'Not set. Whether gradients are permitted at all is itself the rule.',
+      (d) => [
+        ...(d.allowed ? [{ label: 'Permitted', value: d.allowed }] : []),
+        ...(d.maxColours ? [{ label: 'Maximum colours', value: String(d.maxColours) }] : []),
+        ...(d.rules ?? []).map((r, i) => ({ label: `Rule ${i + 1}`, value: r })),
+      ]
+    ),
+  },
+  {
+    id: 'colour.exceptions',
+    name: 'Colour exceptions',
+    section: 3,
+    requires: ['colour.tiers'],
+    machine: 'M6',
+    storage: 'project',
+    produces: obj({ route: str('How a bespoke colour is requested'), approver: str() }),
+    evidence: 'declared',
+    provenance: {
+      origin: 'observed',
+      observedAs: [],
+      frequency: 0,
+      sectors: 0,
+      wheeler: false,
+      grainSources: ['monash', 'irba'],
+      note: 'Monash routes bespoke colour requests through a form under a strict approval process. IRBA allows secondary colours in isolation only "in conjunction with brand management".',
+    },
+    render: renderAuthored(
+      'colour.exceptions',
+      'Colour exceptions',
+      'Route',
+      'Not set. How someone asks for a colour that is not in the palette — and who says yes.'
+    ),
+  },
+  {
+    id: 'colour.dataviz',
+    name: 'Data-visualisation palette',
+    section: 3,
+    requires: ['colour.palette'],
+    machine: 'M2',
+    storage: 'system',
+    produces: obj({
+      categorical: arr(str()),
+      sequential: arr(str()),
+      diverging: arr(str()),
+      cvdSafe: str('pass | fail'),
+    }),
+    evidence: 'measured',
+    provenance: {
+      origin: 'observed',
+      observedAs: [],
+      frequency: 0,
+      sectors: 0,
+      wheeler: false,
+      grainSources: ['monash', 'irba', 'carbon'],
+      note: 'Moved here from §6 on 2026-08-24 — it is a colour concern that happens to appear in charts. Monash keeps a separate utility set used ONLY for data visualisation, with an explicit instruction to keep colour mapping consistent across related visuals; IRBA names data-viz as an ideal application of its secondary and accent tiers. Every manual claims its chart colours are colour-blind safe. This one simulates the deficiency and measures the distance.',
+    },
+    render: (state) => {
+      const { system } = state;
+      if (!hasPalette(system)) {
+        return absent(
+          'colour.dataviz',
+          'Data-visualisation palette',
+          'No colours yet. Chart palettes derive from the brand palette, then get checked against simulated colour-vision deficiency.'
+        );
+      }
+      const collapses = collapsingPairs(system.palette);
+      const entries: BookEntry[] = [
+        { label: 'Categorical series', value: system.palette.map((c) => c.hex).join(' · ') },
+        {
+          label: 'Colour-vision check',
+          value:
+            collapses.length === 0
+              ? `All pairs stay apart under ${CVD_TYPES.length} simulated deficiencies`
+              : `${collapses.length} pair${collapses.length === 1 ? ' collapses' : 's collapse'}`,
+          note: `Distance measured in OKLab; the ${CATEGORICAL_MIN_DELTA_E} floor is our judgement, not a published requirement.`,
+        },
+      ];
+      for (const c of collapses.slice(0, 6)) {
+        entries.push({ label: `${c.a} vs ${c.b}`, value: `ΔE ${c.delta.toFixed(3)} under ${c.type}` });
+      }
+      return present('colour.dataviz', 'Data-visualisation palette', 'measured', entries);
+    },
+    validate: (state): readonly Finding[] => {
+      const { system } = state;
+      if (!hasPalette(system)) return [];
+      return collapsingPairs(system.palette).map((c) =>
+        finding(
+          'colour.dataviz',
+          'warn',
+          `${c.a} and ${c.b} are not distinguishable under ${c.type}, so two series using them read as one.`,
+          { measured: `ΔE ${c.delta.toFixed(3)}`, expected: `≥ ${CATEGORICAL_MIN_DELTA_E}` }
+        )
+      );
+    },
+  },
+  {
+    id: 'colour.misuse',
+    name: 'Colour misuse',
+    section: 3,
+    requires: ['colour.palette'],
+    machine: 'M2',
+    storage: 'system',
+    produces: arr(obj({ kind: str(), why: str(), measured: str() }, ['kind', 'why'])),
+    evidence: 'measured',
+    provenance: {
+      origin: 'observed',
+      observedAs: [],
+      frequency: 0,
+      sectors: 0,
+      wheeler: false,
+      grainSources: ['irba', 'monash', 'ptc'],
+      note: 'Every manual that has this page drew it by hand. Generated here from the real palette, each failure carrying the number that makes it a failure — the ΔE of a mixed colour from anything approved, the ratio of the worst pairing the palette can produce.',
+    },
+    render: (state) => {
+      const { system } = state;
+      const palette = paletteColors(system);
+      if (palette.length < 2) {
+        return absent(
+          'colour.misuse',
+          'Colour misuse',
+          'Needs at least two colours. With two, this page generates itself.'
+        );
+      }
+      const entries: BookEntry[] = [];
+
+      const mixed = midpointOf(palette[0]!.oklch, palette[1]!.oklch);
+      entries.push({
+        label: 'Do not mix approved colours',
+        value: `${palette[0]!.hex} + ${palette[1]!.hex} → ${formatHex(mixed)}`,
+        note: `ΔE ${distanceFromPalette(mixed, palette).toFixed(3)} from the nearest colour you approved — it is a new colour, not a blend of two old ones.`,
+      });
+
+      const worst = worstPairing(palette);
+      if (worst) {
+        entries.push({
+          label: 'Do not set these together',
+          value: `${worst.fg} on ${worst.bg} — ${worst.ratio.toFixed(2)}:1`,
+          note: 'The lowest-contrast pairing this palette can produce. Below 4.5:1 it fails AA for normal text.',
+        });
+      }
+
+      return present('colour.misuse', 'Colour misuse', 'measured', entries);
     },
   },
 ];

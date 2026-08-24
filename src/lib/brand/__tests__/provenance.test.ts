@@ -154,3 +154,78 @@ describe('nothing the research found is homeless', () => {
     }
   });
 });
+
+/* ---------------------------------------------------------------------------
+ * The second evidence base, added 2026-08-24.
+ *
+ * `observedAs` keys into the 25-book study, which recorded which SECTIONS a
+ * guideline contains. `grainSources` keys into the grain study, which recorded
+ * which RULES a section states. The first was blind to depth — and depth is the
+ * entire product — so the second exists and gets the same treatment: written
+ * into the registry where a reader can see it, recomputed from the sample here
+ * so it cannot drift.
+ * ------------------------------------------------------------------------ */
+
+interface GrainSample {
+  readonly manuals: readonly { readonly id: string; readonly name: string }[];
+  readonly rules: Readonly<Record<string, readonly string[]>>;
+}
+
+const grain = JSON.parse(
+  readFileSync(
+    new URL('../../../../docs/research/internal-grain-sample.json', import.meta.url),
+    'utf8'
+  )
+) as GrainSample;
+
+const MANUAL_IDS = new Set(grain.manuals.map((m) => m.id));
+
+describe('the grain study', () => {
+  it('records rules against real manuals only', () => {
+    for (const [rule, sources] of Object.entries(grain.rules)) {
+      for (const id of sources) {
+        expect(MANUAL_IDS.has(id), `rule "${rule}" cites unknown manual "${id}"`).toBe(true);
+      }
+    }
+  });
+
+  it('names every manual it cites', () => {
+    expect(grain.manuals.length).toBeGreaterThan(0);
+    for (const m of grain.manuals) expect(m.name.length).toBeGreaterThan(0);
+  });
+});
+
+describe('grainSources cannot drift from the grain study', () => {
+  it('matches the sample exactly, for every component that claims one', () => {
+    for (const c of REGISTRY) {
+      if (!c.provenance.grainSources) continue;
+      const recorded = grain.rules[c.id];
+      expect(recorded, `${c.id} claims grainSources but the study records no rule for it`).toBeDefined();
+      expect([...c.provenance.grainSources].sort(), c.id).toEqual([...(recorded ?? [])].sort());
+    }
+  });
+
+  it('gives every re-cut colour component a grain source', () => {
+    /*
+     * The regression this guards: §3 was re-cut precisely because the coarse
+     * study could not see these rules. A component added in that re-cut with no
+     * grain source behind it would be exactly the transcription failure the
+     * whole exercise exists to end.
+     */
+    const ungrounded = REGISTRY.filter(
+      (c) =>
+        c.section === 3 &&
+        c.provenance.frequency === 0 &&
+        (c.provenance.grainSources?.length ?? 0) === 0
+    ).map((c) => c.id);
+    expect(ungrounded).toEqual(['colour.state', 'colour.themes']);
+  });
+
+  it('keeps the two evidence bases separate — a grain source is never a research id', () => {
+    for (const c of REGISTRY) {
+      for (const g of c.provenance.grainSources ?? []) {
+        expect(ALL_SAMPLE_IDS.has(g), `${c.id}: "${g}" is a manual, not a component id`).toBe(false);
+      }
+    }
+  });
+});

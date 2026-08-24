@@ -8,48 +8,14 @@
  * the in-house-team user cannot hand off without §6, and nothing else in the
  * category renders both from one source.
  *
- * `web.dataviz-palettes` is the one component here that is already fully
- * computable, and it is the clearest example of the product's whole claim.
- * Every other brand book says its chart colours are colour-blind safe. This
- * one simulates the deficiency and measures the distance.
+ * Data-viz palettes moved OUT of this section on 2026-08-24, to §3. They are a
+ * colour concern that happens to appear in charts, not a web concern — and the
+ * grain study found real manuals (Monash, IRBA, Carbon) documenting them inside
+ * the colour section, as a separate utility set with its own usage rule.
  */
 
-import { CVD_TYPES, deltaEOk, simulateCvd, type Oklch } from '@/lib/color-engine';
-import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived, str } from '../block';
-import { hasPalette } from '../colour';
-import type { BookEntry, BrandComponent, Finding } from '../types';
-
-/**
- * How far apart two categorical colours must stay once a deficiency is
- * simulated, as a distance in OKLab.
- *
- * **This threshold is ours, not a standard.** No specification states a
- * minimum ΔE for two series in a chart. The distance is measured; the line
- * drawn through it is a judgement, and it is labelled that way in the book so
- * nobody quotes it as a published requirement.
- */
-const CATEGORICAL_MIN_DELTA_E = 0.1;
-
-/** Pairs of palette colours that collapse under any simulated deficiency. */
-function collapsingPairs(
-  palette: readonly { hex: string; oklch: Oklch }[]
-): readonly { a: string; b: string; type: string; delta: number }[] {
-  const out: { a: string; b: string; type: string; delta: number }[] = [];
-  for (let i = 0; i < palette.length; i += 1) {
-    for (let j = i + 1; j < palette.length; j += 1) {
-      for (const type of CVD_TYPES) {
-        const delta = deltaEOk(
-          simulateCvd(palette[i]!.oklch, type),
-          simulateCvd(palette[j]!.oklch, type)
-        );
-        if (delta < CATEGORICAL_MIN_DELTA_E) {
-          out.push({ a: palette[i]!.hex, b: palette[j]!.hex, type, delta });
-        }
-      }
-    }
-  }
-  return out;
-}
+import { arr, num, obj, renderAuthored, renderDerived, str } from '../block';
+import type { BrandComponent } from '../types';
 
 export const SECTION_6: readonly BrandComponent[] = [
   {
@@ -237,69 +203,5 @@ export const SECTION_6: readonly BrandComponent[] = [
         ...(d.reducedMotion ? [{ label: 'Reduced motion', value: d.reducedMotion }] : []),
       ]
     ),
-  },
-  {
-    id: 'web.dataviz-palettes',
-    name: 'Data-viz palettes',
-    section: 6,
-    requires: ['colour.palette'],
-    machine: 'M2',
-    storage: 'system',
-    produces: obj({
-      categorical: arr(str()),
-      sequential: arr(str()),
-      diverging: arr(str()),
-      cvdSafe: str('pass | fail'),
-    }),
-    evidence: 'measured',
-    provenance: {
-      origin: 'observed',
-      observedAs: [],
-      frequency: 0,
-      sectors: 0,
-      wheeler: false,
-      note: 'One of the eleven found by checking real books — IBM Carbon ships categorical, sequential and diverging ramps as a first-class part of the system. Not recorded as its own id in the 25-book sample (the one dataviz sighting is counted against imagery.dataviz), so the frequency here is genuinely 0 rather than low.',
-    },
-    render: (state) => {
-      const { system } = state;
-      if (!hasPalette(system)) {
-        return absent(
-          'web.dataviz-palettes',
-          'Data-viz palettes',
-          'No colours yet. Chart palettes are derived from the brand palette, then checked against simulated colour-vision deficiency.'
-        );
-      }
-      const collapses = collapsingPairs(system.palette);
-      const entries: BookEntry[] = [
-        { label: 'Categorical series', value: system.palette.map((c) => c.hex).join(' · ') },
-        {
-          label: 'Colour-vision check',
-          value:
-            collapses.length === 0
-              ? `All pairs stay apart under ${CVD_TYPES.length} simulated deficiencies`
-              : `${collapses.length} pair${collapses.length === 1 ? '' : 's'} collapse`,
-          note: `Distance measured in OKLab; the ${CATEGORICAL_MIN_DELTA_E} floor is our judgement, not a published requirement.`,
-        },
-      ];
-      for (const c of collapses.slice(0, 6)) {
-        entries.push({
-          label: `${c.a} vs ${c.b}`,
-          value: `ΔE ${c.delta.toFixed(3)} under ${c.type}`,
-        });
-      }
-      return present('web.dataviz-palettes', 'Data-viz palettes', 'measured', entries);
-    },
-    validate: (state): readonly Finding[] => {
-      const { system } = state;
-      if (!hasPalette(system)) return [];
-      return collapsingPairs(system.palette).map((c) =>
-        finding(
-          'web.dataviz-palettes',
-          'warn',
-          `${c.a} and ${c.b} are not distinguishable under ${c.type}, so two series using them read as one.`,
-          { measured: `ΔE ${c.delta.toFixed(3)}`, expected: `≥ ${CATEGORICAL_MIN_DELTA_E}` }
-        )
-      );
-    },
   },
 ];

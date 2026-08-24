@@ -25,10 +25,18 @@ describe('registry integrity', () => {
     expect([...registered].filter((id) => !declared.has(id))).toEqual([]);
   });
 
-  it('is the 80 components the reconciliation produced', () => {
-    // 66 rows in the spec's taxonomy table + 13 observed ids that had no row
-    // + 1 row split in two because the research keeps the halves apart.
-    expect(REGISTRY).toHaveLength(80);
+  it('is the 86 components the reconciliation and the grain re-cut produced', () => {
+    /*
+     * 66 rows in the spec's taxonomy table + 13 observed ids that had no row
+     * + 1 row split in two because the research keeps the halves apart = 80.
+     *
+     * Then 2026-08-24: §3 was re-cut to internal-guideline grain, adding six
+     * (tiers, proportions, order, gradients, misuse, exceptions) and moving
+     * data-viz in from §6 — which is a move, not an addition. 80 + 6 = 86.
+     */
+    expect(REGISTRY).toHaveLength(86);
+    expect(componentsInSection(3)).toHaveLength(15);
+    expect(componentsInSection(6)).toHaveLength(6);
   });
 
   it('agrees with SECTION_OF on every component', () => {

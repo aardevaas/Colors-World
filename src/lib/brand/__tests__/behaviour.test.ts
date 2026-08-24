@@ -19,7 +19,7 @@ const READABLE = ['#0A0A0B', '#F5F5F7', '#3B6CF6', '#8A8A93'];
 
 describe('an anonymous visitor with nothing', () => {
   it('renders the whole book without an account', () => {
-    expect(renderBook(ANONYMOUS_EMPTY)).toHaveLength(80);
+    expect(renderBook(ANONYMOUS_EMPTY)).toHaveLength(86);
   });
 
   it('shows colour as absent, and says what would fill it', () => {
@@ -191,7 +191,7 @@ describe('the asset naming lint', () => {
 
 describe('the colour-vision check on chart palettes', () => {
   it('warns when two series would read as one', () => {
-    const findings = component('web.dataviz-palettes').validate!(
+    const findings = component('colour.dataviz').validate!(
       stateOf(systemWith(['#D62728', '#2CA02C']))
     );
     expect(findings.length).toBeGreaterThan(0);
@@ -200,7 +200,7 @@ describe('the colour-vision check on chart palettes', () => {
 
   it('passes a palette that stays apart', () => {
     expect(
-      component('web.dataviz-palettes').validate!(stateOf(systemWith(['#0A0A0B', '#F5F5F7'])))
+      component('colour.dataviz').validate!(stateOf(systemWith(['#0A0A0B', '#F5F5F7'])))
     ).toEqual([]);
   });
 });
@@ -271,19 +271,19 @@ describe('stored but empty is still absent', () => {
 
 describe('the chart palette renders its own colour-vision result', () => {
   it('names the pairs that collapse, with the measured distance', () => {
-    const block = component('web.dataviz-palettes').render(
+    const block = component('colour.dataviz').render(
       stateOf(systemWith(['#D62728', '#2CA02C']))
     );
     expect(block.kind).toBe('present');
     if (block.kind !== 'present') return;
     const check = block.entries.find((e) => e.label === 'Colour-vision check');
-    expect(check?.value).toMatch(/collapse/);
+    expect(check?.value).toMatch(/collapses?$/);
     expect(check?.note).toMatch(/our judgement, not a published requirement/);
     expect(block.entries.some((e) => /ΔE \d\.\d{3} under/.test(e.value))).toBe(true);
   });
 
   it('says so plainly when every pair stays apart', () => {
-    const block = component('web.dataviz-palettes').render(
+    const block = component('colour.dataviz').render(
       stateOf(systemWith(['#0A0A0B', '#F5F5F7']))
     );
     expect(block.kind).toBe('present');
