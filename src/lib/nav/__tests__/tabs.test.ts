@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SECONDARY_ROUTES, TABS, tabById, type TabId } from '../tabs';
+import { TABS, tabById, type TabId } from '../tabs';
 
 describe('tab manifest', () => {
   it('is ordered as the work is actually done', () => {
@@ -41,11 +41,11 @@ describe('tab manifest', () => {
     }
   });
 
-  it('never collides with a secondary route', () => {
-    const tabHrefs = new Set(TABS.map((t) => t.href));
-    for (const route of SECONDARY_ROUTES) {
-      expect(tabHrefs.has(route.href)).toBe(false);
-    }
+  it('is exactly six rooms, which is the whole nav', () => {
+    // The primary navigation is a closed set on purpose: every other route in
+    // the app answers a bookmark, not an exploration.
+    expect(TABS).toHaveLength(6);
+    expect(new Set(TABS.map((t) => t.href)).size).toBe(6);
   });
 
   it('resolves every tab by id', () => {

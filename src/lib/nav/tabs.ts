@@ -32,6 +32,18 @@ export interface TabRoute {
  * unlinked, not deleted, and its ~4,000 tested lines come out properly once the
  * launch is behind us rather than under a deadline.
  */
+/*
+ * Six, and only six.
+ *
+ * Other routes still resolve — /studio, /assets, /palettes, /merge and the
+ * share links — but none of them appears here and none is reachable by
+ * clicking from a room. They are older than the tab model or retired out of
+ * it, and they answer a bookmark rather than an exploration.
+ *
+ * This used to be stated as a SECONDARY_ROUTES export that nothing rendered.
+ * A list nobody reads is not documentation, it is a second manifest waiting to
+ * disagree with this one.
+ */
 export const TABS: readonly TabRoute[] = [
   { id: 'library', href: '/library', label: 'library', built: true },
   { id: 'compose', href: '/compose', label: 'compose', built: true },
@@ -47,17 +59,6 @@ export const TABS: readonly TabRoute[] = [
  * cannot drift out of step with the manifest by keeping its own list.
  */
 export const ROOM_IDS: readonly TabId[] = TABS.map((tab) => tab.id);
-
-/**
- * Routes that work but are not tabs — either older than the tab model, or
- * retired out of it. Kept separate rather than mixed into TABS so the primary
- * navigation stays exactly six items.
- */
-export const SECONDARY_ROUTES = [
-  { href: '/palettes', label: 'palettes' },
-  { href: '/assets', label: 'assets' },
-  { href: '/studio', label: 'studio' },
-] as const;
 
 export function tabById(id: TabId): TabRoute {
   const tab = TABS.find((t) => t.id === id);

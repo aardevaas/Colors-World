@@ -8,7 +8,6 @@ import { FAMILY_STEPS, familyStepSwatch, type FamilyAxis } from '@/lib/spectrum/
 import type { TabId } from '@/lib/nav/tabs';
 import { useSystem } from '@/lib/system/system-context';
 import { setSwatchDragPayload } from '@/lib/system/drag-payload';
-import { pinColorAction } from '@/app/actions';
 import type { ColorRecord } from '@/lib/supabase/colors';
 import styles from './library.module.css';
 
@@ -30,23 +29,25 @@ interface LibraryCardProps {
  * Ordered to match the nav, because that is the order the visitor has already
  * learned the building in.
  *
- * `via` is the part that matters: a destination is not a link, it is a HANDOVER,
- * and the two kinds of room receive a colour differently. Most read the
- * Harmonic Dock, so the colour is docked and travels with you. The studio wall
- * keeps real records, so it is written first and the move waits for it to land.
+ * A destination is not a link, it is a HANDOVER: the colour is docked first so
+ * it travels with you, and only then does the move happen.
+ *
+ * `via` was a union — 'dock' or 'wall' — because the studio wall kept real
+ * records and had to be written before the move could land. Studio was retired
+ * from the nav on 2026-08-24 and no target has pointed at it since, so the
+ * second branch was code for a case that could no longer occur.
  */
 interface TeleportTarget {
   readonly room: TabId;
   readonly label: string;
   readonly href: string;
-  readonly via: 'dock' | 'wall';
 }
 
 const TELEPORT_TARGETS: readonly TeleportTarget[] = [
-  { room: 'compose', label: 'Build a system from it', href: '/compose', via: 'dock' },
-  { room: 'scales', label: 'Deepen it into a ramp', href: '/scales', via: 'dock' },
-  { room: 'visualizer', label: 'Try it on real UI', href: '/visualizer', via: 'dock' },
-  { room: 'typography', label: 'Set type against it', href: '/typography', via: 'dock' },
+  { room: 'compose', label: 'Build a system from it', href: '/compose' },
+  { room: 'scales', label: 'Deepen it into a ramp', href: '/scales' },
+  { room: 'visualizer', label: 'Try it on real UI', href: '/visualizer' },
+  { room: 'typography', label: 'Set type against it', href: '/typography' },
 ];
 
 export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCardProps) {
@@ -113,8 +114,6 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
     });
     return () => cancelAnimationFrame(frame);
   }, [pendingHref, router]);
-  const [pinned, setPinned] = useState(false);
-  const [pinError, setPinError] = useState<string | null>(null);
 
   const displayed =
     previewStep === null ? swatch : familyStepSwatch(swatch.index, previewAxis, previewStep);
@@ -149,36 +148,10 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
    * record, so the navigation waits for it — a `Link` fired the write and left
    * at the same moment, which is a race the colour can lose.
    */
-  async function handleTeleport(target: TeleportTarget) {
+  function handleTeleport(target: TeleportTarget) {
     setTeleportOpen(false);
-    if (target.via === 'dock') {
-      addColor(displayed.hex, displayed.oklch);
-      setPendingHref(target.href);
-      return;
-    }
-    setPinned(true);
-    setPinError(null);
-    try {
-      await pinColorAction(displayed.hex);
-      setPendingHref(target.href);
-    } catch (error) {
-      setPinError(error instanceof Error ? error.message : String(error));
-    } finally {
-      window.setTimeout(() => setPinned(false), 1600);
-    }
-  }
-
-  async function handlePinToStudio() {
-    setTeleportOpen(false);
-    setPinned(true);
-    setPinError(null);
-    try {
-      await pinColorAction(displayed.hex);
-    } catch (error) {
-      setPinError(error instanceof Error ? error.message : String(error));
-    } finally {
-      window.setTimeout(() => setPinned(false), 1600);
-    }
+    addColor(displayed.hex, displayed.oklch);
+    setPendingHref(target.href);
   }
 
   return (
@@ -223,17 +196,6 @@ export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCard
             title="Add to Harmonic Dock"
           >
             + Dock
-          </button>
-          <button
-            type="button"
-            className={styles.hoverActionButton}
-            onClick={handlePinToStudio}
-            disabled={pinned}
-            aria-label={`Pin ${displayed.hex} to Studio canvas`}
-            title={pinError ?? 'Pin to Canvas (/studio)'}
-            data-error={pinError !== null}
-          >
-            {pinError !== null ? 'Pin failed' : pinned ? 'Pinned ✓' : 'Pin'}
           </button>
           <button
             type="button"
