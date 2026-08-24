@@ -146,10 +146,17 @@ describe('the two claims about the logo', () => {
      * genuinely does become the largest unlock, this test fails and the claim
      * can be restored to the documents with a number behind it.
      */
-    expect(unlockCount('logo.primary')).toBe(22);
+    // 22 until 2026-08-24, when collateral.stationery and collateral.signage
+    // stopped requiring a mark — one is a format, a ladder and an ink, the
+    // other is letter height and contrast, and neither needs a logo.
+    // Requiring one kept the whole of §8 dark for the anonymous visitor this
+    // product is built around. The gap widened rather than closing.
+    expect(unlockCount('logo.primary')).toBe(20);
     // 28 before §3 was re-cut to internal grain; the six new colour
-    // sub-components all hang off the palette, so the gap widened.
-    expect(unlockCount('colour.palette')).toBe(34);
+    // sub-components all hang off the palette. 35 since 2026-08-24, when
+    // collateral.signage started requiring the palette — letter height is
+    // arithmetic, but whether a sign can be read is contrast.
+    expect(unlockCount('colour.palette')).toBe(35);
     expect(unlockCount('colour.palette')).toBeGreaterThan(unlockCount('logo.primary'));
   });
 
