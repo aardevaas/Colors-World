@@ -20,6 +20,7 @@
 
 import { approvalFor, textFor } from '../project';
 import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived, str } from '../block';
+import { systemVersion } from '../version';
 import type { BookEntry, BrandComponent, Finding } from '../types';
 
 /** Romaniuk's grid splits at the midpoint of each axis. */
@@ -396,11 +397,38 @@ export const SECTION_9: readonly BrandComponent[] = [
     render: (state) => {
       const project = state.project;
       if (!project) {
-        return absent(
-          'gov.version-changelog',
-          'Version history',
-          'Anonymous systems are shared as links rather than versioned. History begins with a project.'
-        );
+        /*
+         * A stamp, not a history — and the difference is stated rather than
+         * implied. Remembering previous versions needs somewhere to keep them,
+         * which needs an account. Identifying THIS one does not, because the
+         * system is the URL and can be fingerprinted.
+         *
+         * This is the only part of §9 that works without an account, and it is
+         * the part that makes a printed guideline checkable: two people can
+         * compare eight characters instead of comparing every swatch.
+         */
+        const version = systemVersion(state.system);
+        if (version.isEmpty) {
+          return absent(
+            'gov.version-changelog',
+            'Version history',
+            'Nothing is set yet, so there is no version to state. A stamp appears as soon as the system has anything in it.'
+          );
+        }
+        return present('gov.version-changelog', 'Version history', 'measured', [
+          {
+            label: 'This version',
+            value: version.id,
+            note: 'Derived from the system itself, so it cannot be forgotten or set wrongly. The same system always stamps the same, including after a round trip through a shared link.',
+          },
+          { label: 'Taken over', value: version.covers },
+          {
+            label: 'History',
+            value: 'Needs a project',
+            evidence: 'declared',
+            note: 'This identifies the current version. Remembering the previous ones — what changed, when, and who approved it — needs somewhere to keep them, and that is an account.',
+          },
+        ]);
       }
       return present('gov.version-changelog', 'Version history', 'measured', [
         { label: 'Current version', value: project.versionId },

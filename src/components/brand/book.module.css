@@ -672,3 +672,11 @@
   outline: 1px solid var(--hairline);
   outline-offset: -1px;
 }
+
+/* The version stamp. Mono because it is an identifier to be compared
+   character by character, not read as a word. */
+.docVersion {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}

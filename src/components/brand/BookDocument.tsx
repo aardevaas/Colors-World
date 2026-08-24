@@ -2,6 +2,7 @@ import { SECTION_LABELS, type SectionId } from '@/lib/brand/ids';
 import { componentsInSection, validateBook } from '@/lib/brand/registry';
 import { systemRoles } from '@/lib/brand/colour';
 import { resolvedStacks } from '@/lib/brand/typography';
+import { systemVersion } from '@/lib/brand/version';
 import type { BookBlock, BookEntry, BrandState, Evidence, Finding } from '@/lib/brand/types';
 import { DEFAULT_BOOK_VIEW, visibleBlocks, type BookView } from '@/lib/brand/view';
 import { encodeSystem } from '@/lib/system/codec';
@@ -154,6 +155,7 @@ export function BookDocument({ state, view = DEFAULT_BOOK_VIEW }: BookDocumentPr
   });
 
   const failing = findings.filter((f) => f.severity === 'fail').length;
+  const version = systemVersion(state.system);
 
   return (
     <div className={styles.book}>
@@ -204,6 +206,10 @@ export function BookDocument({ state, view = DEFAULT_BOOK_VIEW }: BookDocumentPr
           <h1 className={styles.docTitle}>Internal brand guideline</h1>
           <p className={styles.docMeta}>
             <span>Draft</span>
+            {/* Two printouts need a way to tell whether they are the same
+                rules. Derived from the system itself, so nobody has to
+                remember to bump it and it cannot be wrong. */}
+            {!version.isEmpty && <span className={styles.docVersion}>version {version.id}</span>}
             <span>
               {sections.reduce((n, s) => n + s.present, 0)} of{' '}
               {sections.reduce((n, s) => n + s.total, 0)} specified
