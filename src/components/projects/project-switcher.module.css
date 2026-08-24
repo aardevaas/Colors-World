@@ -1,0 +1,44 @@
+.form {
+  display: flex;
+  /* A row that cannot break sets a min-content floor its whole ancestor chain
+     inherits — this sits in the masthead, so that floor would be the page's. */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-hair);
+  min-width: 0;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.select {
+  max-width: 12rem;
+  padding: 0.25rem 0.4rem;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  background: var(--surface-panel);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-primary);
+}
+
+.go {
+  padding: 0.25rem 0.5rem;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.go:hover {
+  border-color: var(--hairline-bright);
+  color: var(--text-primary);
+}

@@ -1,4 +1,5 @@
 import { signOut } from '@/app/auth/actions';
+import { ProjectSwitcher } from '@/components/projects/ProjectSwitcher';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 import styles from './account-status.module.css';
 
@@ -33,11 +34,17 @@ export async function AccountStatus() {
   }
 
   return (
-    <form action={signOut} className={styles.form}>
-      <span className={styles.email}>{user.email}</span>
-      <button type="submit" className={styles.link}>
-        sign out
-      </button>
-    </form>
+    <div className={styles.account}>
+      {/* Renders nothing until there is more than one project to choose
+          between, so a solo user never sees a control that cannot do
+          anything. */}
+      <ProjectSwitcher userId={user.id} />
+      <form action={signOut} className={styles.form}>
+        <span className={styles.email}>{user.email}</span>
+        <button type="submit" className={styles.link}>
+          sign out
+        </button>
+      </form>
+    </div>
   );
 }

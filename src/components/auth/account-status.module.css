@@ -26,3 +26,14 @@
 .link:hover {
   color: var(--text-primary);
 }
+
+/* The account cluster: which project, and who. Wraps, because it sits in a
+   masthead and a row that cannot break sets a min-content floor the whole
+   page inherits. */
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
