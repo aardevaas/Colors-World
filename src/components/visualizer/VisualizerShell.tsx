@@ -156,7 +156,7 @@ export function VisualizerShell({ accountSlot }: VisualizerShellProps) {
     <div className={styles.shell}>
       <SkipLink />
       <TabNav current="visualizer">{accountSlot}</TabNav>
-      <RoomMain>
+      <RoomMain className={styles.roomMain}>
 
       <div className={styles.controlBar}>
         <div className={styles.templateTabs}>

@@ -6,7 +6,17 @@
 .shell {
   min-height: 100dvh;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  /* TWO tracks, because there are two grid items: the masthead and <main>.
+     SkipLink is absolutely positioned and so does not size a track at all.
+     This said `auto auto 1fr` and therefore always had a THIRD, EMPTY track
+     soaking up the leftover height — 499px of it at 2560x1440 — while <main>
+     sat in the auto row above sizing itself to its content. Nobody noticed
+     while the stage was pinned to 760px and never wanted the room.
+
+     minmax(0, 1fr) rather than 1fr: a bare `1fr` is minmax(AUTO, 1fr), and the
+     auto minimum lets a track grow past its share to fit content, which would
+     put us straight back to content deciding the page height. */
+  grid-template-rows: auto minmax(0, 1fr);
   background: #050508;
 }
 
@@ -117,6 +127,32 @@
   }
 }
 
+/* Only where the layout actually bounds the height does the stage fit into it.
+   The chain has to be unbroken — grid track, <main>, .body, .stage, frame —
+   and every level needs min-height: 0 so it may shrink below its content
+   instead of overflowing. Break any one link and the track above bounds
+   nothing, which is how the empty third row went unnoticed. */
+@media (min-width: 901px) {
+  .roomMain {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .stageFrame {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: auto;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+}
+
 .stage {
   display: flex;
   flex-direction: column;
@@ -125,6 +161,9 @@
   gap: var(--space-snug);
   padding: var(--space-wide);
   min-width: 0;
+  /* Lets the 1fr grid row actually bound this column, so the frame below can
+     be told to fit the height rather than overflowing it. */
+  min-height: 0;
 }
 
 .toggleButtonOn {
@@ -139,18 +178,41 @@
 }
 
 /* Positioning context for the audit badges, sized by the stage it wraps so
-   badge offsets measured against the stage land in the right place. */
+   badge offsets measured against the stage land in the right place.
+
+   It used to carry `max-width: 760px`, which with the 16/10 ratio pinned the
+   mockup at 760x475 — a quarter of a 1600px viewport and a tenth of a 2560px
+   one, on the one screen in the product whose whole job is to BE the interface
+   you are editing. The ratio stays (it keeps template switching from reflowing
+   the page, and keeps an exported PNG predictable); the cap goes.
+
+   The frame now takes the largest 16/10 box that fits the column in BOTH
+   directions: `width: 100%` when width binds, `max-height: 100%` when height
+   does. `min-height: 0` is what allows a flex item to shrink below its content
+   size, without which the frame would overflow the row instead of fitting it. */
+/* Below the two-column breakpoint the page scrolls and there is no height to
+   fit into, so the frame is simply as wide as the column and the ratio gives
+   the height. Trying to fit the viewport here collapsed it to 2x1px: a flex
+   item with `flex: 1 1 auto; min-height: 0` shrinks to nothing when its
+   container has no spare height to distribute. */
 .stageFrame {
   position: relative;
   width: 100%;
-  max-width: 760px;
+  aspect-ratio: 16 / 10;
+  /* Defeats the automatic minimum size. `aspect-ratio` is only a preference:
+     a box whose min-height resolves to `auto` still grows to fit its content,
+     and the mockup inside is laid out at desktop dimensions. That is why the
+     ratio came out 1.04 instead of 1.6 on a phone until this line existed.
+     The original avoided it by accident — the ratio lived on .stageInner,
+     which is a scroll container, and a scroll container's automatic minimum
+     resolves to zero. */
+  min-height: 0;
 }
 
-/* The framed viewport the mockup lives in. Fixed aspect so switching templates
-   doesn't reflow the whole page, and so an exported PNG is a predictable size. */
+/* The framed viewport the mockup lives in. */
 .stageInner {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  height: 100%;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid oklch(100% 0 0 / 0.08);
