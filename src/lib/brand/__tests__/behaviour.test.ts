@@ -58,9 +58,25 @@ describe('an anonymous visitor with a palette — the point of the split model',
     expect(block.kind).toBe('present');
     if (block.kind !== 'present') return;
     expect(block.evidence).toBe('measured');
-    for (const entry of block.entries) {
-      expect(entry.value).toMatch(/^\d+\.\d{2}:1$/);
+
+    /*
+     * The block is a MATRIX now, not a list of named pairs — one row per
+     * background carrying every foreground on it, then two summary rows. So
+     * the assertion is on the rows that state ratios: each must be a real
+     * number with a WCAG band beside it, never prose.
+     */
+    const columns = block.entries.filter((e) => e.label.startsWith('On '));
+    expect(columns.length).toBeGreaterThan(0);
+    for (const entry of columns) {
+      for (const cell of entry.value.split(' · ')) {
+        expect(cell).toMatch(/^\w+ \d+\.\d{2} (AAA|AA|AA large|fail)$/);
+      }
     }
+
+    // And the summaries still count rather than claim.
+    expect(block.entries.find((e) => e.label === 'Required pairs')?.value).toMatch(
+      /^\d+ of \d+ reach AA$/
+    );
   });
 
   it('says plainly that spot colours are not shipped', () => {

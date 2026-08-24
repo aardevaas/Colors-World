@@ -32,6 +32,14 @@ import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived,
 import { encodeSystem } from '@/lib/system/codec';
 import { hasPalette, paletteColors, systemRoles } from '../colour';
 import { asPercent, compareToTarget, coverage, type RoleTarget } from '../proportions';
+import {
+  BACKGROUND_ROLES,
+  REQUIRED_PAIRS,
+  buildPairings,
+  cvdRegressions,
+  pairingsOn,
+  requiredFailures,
+} from '../pairings';
 import { PROPORTION_PRESETS } from '../proportion-presets';
 import { REFERENCE_SURFACES } from '../surfaces';
 import type { RoleColor, SemanticRole } from '@/lib/roles/semantic-roles';
@@ -41,12 +49,6 @@ import type { BookEntry, BrandComponent, Finding } from '../types';
 const AA_NORMAL = 4.5;
 
 const NO_PALETTE = 'No colours yet. Everything in this section follows from the palette.';
-
-/** The text-on-surface pairs worth checking; inks are unfailable by construction. */
-const CHECKED_PAIRS = [
-  { fg: 'text', bg: 'background', label: 'Text on background' },
-  { fg: 'text', bg: 'surface', label: 'Text on surface' },
-] as const;
 
 
 /**
@@ -396,42 +398,74 @@ export const SECTION_3: readonly BrandComponent[] = [
     render: (state) => {
       const { system } = state;
       if (!hasPalette(system)) return absent('colour.contrast-pairs', 'Contrast pairings', NO_PALETTE);
-      const roles = systemRoles(system);
-      return present(
-        'colour.contrast-pairs',
-        'Contrast pairings',
-        'measured',
-        CHECKED_PAIRS.map((pair) => {
-          const report = auditContrast(roles[pair.fg].oklch, roles[pair.bg].oklch);
-          return {
-            label: pair.label,
-            value: `${report.ratio.toFixed(2)}:1`,
-            note: report.normalText.aaa
-              ? 'Passes AAA'
-              : report.normalText.aa
-                ? 'Passes AA'
-                : 'Below AA for normal text',
-          };
-        })
-      );
+      const pairings = buildPairings(systemRoles(system));
+
+      // One row per background rather than one per pair: 22 rows of "x on y"
+      // is a wall, and the question a designer actually arrives with is "what
+      // can I put ON this", which is a column.
+      const entries: BookEntry[] = BACKGROUND_ROLES.map((bg) => ({
+        label: `On ${bg}`,
+        value: pairingsOn(pairings, bg)
+          .map((p) => `${p.fg} ${p.ratio.toFixed(2)} ${p.level}`)
+          .join(' · '),
+      }));
+
+      const failures = requiredFailures(pairings);
+      entries.push({
+        label: 'Required pairs',
+        value: `${REQUIRED_PAIRS.length - failures.length} of ${REQUIRED_PAIRS.length} reach AA`,
+        note:
+          failures.length === 0
+            ? 'Text on both grounds, and each ink on its own fill. These are the pairings an interface cannot design around.'
+            : `Below AA: ${failures.map((p) => `${p.fg} on ${p.bg}`).join(', ')}. These are the pairings an interface cannot design around.`,
+      });
+
+      const regressions = cvdRegressions(pairings);
+      entries.push({
+        label: 'Under colour-vision deficiency',
+        value:
+          regressions.length === 0
+            ? 'No pairing loses AA when simulated'
+            : `${regressions.length} pairing${regressions.length > 1 ? 's' : ''} lose${
+                regressions.length > 1 ? '' : 's'
+              } AA when simulated`,
+        note:
+          regressions.length === 0
+            ? 'Every pair that reaches AA still reaches it under protanopia, deuteranopia, tritanopia and achromatopsia.'
+            : `${regressions
+                .map((p) => `${p.fg} on ${p.bg} falls to ${p.cvdWorst.toFixed(2)} under ${p.cvdWorstType}`)
+                .join('; ')}. Contrast is a ratio of luminance, and simulating a deficiency moves luminance — so a pair can pass an audit and still fail a reader.`,
+      });
+
+      return present('colour.contrast-pairs', 'Contrast pairings', 'measured', entries);
     },
     validate: (state): readonly Finding[] => {
       const { system } = state;
       if (!hasPalette(system)) return [];
-      const roles = systemRoles(system);
-      const findings: Finding[] = [];
-      for (const pair of CHECKED_PAIRS) {
-        const report = auditContrast(roles[pair.fg].oklch, roles[pair.bg].oklch);
-        if (!report.normalText.aa) {
-          findings.push(
-            finding('colour.contrast-pairs', 'fail', `${pair.label} is below AA for normal text.`, {
-              measured: `${report.ratio.toFixed(2)}:1`,
-              expected: `≥ ${AA_NORMAL}:1`,
-            })
-          );
-        }
-      }
-      return findings;
+      const pairings = buildPairings(systemRoles(system));
+
+      return [
+        // Only the required pairs FAIL. The rest of the matrix is reported so
+        // a designer can look a combination up, not so the book can object to
+        // a pairing nobody intends to use.
+        ...requiredFailures(pairings).map((p) =>
+          finding('colour.contrast-pairs', 'fail', `${p.fg} on ${p.bg} is below AA for normal text.`, {
+            measured: `${p.ratio.toFixed(2)}:1`,
+            expected: `≥ ${AA_NORMAL}:1`,
+          })
+        ),
+        // A warning, not a failure: WCAG does not require a simulated pass, so
+        // calling it a failure would be inventing a standard. It is still the
+        // most useful thing in this block.
+        ...cvdRegressions(pairings).map((p) =>
+          finding(
+            'colour.contrast-pairs',
+            'warn',
+            `${p.fg} on ${p.bg} reaches AA normally but not under ${p.cvdWorstType}.`,
+            { measured: `${p.cvdWorst.toFixed(2)}:1`, expected: `≥ ${AA_NORMAL}:1` }
+          )
+        ),
+      ];
     },
   },
 
