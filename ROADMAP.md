@@ -179,6 +179,32 @@ code.
 **Done when:** a visitor with no account gets a real internal guideline from a
 palette and a typeface.
 
+**DONE 2026-08-24, on day one of three** (`5a3a3c0`). The highest-risk item in
+the plan rendered early, so **export was pulled forward from Days 14–15 into
+the slack** rather than starting the measured layer ahead of schedule.
+
+#### Export — moved here from Days 14–15, done 2026-08-24
+
+- **The share link already existed and nothing said so.** Measured before
+  anything was written: bare `/brand` renders 13 of 98, `/brand?c=…&f=…&m=light`
+  renders 22 of 98 with §3 going 0 → 9. The System lives in the query string,
+  so the address bar was already the whole document. The work was a Copy button
+  and a sentence.
+- **Tokens** (`dbb7cb4`) — `lib/exporters/guideline-tokens.ts`. Roles, palette
+  and the whole type ladder, in CSS / Tailwind v4 / W3C JSON. `tokens.ts` could
+  not do this: it takes `GeneratedScale[]` and cannot say which colour is
+  primary or anything at all about type. **Nothing in the repo exported type
+  before this.**
+- **PDF** (`477619b`) — a print stylesheet, not a PDF library. The browser's own
+  pipeline renders this page, so the file has real text and real links and
+  there is no second renderer to drift. Same reason the commercial book is this
+  renderer with blocks deleted.
+- **`hide=unset`** (`cfc8616`) — D4's export-time trim, and the seam D5's
+  `audience` flag switches on. Counts are computed BEFORE the filter so the
+  trimmed view never claims nothing is missing.
+
+Cost: `/brand` 1.29 → 3.96 kB. The 385KB catalogue stayed on the server.
+
 ---
 
 ### Days 6–8 · Aug 29–31 — The measured layer
@@ -240,9 +266,10 @@ idempotent layer and the truth.
 
 ---
 
-### Days 14–15 · Sep 6–7 — Export and polish
-- PDF, design tokens, and a share link — the founder answered "both" to
-  document-vs-living-link, so all three ship.
+### Days 14–15 · Sep 6–7 — Polish
+- ~~PDF, design tokens, and a share link.~~ **DONE 2026-08-24** — pulled
+  forward into the Days 3–5 slack when the Book landed on day one of three.
+  See that section for what shipped and what it cost.
 - Version stamp and changelog on the guideline itself. Nobody in the 25-book
   sample versions their brand; we already have the DAG.
 - Accessibility pass, responsive pass, production build in a throwaway copy.
@@ -258,7 +285,7 @@ Something will slip. Deciding now, while it is cheap:
 | **1. Governance beyond a version stamp** | Least value to a solo user on day one, cheapest to add later |
 | **2. Collateral down to card + letterhead** | Three of five is still the point proved |
 | **3. Accounts** | The Book works anonymously; ship without them and add in week three |
-| **4. PDF export** | Share link and tokens carry the deliverable |
+| ~~**4. PDF export**~~ | Moot — shipped 2026-08-24 as a print stylesheet, which cost hours rather than the headless-browser infrastructure this cut assumed |
 
 **Never cut:** the four room fixes, the Book, proportions, generated misuse, the
 pairings matrix. Those are the product.
