@@ -1,0 +1,388 @@
+/* The guideline.
+   A specification document, so it reads like one: a quiet ground, a single
+   measure for running text, and every number in the mono face so a ratio and a
+   hex line up down the page. Nothing here needs client JavaScript. */
+
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  /* Two tracks for two grid items — the masthead and <main>. SkipLink is
+     absolutely positioned and sizes no track. minmax(0,·) so the row can
+     actually bound its content instead of growing to fit it. */
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--surface-void);
+}
+
+.roomMain {
+  min-height: 0;
+}
+
+.book {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .book {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- rail ---------- */
+
+.rail {
+  border-right: var(--rule-width) solid var(--hairline);
+  padding: var(--space-base) var(--space-snug);
+}
+
+@media (max-width: 900px) {
+  .rail {
+    border-right: none;
+    border-bottom: var(--rule-width) solid var(--hairline);
+  }
+}
+
+.railInner {
+  position: sticky;
+  top: var(--space-base);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.railHead {
+  margin: 0.9rem 0 0.35rem;
+  padding: 0 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.railHead:first-child {
+  margin-top: 0;
+}
+
+.railList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.railLink {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.34rem 0.4rem;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--text-small);
+}
+
+.railLink:hover {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.railLabel {
+  flex: 1;
+}
+
+.railCount {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+
+/* Readiness at a glance, without a percentage. A ring is "nothing yet", a
+   half-tone is "started", a solid dot is "done" — three states a person can
+   read without counting. */
+.pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.pip[data-fill='none'] {
+  border: 1px solid var(--hairline-bright, var(--text-tertiary));
+}
+
+.pip[data-fill='part'] {
+  background: var(--text-tertiary);
+}
+
+.pip[data-fill='full'] {
+  background: var(--text-primary);
+}
+
+.pip[data-fill='alarm'] {
+  background: var(--warn, oklch(72% 0.19 25));
+}
+
+/* ---------- document ---------- */
+
+.doc {
+  padding: var(--space-wide);
+  min-width: 0;
+}
+
+.docHead {
+  padding-bottom: var(--space-base);
+  border-bottom: 2px solid var(--text-primary);
+  margin-bottom: var(--space-wide);
+}
+
+.docTitle {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.docMeta {
+  margin: 0 0 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.docMetaAlarm {
+  color: var(--warn, oklch(72% 0.19 25));
+}
+
+.docLede {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--text-small);
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+/* ---------- findings ---------- */
+
+.findingsPanel {
+  margin: 0 0 var(--space-wide);
+  padding: var(--space-snug);
+  border: var(--rule-width) solid var(--hairline);
+  border-left: 2px solid var(--warn, oklch(72% 0.19 25));
+  border-radius: 0 8px 8px 0;
+  background: var(--surface-panel);
+}
+
+.findingsHead {
+  margin: 0 0 0.6rem;
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.findingsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.finding {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  margin: 0.55rem 0 0;
+  font-size: var(--text-micro);
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* The number IS the finding. Without it this is an opinion. */
+.findingNumbers {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.finding[data-severity='fail'] .findingNumbers {
+  color: var(--warn, oklch(72% 0.19 25));
+}
+
+.findingLink {
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.findingLink:hover {
+  color: var(--text-primary);
+}
+
+/* ---------- sections ---------- */
+
+.section {
+  margin: 0 0 var(--space-vast, 3rem);
+  scroll-margin-top: var(--space-base);
+}
+
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: var(--rule-width) solid var(--hairline-bright, var(--text-tertiary));
+  margin-bottom: 0.3rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.sectionCount {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- a spec block: the atomic unit ---------- */
+
+.block {
+  padding: 0.85rem 0;
+  border-bottom: var(--rule-width) solid var(--hairline);
+  scroll-margin-top: var(--space-base);
+}
+
+.block:last-child {
+  border-bottom: none;
+}
+
+.blockHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.blockTitle {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* Not-set blocks stay legible but recede. They are the readiness mechanism —
+   the only thing saying what is possible next — so they are never hidden and
+   never shouted. */
+.block[data-state='absent'] .blockTitle {
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.tag,
+.entryTag {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.1em 0.42em;
+  border-radius: 3px;
+  border: var(--rule-width) solid var(--hairline);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* The evidence rule, in the one place a reader meets it. `measured` is the
+   only one that gets the ink, because it is the only one that was computed. */
+.tag[data-evidence='measured'],
+.entryTag[data-evidence='measured'] {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.tag[data-evidence='cited'],
+.entryTag[data-evidence='cited'] {
+  border-color: var(--hairline-bright, var(--text-tertiary));
+  color: var(--text-secondary);
+}
+
+.tag[data-evidence='fail'] {
+  border-color: var(--warn, oklch(72% 0.19 25));
+  color: var(--warn, oklch(72% 0.19 25));
+}
+
+.tag[data-evidence='warn'] {
+  border-color: var(--text-tertiary);
+  color: var(--text-secondary);
+}
+
+.absentWhy {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--text-small);
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+/* ---------- entries ---------- */
+
+.entries {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+  gap: 0.28rem 1rem;
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .entries {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}
+
+.entryKey {
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.entryValue {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  min-width: 0;
+}
+
+/* Values are mono so a column of ratios, hexes and rem sizes lines up. */
+.entryText {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.entryNote {
+  flex-basis: 100%;
+  max-width: 62ch;
+  font-family: var(--font-ui, inherit);
+  font-size: var(--text-micro);
+  line-height: 1.55;
+  color: var(--text-tertiary);
+}

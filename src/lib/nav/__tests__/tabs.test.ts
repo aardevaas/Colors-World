@@ -78,10 +78,13 @@ describe('tab manifest', () => {
     }
   });
 
-  it('has brand unbuilt and everything else built, for now', () => {
-    // Deliberately a state assertion, and deliberately separate from the
-    // invariant above: when the Book ships this fails, which is the reminder
-    // to flip the flag.
-    expect(TABS.filter((t) => !t.built).map((t) => t.id)).toEqual(['brand']);
+  it('has every tab built', () => {
+    /*
+     * Deliberately a state assertion, separate from the invariant above. It
+     * read `['brand']` from 2026-08-24 until the Book shipped later the same
+     * day, which is exactly what it was written to catch. Add an unbuilt tab
+     * and this fails until it is listed here on purpose.
+     */
+    expect(TABS.filter((t) => !t.built).map((t) => t.id)).toEqual([]);
   });
 });

@@ -67,6 +67,27 @@ export const SECTIONS = {
 export type SectionId = keyof typeof SECTIONS;
 
 /**
+ * What each section is called IN THE PRODUCT.
+ *
+ * `SECTIONS` above holds the taxonomy's own names, which are precise and
+ * bookish — "Imagery, graphics & motion". Nobody reading a guideline needs
+ * that, and nobody needs "§5" either: the numbers do real work in the code and
+ * none at all on the page. So the rail says Colour, Typography, Applications,
+ * and the taxonomy keeps its own vocabulary where it belongs.
+ */
+export const SECTION_LABELS: Readonly<Record<SectionId, string>> = {
+  1: 'Strategy',
+  2: 'Logo',
+  3: 'Colour',
+  4: 'Typography',
+  5: 'Imagery',
+  6: 'Product',
+  7: 'Editorial',
+  8: 'Collateral',
+  9: 'Governance',
+};
+
+/**
  * The complete component list. Order within a section is presentation order in
  * the book; order between sections follows `SECTIONS`.
  */

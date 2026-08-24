@@ -38,7 +38,7 @@ export const TABS: readonly TabRoute[] = [
   { id: 'scales', href: '/scales', label: 'scales', built: true },
   { id: 'visualizer', href: '/visualizer', label: 'visualizer', built: true },
   { id: 'typography', href: '/typography', label: 'typography', built: true },
-  { id: 'brand', href: '/brand', label: 'brand', built: false },
+  { id: 'brand', href: '/brand', label: 'brand', built: true },
 ];
 
 /**
