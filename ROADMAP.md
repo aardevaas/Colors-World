@@ -326,7 +326,7 @@ idempotent layer and the truth.
   re-exports `AssetKind` so there is one definition rather than two agreeing by
   coincidence, and `schema-contract.test.ts` reads the DDL and compares it to
   the unions so this cannot drift again.
-  **`supabase/reconcile-2026-08-24.sql` HAS NOT BEEN RUN — that is yours.**
+  **`supabase/reconcile-2026-08-24.sql` RUN by the founder, 2026-08-24.**
 - `8402efe` **all eleven call sites** replaced with `requireProject()`. The
   current project rides in a cookie whose membership is verified before the id
   reaches anything that writes; `isMemberOf` returns false when the lookup
@@ -337,10 +337,11 @@ idempotent layer and the truth.
 
 **STILL OPEN in this phase:**
 
-1. **Two real accounts, neither able to read the other's project.** This needs
-   live credentials and is the founder's to run. Nothing here has been verified
-   against a real database — the tests use an in-memory fake, which proves the
-   repository logic and proves nothing about RLS.
+1. **Two real accounts, neither able to read the other's project.** Still open
+   as of 2026-08-24. Needs live credentials and is the founder's to run.
+   Nothing here has been verified against a real database — the tests use an
+   in-memory fake, which proves the repository logic and proves nothing about
+   RLS.
 2. **The approval stamp** (D2), per the correction above.
 
 ---
