@@ -143,6 +143,15 @@ after that point improves a thing that already works.
 - **`/visualizer` full-bleed.** Off the hard-coded 760×475.
 - **Fontsource catalogue.** 2,096 families replacing 4 hardcoded pairings,
   with the licence data §4 needs.
+- **Unlink `/studio`.** The Book replaces it. Six rooms become five.
+
+  > **Unlink now, delete after launch.** Studio is ~4,000 lines of working,
+  > tested code — canvas camera, snapping, masonry auto-arrange, PNG export,
+  > board persistence, sharing. Deleting that under deadline pressure is how
+  > things break. Remove it from nav now, salvage
+  > `src/lib/studio/export-png.ts` into the Book's export, and delete the rest
+  > properly once the launch is behind us. It does have to be deleted — this
+  > repo's "0 dead files" property is worth keeping true.
 
 **Done when:** every room finishes its own job and the registry describes the
 document we are actually building.
@@ -151,6 +160,14 @@ document we are actually building.
 
 ### Days 3–5 · Aug 26–28 — The Book
 *The single highest-risk item in the plan*
+
+**Shape settled 2026-08-24** — see the artifact linked from `rescope-qa`.
+One continuous document at `/brand`. Approval **per section**, pinned to a
+version, going stale when the section changes. Findings on the block *and* in a
+rail list, never a modal. Not-set blocks visible but quiet — no counter, no
+percentage. **Everything renders; approval is a stamp on top, not a gate**, so a
+new user's Book is never empty. Sections named for people; §-numbers stay in the
+code.
 
 - `/brand` renders the guideline from the System, `project: null`.
 - Rules rendered as **specs**: values in five formats, tint ladders, approved
@@ -167,8 +184,19 @@ palette and a typeface.
 ### Days 6–8 · Aug 29–31 — The measured layer
 *What makes it world-class rather than tidy*
 
-- **Proportions**: declare a target ratio, measure any rendered surface against
-  it, report the delta.
+- **Proportions**: declare a target ratio, measure a rendered surface against
+  it, report the delta. Three sources, in this order:
+  **(a)** our own applied views — free, we own the DOM;
+  **(b)** an uploaded screenshot — free, client-side canvas sampling;
+  **(c)** a live URL we render and sample — **real infrastructure, and it may
+  land after 09-08.**
+
+  > **(c) cannot be done in the browser.** A cross-origin iframe taints the
+  > canvas, so `getImageData` throws — a security boundary, not a difficulty.
+  > It needs a server-side headless browser (`@sparticuz/chromium` on Vercel or
+  > a separate service). And rendering arbitrary user-supplied URLs server-side
+  > is an **SSRF vector**: block localhost, private ranges and cloud metadata
+  > endpoints, cap the timeout, and never follow redirects blindly.
 - **Generated misuse** for colour and type.
 - **The pairings matrix** — every foreground on every background, measured,
   AA/AAA verdicts, CVD-checked.
