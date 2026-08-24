@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { viewQuery, type BookView } from '@/lib/brand/view';
 import {
   guidelineTokenFilename,
   toGuidelineTokens,
@@ -35,6 +36,7 @@ interface GuidelineExportProps {
   readonly tokens: GuidelineTokenInput;
   /** The System re-encoded by the codec — canonical, not whatever was typed. */
   readonly query: string;
+  readonly view: BookView;
 }
 
 const FORMATS: readonly { readonly value: GuidelineTokenFormat; readonly label: string }[] = [
@@ -51,8 +53,15 @@ const MIME: Readonly<Record<GuidelineTokenFormat, string>> = {
 
 const COPIED_FEEDBACK_MS = 1500;
 
-export function GuidelineExport({ tokens, query }: GuidelineExportProps) {
+export function GuidelineExport({ tokens, query, view }: GuidelineExportProps) {
+  // Deliberately built from the System alone. Sending someone a link that
+  // silently hid what is not decided yet would be the guideline lying by
+  // omission on the sender's behalf; trimming is for a file you hand over
+  // knowing you trimmed it.
   const path = query === '' ? '/brand' : `/brand?${query}`;
+
+  const trimmedQuery = viewQuery({ ...view, hideUnset: !view.hideUnset }, query);
+  const trimmedHref = trimmedQuery === '' ? '/brand' : `/brand?${trimmedQuery}`;
 
   // Starts as the path so the server and the first client render agree, then
   // becomes the absolute URL once there is a window to ask. Showing the real
@@ -155,6 +164,28 @@ export function GuidelineExport({ tokens, query }: GuidelineExportProps) {
               Download {guidelineTokenFilename(format)}
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className={styles.exportRow}>
+        <div className={styles.exportWhat}>
+          <h3 className={styles.exportTitle}>
+            {view.hideUnset ? 'Showing only what is set' : 'Showing everything'}
+          </h3>
+          <p className={styles.exportWhy}>
+            {view.hideUnset
+              ? 'Blocks with nothing in them yet are hidden, and so are the sections left empty by hiding them. The counts still say how many were left out.'
+              : 'Blocks with nothing in them yet are shown, saying what would fill them. That is the version to work from — the trimmed one is the version to hand over.'}
+          </p>
+        </div>
+        <div className={styles.exportDo}>
+          {/* A link, not a button: the Book renders on the server, so the
+              document is only rebuilt by a navigation — and this is also the
+              version that works before any JavaScript arrives, and the one a
+              person can bookmark or print from directly. */}
+          <a className={styles.exportAction} href={trimmedHref}>
+            {view.hideUnset ? 'Show everything' : 'Hide what isn’t set'}
+          </a>
         </div>
       </div>
 

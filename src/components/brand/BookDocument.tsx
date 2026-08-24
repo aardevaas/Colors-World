@@ -3,6 +3,7 @@ import { componentsInSection, validateBook } from '@/lib/brand/registry';
 import { systemRoles } from '@/lib/brand/colour';
 import { resolvedStacks } from '@/lib/brand/typography';
 import type { BookBlock, BookEntry, BrandState, Evidence, Finding } from '@/lib/brand/types';
+import { DEFAULT_BOOK_VIEW, visibleBlocks, type BookView } from '@/lib/brand/view';
 import { encodeSystem } from '@/lib/system/codec';
 import { GuidelineExport } from './GuidelineExport';
 import styles from './book.module.css';
@@ -26,6 +27,8 @@ import styles from './book.module.css';
 
 interface BookDocumentProps {
   readonly state: BrandState;
+  /** Defaults to the whole internal document — see `lib/brand/view.ts`. */
+  readonly view?: BookView;
 }
 
 const EVIDENCE_LABEL: Readonly<Record<Evidence, string>> = {
@@ -118,18 +121,22 @@ function Block({ block, findings }: { block: BookBlock; findings: readonly Findi
   );
 }
 
-export function BookDocument({ state }: BookDocumentProps) {
+export function BookDocument({ state, view = DEFAULT_BOOK_VIEW }: BookDocumentProps) {
   const findings = validateBook(state);
   const findingsFor = (id: string): readonly Finding[] =>
     findings.filter((f) => f.componentId === id);
 
   const sections = SECTION_ORDER.map((section) => {
-    const blocks = componentsInSection(section).map((component) => component.render(state));
+    const rendered = componentsInSection(section).map((component) => component.render(state));
     return {
       section,
-      blocks,
-      present: blocks.filter((b) => b.kind === 'present').length,
-      total: blocks.length,
+      // Filtered for display; counted before filtering. "9 of 15 specified"
+      // has to keep meaning nine of fifteen even in the trimmed view — a count
+      // that silently became "9 of 9" would turn an export choice into a claim
+      // that nothing is missing.
+      blocks: visibleBlocks(rendered, view),
+      present: rendered.filter((b) => b.kind === 'present').length,
+      total: rendered.length,
     };
   });
 
@@ -141,7 +148,9 @@ export function BookDocument({ state }: BookDocumentProps) {
         <div className={styles.railInner}>
           <p className={styles.railHead}>Guideline</p>
           <ul className={styles.railList}>
-            {sections.map(({ section, present, total }) => (
+            {sections
+              .filter(({ blocks }) => blocks.length > 0)
+              .map(({ section, present, total }) => (
               <li key={section}>
                 <a className={styles.railLink} href={`#${anchorFor(section)}`}>
                   <span
@@ -155,7 +164,7 @@ export function BookDocument({ state }: BookDocumentProps) {
                   </span>
                 </a>
               </li>
-            ))}
+              ))}
           </ul>
 
           {findings.length > 0 && (
@@ -219,7 +228,9 @@ export function BookDocument({ state }: BookDocumentProps) {
           </section>
         )}
 
-        {sections.map(({ section, blocks, present, total }) => (
+        {sections
+          .filter(({ blocks }) => blocks.length > 0)
+          .map(({ section, blocks, present, total }) => (
           <section
             key={section}
             className={styles.section}
@@ -238,12 +249,13 @@ export function BookDocument({ state }: BookDocumentProps) {
               <Block key={block.id} block={block} findings={findingsFor(block.id)} />
             ))}
           </section>
-        ))}
+          ))}
 
         {/* Resolved here, on the server, and handed down as plain strings and
             numbers. `resolvedStacks` reaches into the ~385KB font catalogue,
             which this component already pays for and the browser must not. */}
         <GuidelineExport
+          view={view}
           query={encodeSystem(state.system)}
           tokens={{
             roles: systemRoles(state.system),

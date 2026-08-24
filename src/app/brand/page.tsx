@@ -4,6 +4,7 @@ import { BookDocument } from '@/components/brand/BookDocument';
 import { SystemUrlBridge } from '@/components/brand/SystemUrlBridge';
 import { SkipLink, RoomMain } from '@/components/nav/SkipLink';
 import { TabNav } from '@/components/nav/TabNav';
+import { parseBookView } from '@/lib/brand/view';
 import { decodeSystem } from '@/lib/system/codec';
 import styles from '@/components/brand/book.module.css';
 
@@ -43,6 +44,10 @@ export default async function BrandPage({ searchParams }: PageProps) {
   }
 
   const system = decodeSystem(query.toString());
+  // The view rides in the same query string and the codec ignores it, so a
+  // shared link always hands over the whole internal guideline — trimming it
+  // is a choice made at the moment of export, not one that travels.
+  const view = parseBookView(query);
 
   return (
     <div className={styles.shell}>
@@ -55,7 +60,7 @@ export default async function BrandPage({ searchParams }: PageProps) {
         {/* project: null — the guideline renders for a visitor with no account.
             That is the whole point of the split state model, and §3 and §4 are
             the half that lives in the URL. */}
-        <BookDocument state={{ system, project: null }} />
+        <BookDocument state={{ system, project: null }} view={view} />
       </RoomMain>
     </div>
   );
