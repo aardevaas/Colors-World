@@ -270,6 +270,32 @@ components are `measured` rather than declared**.
 
 **Done when:** the Q18 story runs end to end.
 
+**DONE 2026-08-24.**
+
+- **Applied views** — the fourth existed only after `a69af39` added **email**,
+  the one channel that shows the system as it ARRIVES rather than as it was
+  designed: set in the fallback stack, because most clients strip webfonts. It
+  is also a **fifth reference surface**, so every stated ratio is now checked
+  against one more real layout. Breadth is data, not code.
+- **Five collateral pieces** (`81ea9cf`, `a69af39`) — business card, letterhead
+  and envelope from the ISO standards that define them, signage from the sign
+  trade's 1:120 rule (labelled `declared`, because it is a rule of thumb and
+  every source that publishes it says so), and the email signature inside the
+  email view. Each a dimensioned spec: format, the brand's own ladder converted
+  to points, ink and ground, and whether the licence permits print at all.
+  **Margins, mark size and grid are deliberately NOT stated** — no standard
+  sets them, and the book will not print a guess beside ISO 216.
+- **The guideline shows its colours** (`74923ac`) — `BookEntry.swatches`, 26
+  chips, still a server component. `colour.misuse` shows the two approved
+  colours and the one they make, which is the evidence for the rule rather than
+  decoration.
+- **Logo** — the placeholder item resolved differently than planned, and
+  deliberately. Collateral became a dimensioned spec rather than a picture, so
+  there is no artwork to place a placeholder into, and §8 declines to state
+  mark size at all. What was missing was a sentence, not a rectangle: §2 now
+  says outright that **this product will not draw a mark**, because every other
+  block in that section reads like a feature that has not shipped yet.
+
 ---
 
 ### Days 12–13 · Sep 4–5 — Accounts and persistence

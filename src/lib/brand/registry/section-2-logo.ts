@@ -66,7 +66,13 @@ export const SECTION_2: readonly BrandComponent[] = [
         return absent(
           'logo.primary',
           'Primary logo',
-          'No mark uploaded. An SVG here unlocks six further components — clear space, minimum size, variants, background safety, misuse and lockups.'
+          // Says outright that the mark has to come from somewhere else.
+          // Every other block in §2 explains what an upload unlocks, which
+          // reads like a feature that has not shipped yet — and the first
+          // question anyone brings to a tool that builds their colour and
+          // type system is whether it will also build their mark. It will
+          // not, ever, and leaving that unsaid is how a reader waits for it.
+          'No mark uploaded, and this product will not draw one — a logo is the part of an identity that has to be designed, not generated. Bring a vector mark and six further components follow from its own geometry: clear space, minimum size, variants, background safety, misuse and lockups.'
         );
       }
       const size = dimensions(mark.width, mark.height);
