@@ -13,7 +13,8 @@
  */
 
 import { presetById } from '@/lib/typography/font-sources';
-import { fontStack, get, getByFamily, licenceOf } from '@/lib/typography/font-catalogue';
+import { get, getByFamily, licenceOf } from '@/lib/typography/font-catalogue';
+import { facesOf, stackFor } from '../typography';
 import { permissionsFor } from '@/lib/typography/font-licences';
 import { isLargeText, requiredRatio } from '@/lib/typography/legibility';
 import { buildScale } from '@/lib/typography/type-scale';
@@ -27,28 +28,6 @@ import type { BookEntry, BrandComponent, BrandState, Finding } from '../types';
  * a change it has never been tested at.
  */
 const TEXT_SPACING_LINE_HEIGHT = 1.5;
-
-/**
- * The three faces actually in play, per role.
- *
- * A System may override any role with a catalogue slug; whatever it does not
- * override falls back to the preset. The Book has to state the face the person
- * CHOSE — printing the preset's name next to type set in something else is the
- * exact class of untruth a guideline exists to prevent.
- */
-function facesOf(state: BrandState): readonly { role: string; family: string; id: string | null }[] {
-  const preset = presetById(state.system.type.presetId);
-  const families = state.system.type.families;
-  return (['display', 'body', 'mono'] as const).map((role) => {
-    const slug = families?.[role];
-    const chosen = slug === undefined ? null : get(slug);
-    return {
-      role: role.charAt(0).toUpperCase() + role.slice(1),
-      family: chosen?.family ?? preset[role],
-      id: chosen?.id ?? getByFamily(preset[role])?.id ?? null,
-    };
-  });
-}
 
 export const SECTION_4: readonly BrandComponent[] = [
   {
@@ -389,16 +368,12 @@ export const SECTION_4: readonly BrandComponent[] = [
       note: 'Priority names Calibri as the system alternate "when Source Sans 3 is unavailable for all users… most commonly Microsoft or email". Without a stated fallback a failed font load lands on whatever the browser picks, which is never the brand.',
     },
     render: (state) => {
-      const generic: Record<string, string> = {
-        Display: 'Georgia, serif',
-        Body: 'system-ui, -apple-system, sans-serif',
-        Mono: 'ui-monospace, monospace',
-      };
       return present('type.fallbacks', 'Fallback stack', 'measured', [
-        ...facesOf(state).map(({ role, family, id }) => ({
-          label: role,
-          value: (id === null ? null : fontStack(id)) ?? `"${family}", ${generic[role]}`,
-        })),
+        // stackFor, not a local table: this is the same string the token
+        // exports emit as --font-display / --font-body / --font-mono, and the
+        // book stating one stack while the tokens carry another is the whole
+        // failure this shares a function to prevent.
+        ...facesOf(state).map((face) => ({ label: face.role, value: stackFor(face) })),
         {
           label: 'Email',
           value: 'Arial, Helvetica, sans-serif',
