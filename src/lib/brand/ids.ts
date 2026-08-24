@@ -40,7 +40,7 @@
  * depth, so §3 and §4 were re-cut against
  * `docs/research/INTERNAL-GUIDELINE-GRAIN.md`.
  *
- * §3 colour: 8 → **15**. `colour.dataviz` moved in from §6 (it is a colour
+ * §3 colour: 8 → **15**. §4 typography: 6 → **18**. `colour.dataviz` moved in from §6 (it is a colour
  * concern, not a web one). The other 51 components are untouched and dormant.
  *
  * ## The prefix is a namespace, not a section
@@ -111,13 +111,28 @@ export const COMPONENT_IDS = [
   'colour.misuse',
   'colour.exceptions',
 
-  // §4 Typography system
+  // §4 Typography system — revised 2026-08-24 to internal-guideline grain.
+  // Ordered as a manual reads: what the faces are, where they come from, what
+  // you may do with them, the scale, the ladder, per-role spacing, then the
+  // rules that only bite in a specific channel.
   'type.families',
-  'type.hierarchy',
+  'type.sources',
+  'type.licensing',
+  'type.fallbacks',
+  'type.weights',
   'type.metrics',
+  'type.hierarchy',
+  'type.lineheight',
+  'type.tracking',
+  'type.measure',
   'type.paragraph-spacing',
+  'type.casing',
+  'type.alignment',
   'type.formatting',
+  'type.minimums',
+  'type.channels',
   'type.text-spacing',
+  'type.misuse',
 
   // §5 Imagery, graphics & motion
   'imagery.photography',
@@ -224,11 +239,23 @@ export const SECTION_OF: Readonly<Record<ComponentId, SectionId>> = {
   'colour.exceptions': 3,
 
   'type.families': 4,
-  'type.hierarchy': 4,
+  'type.sources': 4,
+  'type.licensing': 4,
+  'type.fallbacks': 4,
+  'type.weights': 4,
   'type.metrics': 4,
+  'type.hierarchy': 4,
+  'type.lineheight': 4,
+  'type.tracking': 4,
+  'type.measure': 4,
   'type.paragraph-spacing': 4,
+  'type.casing': 4,
+  'type.alignment': 4,
   'type.formatting': 4,
+  'type.minimums': 4,
+  'type.channels': 4,
   'type.text-spacing': 4,
+  'type.misuse': 4,
 
   'imagery.photography': 5,
   'imagery.grading': 5,

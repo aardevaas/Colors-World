@@ -19,7 +19,7 @@ const READABLE = ['#0A0A0B', '#F5F5F7', '#3B6CF6', '#8A8A93'];
 
 describe('an anonymous visitor with nothing', () => {
   it('renders the whole book without an account', () => {
-    expect(renderBook(ANONYMOUS_EMPTY)).toHaveLength(86);
+    expect(renderBook(ANONYMOUS_EMPTY)).toHaveLength(98);
   });
 
   it('shows colour as absent, and says what would fill it', () => {
