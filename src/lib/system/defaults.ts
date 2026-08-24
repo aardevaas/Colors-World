@@ -34,4 +34,5 @@ export const EMPTY_SYSTEM: System = {
   type: DEFAULT_TYPE,
   scales: DEFAULT_SCALES,
   mode: 'dark',
+  proportions: {},
 };

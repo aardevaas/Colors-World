@@ -630,3 +630,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* A value that is also a control. See BookEntry.href — rare by design. */
+.entryLink {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--hairline-bright);
+  text-underline-offset: 3px;
+}
+
+.entryLink:hover {
+  text-decoration-color: var(--text-primary);
+}

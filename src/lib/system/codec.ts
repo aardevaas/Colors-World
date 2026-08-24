@@ -37,6 +37,8 @@ import type {
   ScaleSettings,
   ScaleSystem,
   System,
+  ProportionTarget,
+  RoleTarget,
   SystemColor,
   SystemMode,
   TypeFamilies,
@@ -51,6 +53,7 @@ const PARAM_MODE = 'm';
 const PARAM_SCALE_GLOBALS = 'sg';
 const PARAM_SCALES = 's';
 const PARAM_FAMILIES = 'f';
+const PARAM_PROPORTIONS = 'pp';
 
 /**
  * A hand-edited URL is the one input nobody can validate before it arrives, so
@@ -125,6 +128,9 @@ export function encodeSystem(system: System): string {
   const scales = encodeScales(system.scales, system.palette);
   if (scales !== null) parts.push(`${PARAM_SCALES}=${scales}`);
 
+  const proportions = encodeProportions(system.proportions);
+  if (proportions !== null) parts.push(`${PARAM_PROPORTIONS}=${proportions}`);
+
   if (system.mode !== EMPTY_SYSTEM.mode) parts.push(`${PARAM_MODE}=${system.mode}`);
 
   return parts.join('&');
@@ -160,7 +166,65 @@ export function decodeSystem(search: string): System {
       palette
     ),
     mode: params.get(PARAM_MODE) === 'light' ? 'light' : 'dark',
+    proportions: decodeProportions(params.get(PARAM_PROPORTIONS)),
   };
+}
+
+/* ------------------------------------------------------------ proportions */
+
+/**
+ * The stated colour ratio: `primary.25`, or `primary.25-50,accent.5-15`.
+ *
+ * Percentages in the URL, fractions in the System. A ratio is the one part of
+ * a System a person might reasonably type or read out — "at least a quarter
+ * primary" is `primary.25`, and `primary.0.25` would be neither obvious nor
+ * shorter. One decimal is kept, which is the precision the book prints.
+ */
+function encodeProportions(target: ProportionTarget): string | null {
+  const parts = SEMANTIC_ROLES.flatMap((role) => {
+    const bound = target[role];
+    if (bound === undefined) return [];
+    const min = pct(bound.min);
+    return [`${role}.${bound.max === undefined ? min : `${min}-${pct(bound.max)}`}`];
+  });
+  return parts.length === 0 ? null : parts.join(',');
+}
+
+function decodeProportions(raw: string | null): ProportionTarget {
+  if (raw === null || raw === '') return {};
+  const target: Record<string, RoleTarget> = {};
+  for (const segment of raw.split(',')) {
+    const dot = segment.indexOf('.');
+    if (dot < 1) continue;
+    const role = segment.slice(0, dot);
+    if (!isSemanticRole(role)) continue;
+
+    const [minRaw, maxRaw, ...rest] = segment.slice(dot + 1).split('-');
+    if (rest.length > 0) continue;
+    const min = fraction(minRaw);
+    if (min === null) continue;
+    const max = maxRaw === undefined ? undefined : fraction(maxRaw);
+    if (maxRaw !== undefined && max === null) continue;
+    // A ceiling under its own floor describes nothing, and silently swapping
+    // them would invent a rule the person did not state.
+    if (max !== undefined && max !== null && max < min) continue;
+
+    target[role] = max === undefined || max === null ? { min } : { min, max };
+  }
+  return target;
+}
+
+/** A fraction as the percentage the URL carries. */
+function pct(fractionValue: number): string {
+  return String(Math.round(fractionValue * 1000) / 10);
+}
+
+/** A percentage from the URL as a fraction, or null if it is not one. */
+function fraction(raw: string | undefined): number | null {
+  if (raw === undefined || raw === '') return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 100) return null;
+  return Math.round(value * 10) / 1000;
 }
 
 function decodePalette(raw: string | null): readonly SystemColor[] {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import { parseColor } from '@/lib/color-engine';
 import { SEMANTIC_ROLES } from '@/lib/roles/semantic-roles';
 import { DEFAULT_SCALES, EMPTY_SYSTEM } from '../defaults';
@@ -19,6 +19,7 @@ const FULL: System = {
   type: { presetId: 'editorial', ratio: 1.333, baseRem: 1.125, lineHeight: 1.7, tracking: 0.02, weight: 500 },
   scales: DEFAULT_SCALES,
   mode: 'light',
+  proportions: {},
 };
 
 /** The curve work: what a shared link used to drop on the floor. */
@@ -360,5 +361,85 @@ describe('font families in the URL', () => {
     expect(encoded).not.toContain('t=');
     expect(encoded).toContain('f=');
     expect(decodeSystem(encoded).type.families).toEqual({ body: 'inter' });
+  });
+});
+
+describe('proportions', () => {
+  const withTarget = (proportions: System['proportions']): System => ({
+    ...EMPTY_SYSTEM,
+    proportions,
+  });
+
+  test('a System with no stated ratio adds nothing to the URL', () => {
+    expect(encodeSystem(EMPTY_SYSTEM)).not.toContain('pp=');
+    expect(isDefaultSystem(EMPTY_SYSTEM)).toBe(true);
+  });
+
+  test('a floor round-trips as a readable percentage', () => {
+    const system = withTarget({ primary: { min: 0.25 } });
+    expect(encodeSystem(system)).toContain('pp=primary.25');
+    expect(decodeSystem(encodeSystem(system)).proportions).toEqual({ primary: { min: 0.25 } });
+  });
+
+  test('a band round-trips, and so do several roles at once', () => {
+    const system = withTarget({ primary: { min: 0.25, max: 0.5 }, accent: { min: 0.05, max: 0.15 } });
+    const encoded = encodeSystem(system);
+    expect(encoded).toContain('primary.25-50');
+    expect(encoded).toContain('accent.5-15');
+    expect(decodeSystem(encoded).proportions).toEqual(system.proportions);
+  });
+
+  test('keeps one decimal, which is the precision the book prints', () => {
+    const system = withTarget({ accent: { min: 0.055 } });
+    expect(encodeSystem(system)).toContain('pp=accent.5.5');
+    expect(decodeSystem(encodeSystem(system)).proportions).toEqual({ accent: { min: 0.055 } });
+  });
+
+  test('roles come out in the System’s own order, not the order they were typed', () => {
+    const a = encodeSystem(withTarget({ accent: { min: 0.1 }, primary: { min: 0.2 } }));
+    const b = encodeSystem(withTarget({ primary: { min: 0.2 }, accent: { min: 0.1 } }));
+    expect(a).toBe(b);
+  });
+
+  test('a hand-edited URL cannot state something impossible', () => {
+    const bad = [
+      'pp=notarole.25',      // not a semantic role
+      'pp=primary.abc',      // not a number
+      'pp=primary.-5',       // negative
+      'pp=primary.101',      // over 100%
+      'pp=primary.50-25',    // ceiling under its own floor
+      'pp=primary.1-2-3',    // three bounds
+      'pp=primary.',         // no value
+      'pp=primary',          // no separator
+      'pp=',
+    ];
+    for (const raw of bad) {
+      expect(decodeSystem(raw).proportions, raw).toEqual({});
+    }
+  });
+
+  test('one bad segment does not discard the good ones beside it', () => {
+    expect(decodeSystem('pp=primary.25,notarole.9,accent.5').proportions).toEqual({
+      primary: { min: 0.25 },
+      accent: { min: 0.05 },
+    });
+  });
+
+  test('0% is a real floor and is not confused with absent', () => {
+    expect(decodeSystem('pp=primary.0').proportions).toEqual({ primary: { min: 0 } });
+  });
+
+  test('travels with the rest of the System', () => {
+    const system: System = {
+      ...EMPTY_SYSTEM,
+      palette: [{ hex: '#0a5cff', oklch: parseColor('#0a5cff'), addedAt: 0 }],
+      anchorHex: '#0a5cff',
+      mode: 'light',
+      proportions: { primary: { min: 0.25 } },
+    };
+    const back = decodeSystem(encodeSystem(system));
+    expect(back.proportions).toEqual(system.proportions);
+    expect(back.palette[0]?.hex).toBe('#0a5cff');
+    expect(back.mode).toBe('light');
   });
 });

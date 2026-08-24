@@ -43,6 +43,7 @@
  */
 
 import { SEMANTIC_ROLES, type SemanticRole } from '@/lib/roles/semantic-roles';
+import type { ProportionTarget, RoleTarget } from '@/lib/system/types';
 
 /** Where a surface is meant to be seen. Channels have different rules. */
 export type SurfaceChannel = 'web' | 'mobile' | 'email' | 'presentation' | 'print';
@@ -147,15 +148,13 @@ export function coverage(surface: Surface): RoleCoverage {
   return out;
 }
 
-/** A stated rule about how much of a surface a role should occupy. */
-export interface RoleTarget {
-  /** Fraction, 0…1. A floor, which is how Monash and IRBA both state theirs. */
-  readonly min: number;
-  /** Fraction, 0…1. Absent means "no ceiling", which is usually what is meant. */
-  readonly max?: number;
-}
-
-export type ProportionTarget = Partial<Record<SemanticRole, RoleTarget>>;
+/*
+ * `RoleTarget` and `ProportionTarget` are defined in `lib/system/types.ts`,
+ * not here. The target is a rule the person states about their brand, so it
+ * belongs in the System and travels in the link; this module only checks it.
+ * Re-exported so a caller needs one import rather than two.
+ */
+export type { ProportionTarget, RoleTarget };
 
 export type ProportionVerdict = 'under' | 'within' | 'over';
 

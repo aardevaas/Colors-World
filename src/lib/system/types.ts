@@ -100,6 +100,22 @@ export interface ScaleSystem {
   readonly byHex: Readonly<Record<string, ScaleSettings>>;
 }
 
+/**
+ * How much of a surface a role should occupy, as fractions of 1.
+ *
+ * A brand rule, so it lives in the System and travels in the link. IRBA,
+ * Regus and Monash all state one of these and none of them can check it; the
+ * checking is `lib/brand/proportions.ts`, and this is the half the person says.
+ */
+export interface RoleTarget {
+  /** A floor. Monash's "minimum 25% primary" is exactly this shape. */
+  readonly min: number;
+  /** A ceiling. Absent means none, which is usually what a manual means. */
+  readonly max?: number;
+}
+
+export type ProportionTarget = Partial<Record<SemanticRole, RoleTarget>>;
+
 export interface System {
   readonly palette: readonly SystemColor[];
   /** The color scales are built from. Null when the palette is empty. */
@@ -113,4 +129,6 @@ export interface System {
    */
   readonly scales: ScaleSystem;
   readonly mode: SystemMode;
+  /** The stated colour ratio, if the brand has one. Empty until it does. */
+  readonly proportions: ProportionTarget;
 }

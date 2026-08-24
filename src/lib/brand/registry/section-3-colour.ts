@@ -29,8 +29,10 @@ import {
   toCmyk,
 } from '@/lib/color-engine';
 import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived, str } from '../block';
+import { encodeSystem } from '@/lib/system/codec';
 import { hasPalette, paletteColors, systemRoles } from '../colour';
-import { asPercent, coverage } from '../proportions';
+import { asPercent, compareToTarget, coverage, type RoleTarget } from '../proportions';
+import { PROPORTION_PRESETS } from '../proportion-presets';
 import { REFERENCE_SURFACES } from '../surfaces';
 import type { RoleColor, SemanticRole } from '@/lib/roles/semantic-roles';
 import type { BookEntry, BrandComponent, Finding } from '../types';
@@ -526,17 +528,95 @@ export const SECTION_3: readonly BrandComponent[] = [
       entries.push({
         label: 'Primary spread',
         value: `${asPercent(low)} – ${asPercent(high)}`,
-        note: `Across ${REFERENCE_SURFACES.length} reference surfaces. State a floor and every one of them becomes checkable — which is the thing IRBA, Regus and Monash all ask for and none can do.`,
+        note: `Across ${REFERENCE_SURFACES.length} reference surfaces. A system almost always hits its intended ratio on the layout it was designed against and misses it somewhere nobody checked.`,
       });
 
-      entries.push({
-        label: 'How measured',
-        value: `Declared geometry, ${REFERENCE_SURFACES[0]!.measuredViewport}`,
-        evidence: 'measured',
-        note: 'Rectangle areas composited front to back off the rendered templates, not sampled pixels — so gradients and translucent layers count for what they actually contribute rather than all or nothing.',
-      });
+      const target = system.proportions;
+      const stated = Object.keys(target).length > 0;
+
+      if (!stated) {
+        // Nothing can be checked until someone states a rule, and the rule is
+        // theirs to state — adopting a published one silently would be putting
+        // another organisation's brand policy on this one.
+        for (const preset of PROPORTION_PRESETS) {
+          entries.push({
+            label: preset.label,
+            value: preset.summary,
+            evidence: 'cited',
+            href: `?${encodeSystem({ ...system, proportions: preset.target })}`,
+            note: `${preset.source} Adopt it and every surface above becomes checkable.`,
+          });
+        }
+        entries.push({
+          label: 'Not stated by these',
+          value: 'IRBA 50/20/20 · Regus 60/20/10/5/5',
+          evidence: 'cited',
+          note: 'Both state fixed shares across their own tier vocabulary — "secondary" is a brand tier, not a UI role — so neither maps onto this role model without inventing the mapping. Their numbers are recorded; the rule is not.',
+        });
+      } else {
+        for (const [role, bound] of Object.entries(target) as [SemanticRole, RoleTarget][]) {
+          const band =
+            bound.max === undefined
+              ? `at least ${asPercent(bound.min)}`
+              : `${asPercent(bound.min)}–${asPercent(bound.max)}`;
+          const failing = measured.filter(
+            ({ cover }) => compareToTarget(cover, { [role]: bound })[0]!.verdict !== 'within'
+          );
+          entries.push({
+            label: `Target · ${role}`,
+            value: `${band} — ${measured.length - failing.length} of ${measured.length} surfaces hold it`,
+            note:
+              failing.length === 0
+                ? 'Every reference surface is inside the stated ratio.'
+                : `Outside it: ${failing.map(({ surface }) => surface.name).join(', ')}.`,
+          });
+        }
+        entries.push({
+          label: 'Clear the ratio',
+          value: 'Remove the stated target',
+          href: `?${encodeSystem({ ...system, proportions: {} })}`,
+        });
+      }
 
       return present('colour.proportions', 'Colour proportions', 'measured', entries);
+    },
+    validate: (state): readonly Finding[] => {
+      const { system } = state;
+      if (!hasPalette(system) || Object.keys(system.proportions).length === 0) return [];
+
+      // One finding per targeted ROLE, not per role-and-surface. Four surfaces
+      // against three roles is twelve rows of the same sentence, and a rail
+      // list that long stops being read at all — so each role reports the
+      // surface furthest outside the rule and how many others join it.
+      return (Object.entries(system.proportions) as [SemanticRole, RoleTarget][]).flatMap(
+        ([role, bound]) => {
+          const rows = REFERENCE_SURFACES.map((surface) => ({
+            surface,
+            row: compareToTarget(coverage(surface), { [role]: bound })[0]!,
+          })).filter(({ row }) => row.verdict !== 'within');
+          if (rows.length === 0) return [];
+
+          const worst = rows.reduce((a, b) =>
+            Math.abs(b.row.delta) > Math.abs(a.row.delta) ? b : a
+          );
+          const others = rows.length - 1;
+          const bandText =
+            worst.row.verdict === 'under'
+              ? `≥ ${asPercent(bound.min)}`
+              : `≤ ${asPercent(bound.max as number)}`;
+
+          return [
+            finding(
+              'colour.proportions',
+              'warn',
+              `${role} is ${worst.row.verdict} its stated ratio on ${worst.surface.name}${
+                others > 0 ? ` and ${others} other surface${others > 1 ? 's' : ''}` : ''
+              }.`,
+              { measured: asPercent(worst.row.measured), expected: bandText }
+            ),
+          ];
+        }
+      );
     },
   },
   {

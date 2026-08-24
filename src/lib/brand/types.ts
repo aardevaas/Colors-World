@@ -134,6 +134,16 @@ export interface BookEntry {
    */
   readonly evidence?: Evidence;
   readonly note?: string;
+  /**
+   * Makes the value a link.
+   *
+   * Rare on purpose — the book is a document, not a control panel. It exists
+   * for the one case where a rule cannot be checked until someone states it,
+   * and the alternative is telling a reader to hand-edit a query string. A
+   * bare `?query` href resolves against whatever page is rendering, so the
+   * registry states no route.
+   */
+  readonly href?: string;
 }
 
 /**

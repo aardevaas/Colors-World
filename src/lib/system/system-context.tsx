@@ -29,7 +29,13 @@ import {
 } from './storage';
 import { systemReducer, type SystemAction } from './system-reducer';
 import { decodeSystem } from './codec';
-import type { ScaleSettings, System, SystemMode, TypeSettings } from './types';
+import type {
+  ProportionTarget,
+  ScaleSettings,
+  System,
+  SystemMode,
+  TypeSettings,
+} from './types';
 
 /**
  * The React wiring around the System — mounted once in the root layout so the
@@ -62,6 +68,7 @@ const HISTORY_ACTIONS: ReadonlySet<SystemAction['type']> = new Set([
   'setRoleOverride',
   'clearRoleOverride',
   'setMode',
+  'setProportions',
   'setScaleGlobals',
 ]);
 
@@ -79,6 +86,7 @@ interface SystemContextValue {
   clearRoleOverride(role: SemanticRole): void;
   setType(patch: Partial<TypeSettings>): void;
   setMode(mode: SystemMode): void;
+  setProportions(proportions: ProportionTarget): void;
   setScale(hex: string, settings: ScaleSettings): void;
   setScaleGlobals(patch: { steps?: number; gamut?: Gamut }): void;
   /** The full shareable address of the current System. */
@@ -179,6 +187,7 @@ export function SystemProvider({ children }: { readonly children: ReactNode }) {
       clearRoleOverride: (role) => dispatch({ type: 'clearRoleOverride', role }),
       setType: (patch) => dispatch({ type: 'setType', patch }),
       setMode: (mode) => dispatch({ type: 'setMode', mode }),
+      setProportions: (proportions) => dispatch({ type: 'setProportions', proportions }),
       setScale: (hex, settings) => dispatch({ type: 'setScale', hex, settings }),
       setScaleGlobals: (patch) => dispatch({ type: 'setScaleGlobals', ...patch }),
       shareUrl: () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import { parseColor } from '@/lib/color-engine';
 import { EMPTY_SYSTEM } from '../defaults';
 import { systemReducer } from '../system-reducer';
@@ -192,5 +192,37 @@ describe('setAnchor is the only way the anchor moves', () => {
   it('accepts a palette hex whatever its case, and normalises it', () => {
     const before = threeColors();
     expect(systemReducer(before, { type: 'setAnchor', hex: TAN.toUpperCase() }).anchorHex).toBe(TAN);
+  });
+});
+
+describe('setProportions', () => {
+  test('stores the stated ratio', () => {
+    const next = systemReducer(EMPTY_SYSTEM, {
+      type: 'setProportions',
+      proportions: { primary: { min: 0.25 } },
+    });
+    expect(next.proportions).toEqual({ primary: { min: 0.25 } });
+  });
+
+  test('replaces rather than merges — clearing a role has to be possible', () => {
+    const withBoth = systemReducer(EMPTY_SYSTEM, {
+      type: 'setProportions',
+      proportions: { primary: { min: 0.25 }, accent: { min: 0.05 } },
+    });
+    const next = systemReducer(withBoth, {
+      type: 'setProportions',
+      proportions: { primary: { min: 0.25 } },
+    });
+    expect(next.proportions).toEqual({ primary: { min: 0.25 } });
+  });
+
+  test('leaves the rest of the System alone', () => {
+    const next = systemReducer(EMPTY_SYSTEM, {
+      type: 'setProportions',
+      proportions: { primary: { min: 0.25 } },
+    });
+    expect(next.palette).toBe(EMPTY_SYSTEM.palette);
+    expect(next.type).toBe(EMPTY_SYSTEM.type);
+    expect(next.mode).toBe(EMPTY_SYSTEM.mode);
   });
 });

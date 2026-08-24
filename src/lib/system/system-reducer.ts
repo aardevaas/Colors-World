@@ -12,7 +12,13 @@
 import type { Gamut, Oklch } from '@/lib/color-engine';
 import type { SemanticRole } from '@/lib/roles/semantic-roles';
 import { EMPTY_SYSTEM } from './defaults';
-import type { ScaleSettings, System, SystemMode, TypeSettings } from './types';
+import type {
+  ProportionTarget,
+  ScaleSettings,
+  System,
+  SystemMode,
+  TypeSettings,
+} from './types';
 
 /** Matches the codec's cap, so no route into the System can exceed it. */
 const MAX_PALETTE = 32;
@@ -31,6 +37,7 @@ export type SystemAction =
   | { readonly type: 'clearRoleOverride'; readonly role: SemanticRole }
   | { readonly type: 'setType'; readonly patch: Partial<TypeSettings> }
   | { readonly type: 'setMode'; readonly mode: SystemMode }
+  | { readonly type: 'setProportions'; readonly proportions: ProportionTarget }
   | { readonly type: 'setScale'; readonly hex: string; readonly settings: ScaleSettings }
   | {
       readonly type: 'setScaleGlobals';
@@ -130,6 +137,9 @@ export function systemReducer(state: System, action: SystemAction): System {
 
     case 'setType':
       return { ...state, type: { ...state.type, ...action.patch } };
+
+    case 'setProportions':
+      return { ...state, proportions: action.proportions };
 
     case 'setMode':
       return state.mode === action.mode ? state : { ...state, mode: action.mode };

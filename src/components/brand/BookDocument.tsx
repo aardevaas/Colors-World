@@ -50,7 +50,13 @@ function EntryRow({ entry, fallback }: { entry: BookEntry; fallback: Evidence })
     <>
       <dt className={styles.entryKey}>{entry.label}</dt>
       <dd className={styles.entryValue}>
-        <span className={styles.entryText}>{entry.value}</span>
+        {entry.href === undefined ? (
+          <span className={styles.entryText}>{entry.value}</span>
+        ) : (
+          <a className={`${styles.entryText} ${styles.entryLink}`} href={entry.href}>
+            {entry.value}
+          </a>
+        )}
         {entry.evidence !== undefined && (
           // Only when the line differs from its block — a swatch's hex is
           // declared while the ratio beside it is measured, and that
