@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { useSystem } from '@/lib/system/system-context';
 import { DEFAULT_RATIO, SCALE_RATIOS, buildScale, ROOT_PX } from '@/lib/typography/type-scale';
 import { fluidClamp, toCssVariables, type FluidToken } from '@/lib/typography/fluid-clamp';
@@ -15,6 +15,7 @@ import {
   type LocalFontOutcome,
 } from '@/lib/typography/font-sources';
 import { TabNav } from '@/components/nav/TabNav';
+import { CataloguePicker, type CatalogueFont, type FontRole } from './CataloguePicker';
 import { LegibilityField } from './LegibilityField';
 import { SPECIMENS, specimenById, type SpecimenId } from './specimens';
 import styles from './typography.module.css';
@@ -42,8 +43,58 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
   const [specimenId, setSpecimenId] = useState<SpecimenId>('magazine');
   const [localFonts, setLocalFonts] = useState<LocalFontOutcome | null>(null);
   const [localFamily, setLocalFamily] = useState<string | null>(null);
+  const [pickerRole, setPickerRole] = useState<FontRole | null>(null);
+  /*
+   * The catalogue lives on the server — it is ~385KB and this room is 8.5KB.
+   * A shared link carries only slugs, so the three chosen faces are resolved
+   * back into stacks and one stylesheet through /api/fonts rather than by
+   * shipping two thousand families to look at three.
+   */
+  const [resolved, setResolved] = useState<readonly CatalogueFont[]>([]);
+  const [chosenSheet, setChosenSheet] = useState<string | null>(null);
 
   const preset = presetById(presetId);
+  const families = system.type.families;
+  const chosenIds = useMemo(
+    () => [families?.display, families?.body, families?.mono].filter((id): id is string => id !== undefined),
+    [families]
+  );
+
+  useEffect(() => {
+    if (chosenIds.length === 0) {
+      setResolved([]);
+      setChosenSheet(null);
+      return;
+    }
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch(`/api/fonts?ids=${chosenIds.join(',')}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const body = (await response.json()) as {
+          families: readonly CatalogueFont[];
+          stylesheet: string | null;
+        };
+        setResolved(body.families);
+        setChosenSheet(body.stylesheet);
+      } catch {
+        // A failed resolve leaves the preset in place, which is the correct
+        // degradation: the page still sets type, in the face it names.
+      }
+    })();
+    return () => controller.abort();
+  }, [chosenIds]);
+
+  const stackFor = useCallback(
+    (role: FontRole, fallback: string): string => {
+      const id = families?.[role];
+      if (id === undefined) return `"${fallback}"`;
+      return resolved.find((f) => f.id === id)?.stack ?? `"${fallback}"`;
+    },
+    [families, resolved]
+  );
 
   useEffect(() => {
     ensurePresetLoaded(preset);
@@ -85,9 +136,9 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
 
   const specimenStyle = useMemo(() => {
     const vars: Record<string, string> = {
-      '--type-display-family': localFamily ?? `"${preset.display}"`,
-      '--type-body-family': localFamily ?? `"${preset.body}"`,
-      '--type-mono-family': `"${preset.mono}"`,
+      '--type-display-family': localFamily ?? stackFor('display', preset.display),
+      '--type-body-family': localFamily ?? stackFor('body', preset.body),
+      '--type-mono-family': stackFor('mono', preset.mono),
       '--type-leading': String(lineHeight),
       '--type-tracking': `${tracking}em`,
       '--type-weight': String(weight),
@@ -100,7 +151,7 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
     };
     for (const token of fluidTokens) vars[`--type-${token.name}`] = token.result.css;
     return vars as CSSProperties;
-  }, [fluidTokens, preset, localFamily, lineHeight, tracking, weight, roles]);
+  }, [fluidTokens, preset, localFamily, stackFor, lineHeight, tracking, weight, roles]);
 
   // Body copy is the honest test: if that fails, the page fails, whatever the
   // headline scores.
@@ -148,6 +199,26 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
           </button>
         </div>
 
+        {/* The presets above are four starting points. These reach all of the
+            catalogue, per role, and the choice travels in the link. */}
+        <div className={styles.pillRow} role="group" aria-label="Choose a typeface from the catalogue">
+          {(['display', 'body', 'mono'] as const).map((role) => {
+            const id = families?.[role];
+            const label = id === undefined ? null : (resolved.find((f) => f.id === id)?.family ?? id);
+            return (
+              <button
+                key={role}
+                type="button"
+                className={pickerRole === role ? `${styles.pill} ${styles.pillActive}` : styles.pill}
+                aria-expanded={pickerRole === role}
+                onClick={() => setPickerRole((prev) => (prev === role ? null : role))}
+              >
+                {role}: {label ?? preset[role]}
+              </button>
+            );
+          })}
+        </div>
+
         <div className={styles.pillRow}>
           {SPECIMENS.map((entry) => (
             <button
@@ -161,6 +232,25 @@ export function TypographyShell({ accountSlot }: TypographyShellProps) {
           ))}
         </div>
       </div>
+
+      {/* One request covering whichever faces are actually in use. */}
+      {chosenSheet !== null && <link rel="stylesheet" href={chosenSheet} />}
+
+      {pickerRole !== null && (
+        <CataloguePicker
+          role={pickerRole}
+          chosen={families?.[pickerRole]}
+          onPick={(font: CatalogueFont) =>
+            setType({ families: { ...families, [pickerRole]: font.id } })
+          }
+          onClear={() => {
+            const next = { ...families };
+            delete next[pickerRole];
+            setType({ families: Object.keys(next).length > 0 ? next : undefined });
+          }}
+          onClose={() => setPickerRole(null)}
+        />
+      )}
 
       {localFonts !== null && (
         <div className={styles.localTray}>

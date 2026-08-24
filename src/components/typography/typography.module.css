@@ -422,3 +422,140 @@
   border: var(--rule-width) solid var(--hairline);
   vertical-align: -1px;
 }
+
+/* ---------- catalogue picker ----------
+   2,096 families, searched on the server. The room never holds the catalogue,
+   so this is a list renderer and nothing more. */
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem var(--space-wide);
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.pickerHead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.pickerTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.pickerTitle {
+  margin: 0;
+  font-size: var(--text-small, 0.8125rem);
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.pickerCount {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-micro, 0.7rem);
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.pickerHeadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pickerControls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.pickerSearch {
+  width: 100%;
+  max-width: 22rem;
+  padding: 0.42rem 0.7rem;
+  border-radius: 8px;
+  border: var(--rule-width) solid var(--hairline);
+  background: var(--surface-panel, #17171a);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-small, 0.8125rem);
+}
+
+.pickerSearch::placeholder {
+  color: var(--text-tertiary);
+}
+
+.pickerNote {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-micro, 0.7rem);
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+/* A fixed height so searching does not shunt the specimen below it up and
+   down the page on every keystroke. Scrolls inside itself. */
+.pickerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.35rem;
+  max-height: 17rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pickerList[aria-busy='true'] {
+  opacity: 0.55;
+}
+
+.pickerItem {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: var(--rule-width) solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.pickerItem:hover {
+  border-color: var(--hairline);
+  background: var(--surface-raised, #1e1b19);
+}
+
+.pickerItemOn {
+  border-color: var(--text-primary);
+  background: var(--surface-raised, #1e1b19);
+}
+
+/* The name, set in the face it names. The whole point of the list. */
+.pickerSpecimen {
+  font-size: 1.05rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.pickerMeta {
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary);
+}

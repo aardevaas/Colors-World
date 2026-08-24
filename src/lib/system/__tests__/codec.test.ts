@@ -300,3 +300,65 @@ describe('encodeSystem — stability', () => {
     expect(encodeSystem(FULL)).not.toMatch(/local|family/i);
   });
 });
+
+describe('font families in the URL', () => {
+  /*
+   * Added 2026-08-24 when the catalogue went from four presets to 2,096
+   * families. Families ride in their own `f` parameter rather than as trailing
+   * fields on `t`, so a System that never left its preset carries no cost for
+   * them at all.
+   */
+  const withFamilies = (families: NonNullable<System['type']['families']>): System => ({
+    ...EMPTY_SYSTEM,
+    type: { ...EMPTY_SYSTEM.type, families },
+  });
+
+  it('costs nothing when nothing is overridden', () => {
+    expect(encodeSystem(EMPTY_SYSTEM)).not.toContain('f=');
+  });
+
+  it('round-trips a full set', () => {
+    const system = withFamilies({ display: 'unbounded', body: 'inter', mono: 'geist-mono' });
+    expect(decodeSystem(encodeSystem(system)).type.families).toEqual({
+      display: 'unbounded',
+      body: 'inter',
+      mono: 'geist-mono',
+    });
+  });
+
+  it('round-trips a partial set, leaving the others on the preset', () => {
+    const system = withFamilies({ body: 'inter' });
+    const back = decodeSystem(encodeSystem(system)).type.families;
+    expect(back).toEqual({ body: 'inter' });
+    expect(back?.display).toBeUndefined();
+  });
+
+  it('encodes a body-only override without trailing separators', () => {
+    expect(encodeSystem(withFamilies({ display: 'unbounded' }))).toContain('f=unbounded');
+  });
+
+  it('rejects a slug that is not slug-shaped, rather than rendering nothing', () => {
+    /*
+     * Shape, not membership: validating against the 385KB catalogue would ship
+     * two thousand families to the browser to check three. A slug that passes
+     * shape and matches nothing simply does not load, and the family's declared
+     * fallback stack takes over — which is what a fallback is for.
+     */
+    expect(decodeSystem('?f=Not%20A%20Slug~inter').type.families).toEqual({ body: 'inter' });
+    expect(decodeSystem('?f=<script>~~').type.families).toBeUndefined();
+  });
+
+  it('drops the key entirely when every segment is junk', () => {
+    expect(decodeSystem('?f=~~').type.families).toBeUndefined();
+  });
+
+  it('survives a System on default metrics but a chosen face', () => {
+    // The regression this guards: `isDefaultType` omits `t=` for default
+    // metrics, and families must not be omitted with it.
+    const system = withFamilies({ body: 'inter' });
+    const encoded = encodeSystem(system);
+    expect(encoded).not.toContain('t=');
+    expect(encoded).toContain('f=');
+    expect(decodeSystem(encoded).type.families).toEqual({ body: 'inter' });
+  });
+});

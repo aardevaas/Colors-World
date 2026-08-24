@@ -328,3 +328,53 @@ describe('the book renders the polarity the System is authored in', () => {
     expect(backgroundOf('light')).not.toBe(backgroundOf('dark'));
   });
 });
+
+describe('the book states the face you chose, not the preset', () => {
+  /*
+   * The room can override any role with a family from the open catalogue. If
+   * §4 kept printing the preset's name next to type set in something else, the
+   * guideline would be stating something untrue about itself — which is the
+   * exact class of error the whole product exists to prevent.
+   */
+  const withBody = (slug: string) =>
+    stateOf({ ...EMPTY_SYSTEM, type: { ...EMPTY_SYSTEM.type, families: { body: slug } } });
+
+  it('names the chosen family in Typefaces', () => {
+    const block = component('type.families').render(withBody('lora'));
+    expect(block.kind).toBe('present');
+    if (block.kind !== 'present') return;
+    expect(block.entries.find((e) => e.label === 'Body')?.value).toBe('Lora');
+    // Display was not overridden, so it stays on the preset.
+    expect(block.entries.find((e) => e.label === 'Display')?.value).toBe('Unbounded');
+  });
+
+  it('falls back within the chosen family’s own category', () => {
+    // Lora is a serif; the preset body is a sans. A serif falling back to a
+    // sans is a different page, so the stack has to follow the face.
+    const block = component('type.fallbacks').render(withBody('lora'));
+    expect(block.kind).toBe('present');
+    if (block.kind !== 'present') return;
+    expect(block.entries.find((e) => e.label === 'Body')?.value).toMatch(/^"Lora", Georgia/);
+  });
+
+  it('reports the chosen family’s real weights, not the preset’s', () => {
+    const block = component('type.weights').render(withBody('lora'));
+    expect(block.kind).toBe('present');
+    if (block.kind !== 'present') return;
+    expect(block.entries.find((e) => e.label === 'Available')?.value).toBe('400–700 on an axis');
+  });
+
+  it('states the chosen family’s licence', () => {
+    const block = component('type.licensing').render(withBody('lora'));
+    expect(block.kind).toBe('present');
+    if (block.kind !== 'present') return;
+    expect(block.entries.some((e) => e.value.includes('Lora'))).toBe(true);
+  });
+
+  it('ignores a slug that is not in the catalogue, keeping the preset', () => {
+    const block = component('type.families').render(withBody('not-a-real-font'));
+    expect(block.kind).toBe('present');
+    if (block.kind !== 'present') return;
+    expect(block.entries.find((e) => e.label === 'Body')?.value).toBe('Plus Jakarta Sans');
+  });
+});

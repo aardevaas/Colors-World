@@ -13,12 +13,12 @@
  */
 
 import { presetById } from '@/lib/typography/font-sources';
-import { fontStack, getByFamily, licenceOf } from '@/lib/typography/font-catalogue';
+import { fontStack, get, getByFamily, licenceOf } from '@/lib/typography/font-catalogue';
 import { permissionsFor } from '@/lib/typography/font-licences';
 import { isLargeText, requiredRatio } from '@/lib/typography/legibility';
 import { buildScale } from '@/lib/typography/type-scale';
 import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived, str } from '../block';
-import type { BookEntry, BrandComponent, Finding } from '../types';
+import type { BookEntry, BrandComponent, BrandState, Finding } from '../types';
 
 /**
  * WCAG 1.4.12 asks that content stay readable when a reader forces
@@ -27,6 +27,28 @@ import type { BookEntry, BrandComponent, Finding } from '../types';
  * a change it has never been tested at.
  */
 const TEXT_SPACING_LINE_HEIGHT = 1.5;
+
+/**
+ * The three faces actually in play, per role.
+ *
+ * A System may override any role with a catalogue slug; whatever it does not
+ * override falls back to the preset. The Book has to state the face the person
+ * CHOSE — printing the preset's name next to type set in something else is the
+ * exact class of untruth a guideline exists to prevent.
+ */
+function facesOf(state: BrandState): readonly { role: string; family: string; id: string | null }[] {
+  const preset = presetById(state.system.type.presetId);
+  const families = state.system.type.families;
+  return (['display', 'body', 'mono'] as const).map((role) => {
+    const slug = families?.[role];
+    const chosen = slug === undefined ? null : get(slug);
+    return {
+      role: role.charAt(0).toUpperCase() + role.slice(1),
+      family: chosen?.family ?? preset[role],
+      id: chosen?.id ?? getByFamily(preset[role])?.id ?? null,
+    };
+  });
+}
 
 export const SECTION_4: readonly BrandComponent[] = [
   {
@@ -58,10 +80,9 @@ export const SECTION_4: readonly BrandComponent[] = [
     },
     render: (state) => {
       const preset = presetById(state.system.type.presetId);
+      const faces = facesOf(state);
       return present('type.families', 'Typefaces', 'declared', [
-        { label: 'Display', value: preset.display },
-        { label: 'Body', value: preset.body },
-        { label: 'Mono', value: preset.mono },
+        ...faces.map((f) => ({ label: f.role, value: f.family })),
         { label: 'Character', value: preset.character },
         {
           label: 'Served from',
@@ -267,13 +288,8 @@ export const SECTION_4: readonly BrandComponent[] = [
       note: 'Priority names the source and links the download. Skipping it is what makes a contractor pull the wrong cut six months later.',
     },
     render: (state) => {
-      const p = presetById(state.system.type.presetId);
       const entries: BookEntry[] = [];
-      for (const [role, family] of [
-        ['Display', p.display],
-        ['Body', p.body],
-        ['Mono', p.mono],
-      ] as const) {
+      for (const { role, family } of facesOf(state)) {
         const hit = getByFamily(family);
         entries.push(
           hit === null
@@ -310,9 +326,7 @@ export const SECTION_4: readonly BrandComponent[] = [
       note: 'Web embedding, print, product use and resale are FOUR different permissions and not every licence grants all four. Fontsource carries per-family licence data, which is the strongest argument for that catalogue over Google\u2019s API.',
     },
     render: (state) => {
-      const p = presetById(state.system.type.presetId);
-      const families = [p.display, p.body, p.mono];
-      const resolved = families.map((family) => {
+      const resolved = facesOf(state).map(({ family }) => {
         const hit = getByFamily(family);
         return { family, licence: hit === null ? null : licenceOf(hit.id) };
       });
@@ -375,15 +389,16 @@ export const SECTION_4: readonly BrandComponent[] = [
       note: 'Priority names Calibri as the system alternate "when Source Sans 3 is unavailable for all users… most commonly Microsoft or email". Without a stated fallback a failed font load lands on whatever the browser picks, which is never the brand.',
     },
     render: (state) => {
-      const p = presetById(state.system.type.presetId);
-      const stackFor = (family: string, generic: string): string => {
-        const hit = getByFamily(family);
-        return hit === null ? `"${family}", ${generic}` : (fontStack(hit.id) ?? `"${family}", ${generic}`);
+      const generic: Record<string, string> = {
+        Display: 'Georgia, serif',
+        Body: 'system-ui, -apple-system, sans-serif',
+        Mono: 'ui-monospace, monospace',
       };
       return present('type.fallbacks', 'Fallback stack', 'measured', [
-        { label: 'Display', value: stackFor(p.display, 'Georgia, serif') },
-        { label: 'Body', value: stackFor(p.body, 'system-ui, -apple-system, sans-serif') },
-        { label: 'Mono', value: stackFor(p.mono, 'ui-monospace, monospace') },
+        ...facesOf(state).map(({ role, family, id }) => ({
+          label: role,
+          value: (id === null ? null : fontStack(id)) ?? `"${family}", ${generic[role]}`,
+        })),
         {
           label: 'Email',
           value: 'Arial, Helvetica, sans-serif',
@@ -407,8 +422,8 @@ export const SECTION_4: readonly BrandComponent[] = [
       note: 'Toyota states weight per role AND per condition: "Book for text 10pt or larger on light backgrounds; Regular for 10pt or smaller when reversed on dark." Weight is not one number.',
     },
     render: (state) => {
-      const p = presetById(state.system.type.presetId);
-      const body = getByFamily(p.body);
+      const bodyFace = facesOf(state).find((f) => f.role === 'Body')!;
+      const body = bodyFace.id === null ? null : get(bodyFace.id);
       const entries: BookEntry[] = [
         { label: 'Body weight', value: String(state.system.type.weight), evidence: 'measured' },
       ];

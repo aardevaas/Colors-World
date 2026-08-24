@@ -39,6 +39,7 @@ import type {
   System,
   SystemColor,
   SystemMode,
+  TypeFamilies,
   TypeSettings,
 } from './types';
 
@@ -49,6 +50,7 @@ const PARAM_TYPE = 't';
 const PARAM_MODE = 'm';
 const PARAM_SCALE_GLOBALS = 'sg';
 const PARAM_SCALES = 's';
+const PARAM_FAMILIES = 'f';
 
 /**
  * A hand-edited URL is the one input nobody can validate before it arrives, so
@@ -60,6 +62,17 @@ const MAX_PALETTE = 32;
 
 const HEX6 = /^#?[0-9a-f]{6}$/i;
 const TYPE_SEPARATOR = '~';
+
+/**
+ * A Fontsource slug, by SHAPE rather than by membership.
+ *
+ * Deliberate: the catalogue snapshot is ~385KB and this module runs in the
+ * browser, so checking a slug against it would ship two thousand families to
+ * validate three. A slug that passes this and matches nothing simply does not
+ * load, and the family's declared fallback stack takes over — which is the
+ * entire reason a guideline states one.
+ */
+const FONT_SLUG = /^[a-z0-9-]{1,60}$/;
 
 /** Bounds that keep a hand-edited URL from rendering something impossible. */
 const TYPE_BOUNDS = {
@@ -103,6 +116,9 @@ export function encodeSystem(system: System): string {
     );
   }
 
+  const families = encodeFamilies(system.type.families);
+  if (families !== null) parts.push(`${PARAM_FAMILIES}=${families}`);
+
   const scaleGlobals = encodeScaleGlobals(system.scales);
   if (scaleGlobals !== null) parts.push(`${PARAM_SCALE_GLOBALS}=${scaleGlobals}`);
 
@@ -131,7 +147,13 @@ export function decodeSystem(search: string): System {
     palette,
     anchorHex: decodeAnchor(params.get(PARAM_ANCHOR), palette),
     roleOverrides: decodeRoles(params.get(PARAM_ROLES)),
-    type: decodeType(params.get(PARAM_TYPE)),
+    // Families ride in their own parameter rather than as trailing fields on
+    // `t`, so a System that never left its preset carries no cost for them and
+    // the two concerns stay independently editable by hand.
+    type: withFamilies(
+      decodeType(params.get(PARAM_TYPE)),
+      decodeFamilies(params.get(PARAM_FAMILIES))
+    ),
     scales: decodeScales(
       params.get(PARAM_SCALE_GLOBALS),
       params.get(PARAM_SCALES),
@@ -179,6 +201,37 @@ function decodeRoles(raw: string | null): Readonly<Partial<Record<SemanticRole, 
     out[role] = hex;
   }
   return out;
+}
+
+/**
+ * `display~body~mono`, with an empty segment meaning "keep the preset's".
+ *
+ * Null when nothing is overridden, so a System still on its preset costs no
+ * URL at all.
+ */
+function encodeFamilies(families: TypeFamilies | undefined): string | null {
+  if (families === undefined) return null;
+  const parts = [families.display ?? '', families.body ?? '', families.mono ?? ''];
+  return parts.some((p) => p !== '') ? parts.join(TYPE_SEPARATOR).replace(/~+$/, '') : null;
+}
+
+function decodeFamilies(raw: string | null): TypeFamilies | undefined {
+  if (raw === null || raw === '') return undefined;
+  const [display, body, mono] = raw.split(TYPE_SEPARATOR);
+  const keep = (slug: string | undefined): string | undefined =>
+    slug !== undefined && slug !== '' && FONT_SLUG.test(slug) ? slug : undefined;
+  const families: TypeFamilies = {
+    ...(keep(display) !== undefined ? { display: keep(display) } : {}),
+    ...(keep(body) !== undefined ? { body: keep(body) } : {}),
+    ...(keep(mono) !== undefined ? { mono: keep(mono) } : {}),
+  };
+  return Object.keys(families).length > 0 ? families : undefined;
+}
+
+/** Attaches decoded families to type settings, leaving the key off entirely
+ *  when nothing is overridden so `isDefaultType` stays a plain comparison. */
+function withFamilies(type: TypeSettings, families: TypeFamilies | undefined): TypeSettings {
+  return families === undefined ? type : { ...type, families };
 }
 
 function decodeType(raw: string | null): TypeSettings {
@@ -456,6 +509,8 @@ function isDefaultType(type: TypeSettings): boolean {
     type.tracking === DEFAULT_TYPE.tracking &&
     type.weight === DEFAULT_TYPE.weight
   );
+  // `families` is deliberately NOT part of this: it has its own parameter, and
+  // a System on default metrics with a chosen face must still encode the face.
 }
 
 /** Re-exported so callers never hand-write `#` handling. */

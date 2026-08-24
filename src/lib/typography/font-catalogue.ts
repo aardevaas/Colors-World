@@ -207,6 +207,28 @@ export function fontStack(id: string): string | null {
   return `"${font.family}", ${generic[font.category]}`;
 }
 
+/**
+ * One stylesheet covering a whole result set, at a single weight.
+ *
+ * A picker showing forty families needs forty faces, and forty separate
+ * stylesheet requests on every keystroke is not a search box, it is a denial of
+ * service you inflict on yourself. Bunny takes families pipe-separated, so the
+ * whole page costs one request — and only the regular cut, because a name set
+ * once at 400 is a specimen and the other eight weights are not being looked at.
+ */
+export function bulkCssUrl(ids: readonly string[], weight = 400): string | null {
+  const slugs = ids
+    .map((id) => get(id))
+    .filter((font): font is FontFamily => font !== null)
+    .map((font) => {
+      // Fall back to the family's nearest available cut rather than dropping it.
+      const cut = font.weights.includes(weight) ? weight : (font.weights[0] ?? weight);
+      return `${font.id}:${cut}`;
+    });
+  if (slugs.length === 0) return null;
+  return `https://fonts.bunny.net/css?family=${slugs.join('|')}&display=swap`;
+}
+
 /** How the catalogue breaks down — used by the guideline to show its own basis. */
 export function catalogueStats(): {
   readonly total: number;

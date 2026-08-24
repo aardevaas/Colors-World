@@ -30,6 +30,25 @@ export interface SystemColor {
 export type SystemMode = 'dark' | 'light';
 
 /**
+ * Families chosen from the open catalogue, as Fontsource slugs.
+ *
+ * A slug rather than a family name because the slug is the key everything else
+ * resolves on — the licence, the weights, the CSS URL. Absent means "use the
+ * preset's", so a System that never left the presets stays exactly as short in
+ * the URL as it was before this existed.
+ *
+ * This is NOT the locally-scanned font exclusion being reversed. A catalogue
+ * face is servable from a CDN, so a shared link renders the typeface it
+ * promises on a machine that has never seen it; a face scanned off the author's
+ * own disk is not, which is why that one stays out.
+ */
+export interface TypeFamilies {
+  readonly display?: string;
+  readonly body?: string;
+  readonly mono?: string;
+}
+
+/**
  * How type is set. Deliberately excludes the locally-scanned font family:
  * a face installed on one machine is not installed on another, so putting it
  * in a shared System would hand someone a link that silently renders in a
@@ -42,6 +61,8 @@ export interface TypeSettings {
   readonly lineHeight: number;
   readonly tracking: number;
   readonly weight: number;
+  /** Overrides the preset's faces, per role. Absent roles fall back to it. */
+  readonly families?: TypeFamilies;
 }
 
 /**
