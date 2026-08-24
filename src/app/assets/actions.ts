@@ -10,7 +10,7 @@ import {
   deleteBrandAsset,
   type BrandAssetKind,
 } from '@/lib/supabase/brand-assets';
-import { resolveDefaultProjectId } from '@/lib/supabase/projects';
+import { currentProjectId } from '@/lib/supabase/require-project';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 
 function isBrandAssetKind(value: FormDataEntryValue | null): value is BrandAssetKind {
@@ -44,7 +44,7 @@ export async function uploadBrandAssetAction(formData: FormData): Promise<void> 
   const groupIdRaw = formData.get('groupId');
   const groupId = typeof groupIdRaw === 'string' && groupIdRaw !== '' ? groupIdRaw : undefined;
 
-  const projectId = await resolveDefaultProjectId(user.id, supabase);
+  const projectId = await currentProjectId(user.id, supabase);
   const path = `${projectId}/brand/${groupId ?? randomUUID()}/${randomUUID()}-${file.name}`;
 
   const { error: uploadError } = await supabase.storage

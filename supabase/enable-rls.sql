@@ -22,7 +22,7 @@
 -- This reassigns every orphaned palette to a "Personal" project owned by
 -- whoever just signed up. Idempotent on the project itself — if the app has
 -- already auto-provisioned one (visiting the Studio Wall does this the
--- moment someone signs in, via resolveDefaultProjectId), this reuses it
+-- moment someone signs in, via resolveCurrentProjectId), this reuses it
 -- instead of creating a duplicate. Safe exactly once, at exactly this
 -- moment — the guard below is not decoration.
 -- ============================================================================

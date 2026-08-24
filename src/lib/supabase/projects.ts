@@ -91,20 +91,3 @@ export async function getDefaultProjectId(
   if (error) throw new Error(`Failed to resolve default project: ${error.message}`);
   return data[0]?.id ?? null;
 }
-
-/**
- * The project a signed-in user's stuff lands in when there's no explicit
- * project switcher yet (roadmap phase 4 proper) — self-provisions a
- * "Personal" project the very first time this runs for someone. Both the
- * Studio Wall page and the Scale Lab "save as palette" flow call this so
- * neither can silently diverge on what "your project" means.
- */
-export async function resolveDefaultProjectId(
-  userId: string,
-  client?: SupabaseClient
-): Promise<string> {
-  const existing = await getDefaultProjectId(userId, client);
-  if (existing !== null) return existing;
-  const project = await createProject('Personal', userId, client);
-  return project.id;
-}

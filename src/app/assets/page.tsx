@@ -3,7 +3,7 @@ import { TABS } from '@/lib/nav/tabs';
 import { redirect } from 'next/navigation';
 import { BOARD_ASSETS_BUCKET } from '@/lib/supabase/board';
 import { listBrandAssets, type BrandAssetRecord } from '@/lib/supabase/brand-assets';
-import { resolveDefaultProjectId } from '@/lib/supabase/projects';
+import { currentProjectId } from '@/lib/supabase/require-project';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 import { deleteBrandAssetAction, uploadBrandAssetAction } from './actions';
 import styles from './assets.module.css';
@@ -37,7 +37,7 @@ export default async function AssetsPage() {
   } = await supabase.auth.getUser();
   if (user === null) redirect('/login');
 
-  const projectId = await resolveDefaultProjectId(user.id, supabase);
+  const projectId = await currentProjectId(user.id, supabase);
   const assets = await listBrandAssets(projectId, supabase);
   const groups = groupByAsset(assets);
 

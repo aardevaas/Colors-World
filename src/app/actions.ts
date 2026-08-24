@@ -22,8 +22,11 @@ import {
   revokeShareLink,
   type ShareLinkRecord,
 } from '@/lib/supabase/sharing';
-import { resolveDefaultProjectId } from '@/lib/supabase/projects';
+import { requireProject } from '@/lib/supabase/require-project';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
+
+/** What an unauthenticated visitor is told when they try to edit the board. */
+const STUDIO_SIGN_IN = 'You must be signed in to edit the Studio Wall.';
 
 async function requireUserId(): Promise<{
   userId: string;
@@ -34,14 +37,13 @@ async function requireUserId(): Promise<{
     data: { user },
   } = await supabase.auth.getUser();
   if (user === null) {
-    throw new Error('You must be signed in to edit the Studio Wall.');
+    throw new Error(STUDIO_SIGN_IN);
   }
   return { userId: user.id, supabase };
 }
 
 export async function createNoteAction(): Promise<BoardItemRecord> {
-  const { userId, supabase } = await requireUserId();
-  const projectId = await resolveDefaultProjectId(userId, supabase);
+  const { projectId, supabase } = await requireProject(STUDIO_SIGN_IN);
   const existingItems = await listBoardItems(projectId, supabase);
 
   return createBoardItem(
@@ -57,8 +59,7 @@ export async function createNoteAction(): Promise<BoardItemRecord> {
 
 /** Pins a single Spectrum swatch to the Studio Wall — "individual colors, dragged from the Spectrum tray." */
 export async function pinColorAction(hex: string, name?: string): Promise<BoardItemRecord> {
-  const { userId, supabase } = await requireUserId();
-  const projectId = await resolveDefaultProjectId(userId, supabase);
+  const { projectId, supabase } = await requireProject(STUDIO_SIGN_IN);
   const existingItems = await listBoardItems(projectId, supabase);
 
   return createBoardItem(
@@ -75,8 +76,7 @@ export async function pinColorAction(hex: string, name?: string): Promise<BoardI
 }
 
 export async function createGradientAction(colors: string[]): Promise<BoardItemRecord> {
-  const { userId, supabase } = await requireUserId();
-  const projectId = await resolveDefaultProjectId(userId, supabase);
+  const { projectId, supabase } = await requireProject(STUDIO_SIGN_IN);
   const existingItems = await listBoardItems(projectId, supabase);
 
   return createBoardItem(
@@ -124,8 +124,7 @@ export async function deleteItemAction(id: string): Promise<void> {
 }
 
 export async function createTypePairingAction(): Promise<BoardItemRecord> {
-  const { userId, supabase } = await requireUserId();
-  const projectId = await resolveDefaultProjectId(userId, supabase);
+  const { projectId, supabase } = await requireProject(STUDIO_SIGN_IN);
   const existingItems = await listBoardItems(projectId, supabase);
 
   return createBoardItem(
@@ -148,8 +147,6 @@ export async function updateTypePairingAction(id: string, pairId: string): Promi
 
 /** Pins a URL to the Studio Wall, fetching a page title for the preview card on a best-effort basis. */
 export async function createLinkAction(rawUrl: string): Promise<BoardItemRecord> {
-  const { userId, supabase } = await requireUserId();
-
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -160,7 +157,7 @@ export async function createLinkAction(rawUrl: string): Promise<BoardItemRecord>
     throw new Error('Only http:// and https:// links can be pinned.');
   }
 
-  const projectId = await resolveDefaultProjectId(userId, supabase);
+  const { projectId, supabase } = await requireProject(STUDIO_SIGN_IN);
   const existingItems = await listBoardItems(projectId, supabase);
   const title = await fetchPageTitle(url.toString());
 
@@ -179,8 +176,7 @@ export async function createLinkAction(rawUrl: string): Promise<BoardItemRecord>
 
 /** Get-or-create semantics — a "Share" button always shows one live link, not a new one every click. */
 export async function getOrCreateShareLinkAction(): Promise<ShareLinkRecord> {
-  const { userId, supabase } = await requireUserId();
-  const projectId = await resolveDefaultProjectId(userId, supabase);
+  const { userId, projectId, supabase } = await requireProject(STUDIO_SIGN_IN);
 
   const existing = await getActiveShareLink(projectId, supabase);
   if (existing !== null) return existing;
@@ -206,7 +202,7 @@ export interface CreateImageResult {
  * one action, not a separate follow-up step.
  */
 export async function createImageAction(formData: FormData): Promise<CreateImageResult> {
-  const { userId, supabase } = await requireUserId();
+  const { projectId, supabase } = await requireProject(STUDIO_SIGN_IN);
 
   const file = formData.get('file');
   if (!(file instanceof File)) {
@@ -216,7 +212,6 @@ export async function createImageAction(formData: FormData): Promise<CreateImage
   const colorsRaw = formData.get('colors');
   const colors: string[] = typeof colorsRaw === 'string' ? JSON.parse(colorsRaw) : [];
 
-  const projectId = await resolveDefaultProjectId(userId, supabase);
   const path = `${projectId}/${randomUUID()}-${file.name}`;
 
   const { error: uploadError } = await supabase.storage

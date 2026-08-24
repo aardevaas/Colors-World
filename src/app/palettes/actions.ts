@@ -7,7 +7,7 @@ import {
   initializePalette,
 } from '@/lib/supabase/branch-workflow';
 import { createBoardItem, listBoardItems, nextBoardPosition } from '@/lib/supabase/board';
-import { resolveDefaultProjectId } from '@/lib/supabase/projects';
+import { currentProjectId } from '@/lib/supabase/require-project';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 import type { ScaleSpec } from '@/lib/color-engine';
 import type { PaletteSnapshot } from '@/lib/versioning';
@@ -39,7 +39,7 @@ export async function createPaletteFromScale(
     throw new Error('You must be signed in to save a palette.');
   }
 
-  const projectId = await resolveDefaultProjectId(user.id, supabase);
+  const projectId = await currentProjectId(user.id, supabase);
 
   const { palette, branch } = await initializePalette(
     name,
