@@ -307,12 +307,41 @@ components are `measured` rather than declared**.
 - Reconcile the two schema mismatches **before data exists**:
   `project_members.role` default `'member'` → `owner|editor|reviewer|viewer`;
   `BrandAssetKind 'logo'|'mark'|'other'` → `mark|image|font|document`.
-- The **approval gate** — approved, then it renders. Pinned to a version.
+- ~~The **approval gate** — approved, then it renders.~~ **VOID — contradicted
+  by Q3 = A**, settled after this line was written: *everything renders;
+  approval is a stamp on top, not a gate.* A new user's Book is never empty.
+  What is still wanted is the STAMP: approval per section, pinned to a version,
+  going stale when the section changes (D2). Not built.
 - Project switcher.
 
 **Verified by:** two real accounts, neither able to read the other's project.
 `enable-rls.sql` is unrunnable past the first user — `policies.sql` is the
 idempotent layer and the truth.
+
+**DONE 2026-08-24, except the two items named below.**
+
+- `2228985` **schema reconciled before data exists** — `project_members.role`
+  → `owner|editor|reviewer|viewer` (default `viewer`, least privilege);
+  `brand_assets.kind` → `mark|image|font|document`. `BrandAssetKind` now
+  re-exports `AssetKind` so there is one definition rather than two agreeing by
+  coincidence, and `schema-contract.test.ts` reads the DDL and compares it to
+  the unions so this cannot drift again.
+  **`supabase/reconcile-2026-08-24.sql` HAS NOT BEEN RUN — that is yours.**
+- `8402efe` **all eleven call sites** replaced with `requireProject()`. The
+  current project rides in a cookie whose membership is verified before the id
+  reaches anything that writes; `isMemberOf` returns false when the lookup
+  itself errors, so an outage cannot become an authorisation bypass.
+  `resolveDefaultProjectId` deleted.
+- `67ad807` **the switcher** — Server Component, plain form, no client JS,
+  hidden until there are two projects to choose between.
+
+**STILL OPEN in this phase:**
+
+1. **Two real accounts, neither able to read the other's project.** This needs
+   live credentials and is the founder's to run. Nothing here has been verified
+   against a real database — the tests use an in-memory fake, which proves the
+   repository logic and proves nothing about RLS.
+2. **The approval stamp** (D2), per the correction above.
 
 ---
 
