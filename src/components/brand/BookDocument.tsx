@@ -1,6 +1,10 @@
 import { SECTION_LABELS, type SectionId } from '@/lib/brand/ids';
 import { componentsInSection, validateBook } from '@/lib/brand/registry';
+import { systemRoles } from '@/lib/brand/colour';
+import { resolvedStacks } from '@/lib/brand/typography';
 import type { BookBlock, BookEntry, BrandState, Evidence, Finding } from '@/lib/brand/types';
+import { encodeSystem } from '@/lib/system/codec';
+import { GuidelineExport } from './GuidelineExport';
 import styles from './book.module.css';
 
 /**
@@ -164,6 +168,12 @@ export function BookDocument({ state }: BookDocumentProps) {
               </a>
             </>
           )}
+
+          <p className={styles.railHead}>Export</p>
+          <a className={styles.railLink} href="#export">
+            <span className={styles.pip} data-fill="full" aria-hidden="true" />
+            <span className={styles.railLabel}>Take it with you</span>
+          </a>
         </div>
       </nav>
 
@@ -229,6 +239,20 @@ export function BookDocument({ state }: BookDocumentProps) {
             ))}
           </section>
         ))}
+
+        {/* Resolved here, on the server, and handed down as plain strings and
+            numbers. `resolvedStacks` reaches into the ~385KB font catalogue,
+            which this component already pays for and the browser must not. */}
+        <GuidelineExport
+          query={encodeSystem(state.system)}
+          tokens={{
+            roles: systemRoles(state.system),
+            palette: state.system.palette,
+            type: state.system.type,
+            stacks: resolvedStacks(state),
+            mode: state.system.mode,
+          }}
+        />
       </div>
     </div>
   );

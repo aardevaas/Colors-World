@@ -125,3 +125,37 @@ select {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- print ----------
+   App chrome, everywhere. The System Bar floats over every room and the skip
+   link exists for keyboards; neither is a thing that can be on paper, and both
+   sit outside any room's own stylesheet, so they are hidden here rather than
+   six times over. Page-level print rules live with the page — see
+   `components/brand/book.module.css`, where the guideline sets its own. */
+
+@media print {
+  /* Ink is the whole design constraint. Every room reads on a near-black
+     ground; printed, that is a solid dark page that empties a cartridge and
+     reads worse. Redefining the tokens rather than the rules means paper is
+     one palette swap and nothing else in any room moves — which only works
+     because nothing hardcodes a colour. */
+  :root {
+    --surface-void: #ffffff;
+    --surface-panel: #ffffff;
+    --surface-raised: #f4f4f5;
+    --hairline: #c8c8cc;
+    --hairline-bright: #8a8a90;
+    --text-primary: #000000;
+    --text-secondary: #26262a;
+    --text-tertiary: #4a4a50;
+  }
+
+  @page {
+    margin: 16mm 14mm;
+  }
+
+  [data-chrome='app'],
+  .skipLink {
+    display: none !important;
+  }
+}

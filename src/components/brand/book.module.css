@@ -386,3 +386,247 @@
   line-height: 1.55;
   color: var(--text-tertiary);
 }
+
+/* ---------- export ----------
+   Laid out on the same two-column grid the sections use — what it is on the
+   left, what you do about it on the right — so the last block on the page
+   reads like the rest of the document rather than like a toolbar bolted on. */
+
+.export {
+  padding: var(--space-vast) var(--space-wide) var(--space-vast);
+  border-top: var(--rule-width) solid var(--hairline);
+}
+
+.exportRow {
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  gap: var(--space-base) var(--space-wide);
+  align-items: start;
+  padding: var(--space-base) 0;
+  border-bottom: var(--rule-width) solid var(--hairline);
+}
+
+.exportRow:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 760px) {
+  .exportRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.exportWhat {
+  min-width: 0;
+}
+
+.exportTitle {
+  margin: 0 0 var(--space-hair);
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.exportWhy {
+  margin: 0;
+  max-width: 46ch;
+  font-size: var(--text-small);
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+.exportWhy code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--text-secondary);
+}
+
+.exportDo {
+  display: flex;
+  /* A row that cannot break sets a min-content floor its whole ancestor chain
+     inherits — one missing wrap here is a sideways scrollbar on <body>. */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-tight);
+  min-width: 0;
+}
+
+.exportUrl {
+  flex: 1 1 20rem;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  background: var(--surface-panel);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.exportTabs {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-hair);
+}
+
+.exportTab {
+  padding: 0.3rem 0.55rem;
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.exportTab:hover {
+  border-color: var(--hairline-bright);
+  color: var(--text-secondary);
+}
+
+.exportTab[data-active='true'] {
+  border-color: var(--hairline-bright);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.exportCode {
+  flex-basis: 100%;
+  margin: 0;
+  max-height: 22rem;
+  padding: var(--space-snug);
+  border: var(--rule-width) solid var(--hairline);
+  border-radius: 3px;
+  background: var(--surface-panel);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  /* Its own scroll container in both axes: token lines are long and this must
+     never be the reason the page scrolls sideways. */
+  overflow: auto;
+}
+
+.exportActions {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-tight);
+}
+
+.exportAction {
+  padding: 0.4rem 0.75rem;
+  border: var(--rule-width) solid var(--hairline-bright);
+  border-radius: 3px;
+  background: var(--surface-raised);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.exportAction:hover {
+  background: var(--surface-panel);
+  border-color: var(--text-tertiary);
+}
+
+/* ---------- print ----------
+   The PDF, and there is no other PDF. The browser's own print pipeline
+   renders THIS page, so the file has real text, real anchors and a real
+   outline — and there is no second renderer that could ever print something
+   the document does not say. That is the same reason the commercial export
+   will be this renderer with blocks deleted rather than a renderer of its own.
+
+   The paper palette and the page margins are NOT here: a CSS Module rejects
+   any rule without a local class in it, so `:root` and `@page` cannot live in
+   this file at all. They are in `app/globals.css`, which is also the more
+   correct home — no room in this app should print on a near-black ground, not
+   only this one. Everything below is layout, and layout is per-page.
+
+   That rule is worth stating because tsc and the full test suite both passed
+   with `:global(:root)` in this file and the page returned a 500. */
+
+@media print {
+  .shell {
+    min-height: 0;
+    display: block;
+  }
+
+  /* The masthead is navigation. Nothing to navigate to on paper. */
+  .shell > header {
+    display: none;
+  }
+
+  .book {
+    display: block;
+  }
+
+  /* Section links, a sticky position and a completeness pip: three things
+     that mean nothing once the page cannot move. The counts they carried are
+     printed on each section heading anyway. */
+  .rail {
+    display: none;
+  }
+
+  .doc {
+    max-width: none;
+    padding: 0;
+  }
+
+  .docHead {
+    /* The masthead of the document itself, as opposed to the app's. Keep it
+       with the first thing it introduces. */
+    break-after: avoid;
+  }
+
+  /* A rule split across a page break is a rule someone reads half of. Blocks
+     are small and self-contained, so they are cheap to keep whole. */
+  .block,
+  .finding,
+  .findingsPanel {
+    break-inside: avoid;
+  }
+
+  .sectionHead,
+  .blockHead {
+    break-after: avoid;
+  }
+
+  /* Adjacent sibling, NOT `.section:first-of-type`. `:first-of-type` counts
+     ELEMENTS of that tag, and the findings panel is a <section> too — so when
+     the guideline has anything to report, the first `.section` is the second
+     <section> on the page, the exemption matches nothing, and Colour opens on
+     a blank sheet. Measured: it matched 0 elements. `.section + .section`
+     breaks before every section that follows one, which is the rule actually
+     meant, and it does not care what precedes the first. */
+  .section + .section,
+  .export {
+    break-before: page;
+  }
+
+  /* The code block scrolls on screen; on paper there is nothing to scroll, so
+     it has to wrap or the right-hand side of every token line is simply gone. */
+  .exportCode {
+    max-height: none;
+    overflow: visible;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* Controls do nothing on paper. The URL stays: it is what makes a printout
+     traceable back to the living document, and the one thing on the sheet that
+     is still worth typing out. */
+  .exportTabs,
+  .exportActions,
+  .exportAction {
+    display: none;
+  }
+
+  .exportRow {
+    grid-template-columns: 1fr;
+  }
+}

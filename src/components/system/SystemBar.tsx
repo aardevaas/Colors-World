@@ -94,6 +94,7 @@ export function SystemBar() {
       <button
         type="button"
         className={styles.collapsedPill}
+        data-chrome="app"
         onClick={() => setExpanded(true)}
         onDragOver={handleDragOver}
         onDragLeave={() => setDragOver(false)}
@@ -146,6 +147,7 @@ export function SystemBar() {
   return (
     <div
       className={styles.panel}
+      data-chrome="app"
       onDragOver={handleDragOver}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
