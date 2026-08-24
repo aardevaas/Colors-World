@@ -233,6 +233,30 @@ Cost: `/brand` 1.29 → 3.96 kB. The 385KB catalogue stayed on the server.
 **Done when:** the guideline catches things the user did not know were wrong.
 **From here the product is shippable.**
 
+**DONE 2026-08-24.** On a five-colour palette with a stated ratio the guideline
+reports six findings, none of them typed in:
+
+| finding | why it is not available elsewhere |
+|---|---|
+| primary 0.2% against a 25% floor, on 3 of 4 surfaces | every manual states a ratio, none checks one |
+| text on surface 2.17:1, below AA | ordinary, and it was already caught |
+| **onPrimary on primary reaches AA but not under tritanopia — 4.14:1** | reads 5.27:1 in every contrast checker there is |
+| three chart-series pairs collapsing under CVD | already shipped |
+
+§3 is 10 of 15, §4 is 14 of 18, and **20 of the 24 rendered colour and type
+components are `measured` rather than declared**.
+
+- **Proportions** (`2ac851d`, `c9687a6`) — front-to-back alpha compositing over
+  declared geometry, measured off the four `/visualizer` templates. Q1 = A.
+  `pp=primary.25` in the codec, so a stated ratio travels in the share link.
+- **The pairings matrix** (`bf6080d`) — 22 pairs, each re-measured through four
+  CVD simulations. Only the four required pairs fail; a CVD regression warns,
+  because WCAG does not require a simulated pass.
+- **Channel rules** (`11f09c9`) — computed, not authored. Print answers whether
+  the licence permits print use at all, which no manual in the sample does.
+- **Generated misuse** — already measured for colour and type before this
+  phase. Checked rather than assumed.
+
 ---
 
 ### Days 9–11 · Sep 1–3 — Applied views
