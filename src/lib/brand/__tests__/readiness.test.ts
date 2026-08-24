@@ -29,10 +29,11 @@ import { ANONYMOUS_EMPTY, mark, projectWith, stateOf, systemWith } from './fixtu
 describe('what an empty System already has', () => {
   it('shows typography as present, because the System ships a default type system', () => {
     const present = REGISTRY.filter((c) => isPresent(c.id, ANONYMOUS_EMPTY)).map((c) => c.id);
+    // Order is COMPONENT_IDS order, which is book order — see registry/index.ts.
     expect(present).toEqual([
       'type.families',
-      'type.metrics',
       'type.hierarchy',
+      'type.metrics',
       'type.text-spacing',
     ]);
   });

@@ -25,6 +25,18 @@ import { SECTION_7 } from './section-7-editorial';
 import { SECTION_8 } from './section-8-collateral';
 import { SECTION_9 } from './section-9-governance';
 
+const DECLARED_ORDER = new Map<ComponentId, number>(COMPONENT_IDS.map((id, i) => [id, i]));
+
+/**
+ * Every component, in the order the book presents them.
+ *
+ * Sorted by `COMPONENT_IDS` rather than by the order the section files happen
+ * to list them. Found by rendering §3 after the grain re-cut: the six new
+ * components had been appended to the end of their file, so the book read
+ * palette → … → contrast pairings → hierarchy → proportions, which is not an
+ * order anyone would write a guideline in. `COMPONENT_IDS` is now the single
+ * authority on sequence, and a component moves in the book by moving there.
+ */
 export const REGISTRY: readonly BrandComponent[] = [
   ...SECTION_1,
   ...SECTION_2,
@@ -35,7 +47,7 @@ export const REGISTRY: readonly BrandComponent[] = [
   ...SECTION_7,
   ...SECTION_8,
   ...SECTION_9,
-];
+].sort((a, b) => (DECLARED_ORDER.get(a.id) ?? 0) - (DECLARED_ORDER.get(b.id) ?? 0));
 
 const BY_ID: ReadonlyMap<ComponentId, BrandComponent> = new Map(
   REGISTRY.map((c) => [c.id, c])

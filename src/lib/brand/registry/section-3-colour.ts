@@ -114,7 +114,7 @@ function worstPairing(
 export const SECTION_3: readonly BrandComponent[] = [
   {
     id: 'colour.palette',
-    name: 'Palette & hierarchy',
+    name: 'Palette',
     section: 3,
     requires: [],
     machine: 'M2',
@@ -139,7 +139,7 @@ export const SECTION_3: readonly BrandComponent[] = [
     },
     render: (state) => {
       const { system } = state;
-      if (!hasPalette(system)) return absent('colour.palette', 'Palette & hierarchy', NO_PALETTE);
+      if (!hasPalette(system)) return absent('colour.palette', 'Palette', NO_PALETTE);
       const entries: BookEntry[] = system.palette.map((c, i) => ({
         label: `Colour ${i + 1}`,
         value: c.hex,
@@ -150,7 +150,7 @@ export const SECTION_3: readonly BrandComponent[] = [
         value: system.anchorHex ?? 'not set',
         note: 'The colour every scale is built from.',
       });
-      return present('colour.palette', 'Palette & hierarchy', 'declared', entries);
+      return present('colour.palette', 'Palette', 'declared', entries);
     },
     validate: (state): readonly Finding[] => {
       const { system } = state;

@@ -140,3 +140,23 @@ describe('every contract is complete', () => {
     }
   });
 });
+
+describe('book order', () => {
+  it('follows the declared id order, not the order section files list them', () => {
+    /*
+     * Caught by rendering §3 after the grain re-cut: the six new components had
+     * been appended to the end of their file, so the book read palette → … →
+     * contrast pairings → hierarchy → proportions. A guideline is a document
+     * and its sequence is part of its meaning.
+     */
+    const declared = COMPONENT_IDS.filter((id) => REGISTRY.some((c) => c.id === id));
+    expect(REGISTRY.map((c) => c.id)).toEqual([...declared]);
+  });
+
+  it('gives every component a distinct name, so no two rows read alike', () => {
+    const names = REGISTRY.map((c) => c.name);
+    expect(new Set(names).size, `duplicate names: ${names.filter((n, i) => names.indexOf(n) !== i).join(', ')}`).toBe(
+      names.length
+    );
+  });
+});
