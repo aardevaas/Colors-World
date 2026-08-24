@@ -1,9 +1,20 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { AssetKind } from '@/lib/brand/project';
 import { getSupabaseClient } from './client';
 
-export type BrandAssetKind = 'logo' | 'mark' | 'other';
+/**
+ * Re-exported, not redeclared.
+ *
+ * This was its own union — `'logo' | 'mark' | 'other'` — and it disagreed with
+ * `AssetKind`, which is what the registry renders from. Two definitions of the
+ * same idea in two files is how a persistence layer and a contract drift
+ * apart without either one looking wrong on its own, so there is now one and
+ * this points at it. The database CHECK matches it too; see
+ * `supabase/reconcile-2026-08-24.sql`.
+ */
+export type BrandAssetKind = AssetKind;
 
 export interface BrandAssetRecord {
   readonly id: string;

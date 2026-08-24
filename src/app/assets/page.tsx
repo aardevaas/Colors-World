@@ -75,10 +75,14 @@ export default async function AssetsPage() {
 
       <form action={uploadBrandAssetAction} className={styles.uploadForm}>
         <input type="text" name="name" placeholder="Name — e.g. Primary logo" required className={styles.textInput} />
-        <select name="kind" className={styles.kindSelect} defaultValue="logo">
-          <option value="logo">Logo</option>
-          <option value="mark">Mark</option>
-          <option value="other">Other</option>
+        {/* The registry's four kinds. `mark` is not a synonym for "logo" —
+            it is the one kind with derivable geometry, which is what decides
+            whether clear space and minimum size can be computed at all. */}
+        <select name="kind" className={styles.kindSelect} defaultValue="mark">
+          <option value="mark">Mark — a vector logo</option>
+          <option value="image">Image</option>
+          <option value="font">Font</option>
+          <option value="document">Document</option>
         </select>
         <input type="file" name="file" accept="image/*,.svg" required className={styles.fileInput} />
         <button type="submit" className={styles.uploadButton}>
@@ -87,7 +91,7 @@ export default async function AssetsPage() {
       </form>
 
       {groups.length === 0 ? (
-        <p className={styles.empty}>No brand assets yet — upload a logo or mark above.</p>
+        <p className={styles.empty}>No brand assets yet — upload a mark above.</p>
       ) : (
         <div className={styles.grid}>
           {groups.map(({ groupId, current, history }) => (

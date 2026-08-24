@@ -17,7 +17,10 @@ create table if not exists brand_assets (
   project_id uuid not null references projects(id) on delete cascade,
   group_id uuid not null default gen_random_uuid(),
   name text not null,
-  kind text not null check (kind in ('logo', 'mark', 'other')),
+  -- mark | image | font | document, from src/lib/brand/project.ts. The
+  -- distinction that matters is not logo-versus-mark, it is "vector geometry
+  -- M1 can derive clear space and minimum size from" versus everything else.
+  kind text not null check (kind in ('mark', 'image', 'font', 'document')),
   version integer not null default 1,
   storage_path text not null,
   created_by uuid not null references profiles(id) on delete cascade,

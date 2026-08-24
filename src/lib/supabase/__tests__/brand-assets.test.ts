@@ -9,27 +9,27 @@ describe('createBrandAsset', () => {
   test('creates a brand-new asset at version 1 with a fresh group', async () => {
     const client = createFakeSupabaseClient();
     const asset = await createBrandAsset(
-      { projectId: PROJECT_ID, name: 'Wordmark', kind: 'logo', storagePath: 'p/1', createdBy: USER_ID },
+      { projectId: PROJECT_ID, name: 'Wordmark', kind: 'mark', storagePath: 'p/1', createdBy: USER_ID },
       client
     );
 
     expect(asset.version).toBe(1);
     expect(asset.name).toBe('Wordmark');
-    expect(asset.kind).toBe('logo');
+    expect(asset.kind).toBe('mark');
     expect(asset.groupId).toBeDefined();
   });
 
   test('adding a version to an existing group increments version and keeps the group id', async () => {
     const client = createFakeSupabaseClient();
     const first = await createBrandAsset(
-      { projectId: PROJECT_ID, name: 'Wordmark', kind: 'logo', storagePath: 'p/1', createdBy: USER_ID },
+      { projectId: PROJECT_ID, name: 'Wordmark', kind: 'mark', storagePath: 'p/1', createdBy: USER_ID },
       client
     );
     const second = await createBrandAsset(
       {
         projectId: PROJECT_ID,
         name: 'Wordmark',
-        kind: 'logo',
+        kind: 'mark',
         storagePath: 'p/2',
         createdBy: USER_ID,
         groupId: first.groupId,
@@ -44,7 +44,7 @@ describe('createBrandAsset', () => {
   test('two independent uploads (no groupId) get different groups', async () => {
     const client = createFakeSupabaseClient();
     const a = await createBrandAsset(
-      { projectId: PROJECT_ID, name: 'Logo A', kind: 'logo', storagePath: 'p/a', createdBy: USER_ID },
+      { projectId: PROJECT_ID, name: 'Logo A', kind: 'mark', storagePath: 'p/a', createdBy: USER_ID },
       client
     );
     const b = await createBrandAsset(
@@ -59,11 +59,11 @@ describe('listBrandAssets', () => {
   test('only returns assets for the given project', async () => {
     const client = createFakeSupabaseClient();
     await createBrandAsset(
-      { projectId: PROJECT_ID, name: 'Mine', kind: 'logo', storagePath: 'p/1', createdBy: USER_ID },
+      { projectId: PROJECT_ID, name: 'Mine', kind: 'mark', storagePath: 'p/1', createdBy: USER_ID },
       client
     );
     await createBrandAsset(
-      { projectId: 'other-project', name: 'Not mine', kind: 'logo', storagePath: 'p/2', createdBy: USER_ID },
+      { projectId: 'other-project', name: 'Not mine', kind: 'mark', storagePath: 'p/2', createdBy: USER_ID },
       client
     );
 
@@ -77,14 +77,14 @@ describe('deleteBrandAsset', () => {
   test('removes just the one version, not the whole group', async () => {
     const client = createFakeSupabaseClient();
     const first = await createBrandAsset(
-      { projectId: PROJECT_ID, name: 'Wordmark', kind: 'logo', storagePath: 'p/1', createdBy: USER_ID },
+      { projectId: PROJECT_ID, name: 'Wordmark', kind: 'mark', storagePath: 'p/1', createdBy: USER_ID },
       client
     );
     const second = await createBrandAsset(
       {
         projectId: PROJECT_ID,
         name: 'Wordmark',
-        kind: 'logo',
+        kind: 'mark',
         storagePath: 'p/2',
         createdBy: USER_ID,
         groupId: first.groupId,

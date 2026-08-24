@@ -14,7 +14,7 @@ import { resolveDefaultProjectId } from '@/lib/supabase/projects';
 import { createServerSupabaseClient } from '@/lib/supabase/server-client';
 
 function isBrandAssetKind(value: FormDataEntryValue | null): value is BrandAssetKind {
-  return value === 'logo' || value === 'mark' || value === 'other';
+  return value === 'mark' || value === 'image' || value === 'font' || value === 'document';
 }
 
 export async function uploadBrandAssetAction(formData: FormData): Promise<void> {

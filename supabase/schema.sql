@@ -245,7 +245,12 @@ create table if not exists projects (
 create table if not exists project_members (
   project_id uuid not null references projects(id) on delete cascade,
   user_id uuid not null references profiles(id) on delete cascade,
-  role text not null default 'member',
+  -- owner | editor | reviewer | viewer — the registry's vocabulary
+  -- (src/lib/brand/project.ts). Defaults to the least privilege there is:
+  -- a membership row written without an explicit role is a bug, and the safe
+  -- reading of a bug in an access column is the one that grants nothing.
+  role text not null default 'viewer'
+    check (role in ('owner', 'editor', 'reviewer', 'viewer')),
   created_at timestamptz not null default now(),
   primary key (project_id, user_id)
 );
