@@ -69,9 +69,17 @@
   border-color: var(--text-primary);
 }
 
+/* Wrapping is not cosmetic here. A flex row defaults to `nowrap`, and a row
+   that cannot break sets a FLOOR on how narrow its container may be: these
+   four controls (61 + 61 + 67 + 169 plus gaps) pinned the control bar's
+   min-content at 442px, so every viewport below that scrolled sideways — and
+   because a grid container's automatic minimum is its content's min-content,
+   that floor propagated all the way out to <body>. The nav was blamed for
+   this and was innocent; its own min-content is 353. */
 .controlGroup {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-snug);
 }
 

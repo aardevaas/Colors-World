@@ -16,6 +16,14 @@
   border-bottom: var(--rule-width) solid var(--hairline);
 }
 
+/* `nowrap` keeps "COLORS WORLD / TYPOGRAPHY" on one line, which is right at
+   every width where it fits. Uppercase at 0.24em tracking is wide, though, and
+   below about 360px it does not fit — and a nowrap heading sets a min-content
+   floor its whole ancestor chain inherits, which is how one line of CSS made
+   the entire page scroll sideways at 320px.
+
+   Released only where it has to be, so nothing changes at the widths where it
+   already worked. */
 .wordmark {
   font-size: var(--text-body);
   font-weight: 500;
@@ -23,6 +31,12 @@
   text-transform: uppercase;
   margin: 0;
   white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .wordmark {
+    white-space: normal;
+  }
 }
 
 .wordmarkDim {
