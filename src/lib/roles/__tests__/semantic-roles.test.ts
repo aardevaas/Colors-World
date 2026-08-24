@@ -353,3 +353,81 @@ describe('flipPolarity', () => {
     expect(twice.text.oklch.l).toBeCloseTo(roles.text.oklch.l, 6);
   });
 });
+
+/*
+ * THE GUARANTEE, GENERALISED.
+ *
+ * `keeps text legible against surface at three colors` above asserted exactly
+ * this, for exactly one palette, and the model did not hold it in general: a
+ * five-colour palette handed `surface` whichever colour happened to be left
+ * over, and a saturated green is not a panel. Measured on the live book,
+ * text-on-surface came out 2.85:1 in dark and 2.17:1 in light — a failing
+ * check the guideline correctly reported about its own interface.
+ *
+ * `inkOn` already establishes the principle for filled controls: a fill
+ * carries an ink it can actually support, by construction rather than by luck.
+ * A panel is the same promise. These pin it across palette sizes and both
+ * polarities.
+ */
+describe('text is legible on surface, for every palette', () => {
+  const PALETTES: readonly (readonly string[])[] = [
+    ['#0a5cff', '#ff6b35', '#1b1b1f', '#f5f5f7', '#00a67e'],
+    ['#0a5cff', '#ff6b35', '#1b1b1f'],
+    ['#0a5cff', '#1b1b1f'],
+    ['#0a5cff'],
+    [],
+    ['#7c5cff', '#22d3ee', '#facc15', '#0f172a', '#f8fafc', '#ec4899'],
+    ['#808080', '#7f7f7f', '#818181'],
+    ['#000000', '#ffffff'],
+    ['#00a67e', '#00a67f', '#00a680'],
+  ];
+
+  const asColors = (hexes: readonly string[]) =>
+    hexes.map((hex) => ({ hex, oklch: parseColor(hex) }));
+
+  for (const hexes of PALETTES) {
+    const label = hexes.length === 0 ? '(empty)' : hexes.join(' ');
+
+    /*
+     * CONDITIONAL, and the condition is the honest part. Some palettes cannot
+     * hold text anywhere — three near-identical greys have no page/ink pair
+     * that clears AA — and demanding a legible panel there would be demanding
+     * the impossible. What the model CAN promise is that the panel is never
+     * the weaker of the two: if the page holds text, the card does too.
+     */
+    it(`the panel holds text whenever the page does — ${label}`, () => {
+      const roles = deriveRoles(asColors(hexes));
+      const page = contrastRatio(roles.text.oklch, roles.background.oklch);
+      if (page < 4.5) return;
+      expect(contrastRatio(roles.text.oklch, roles.surface.oklch)).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`the panel holds text whenever the page does, once flipped — ${label}`, () => {
+      const roles = flipPolarity(deriveRoles(asColors(hexes)));
+      const page = contrastRatio(roles.text.oklch, roles.background.oklch);
+      if (page < 4.5) return;
+      expect(contrastRatio(roles.text.oklch, roles.surface.oklch)).toBeGreaterThanOrEqual(4.5);
+    });
+
+    /*
+     * Direction is chosen for LEGIBILITY first and convention second, which
+     * is why this does not assert "the card is lighter in dark mode".
+     *
+     * The conventional card steps toward the ink — it lifts off a dark page,
+     * settles into a light one. That costs contrast, and on a mid-tone page it
+     * costs more than there is to spend, so the panel recedes instead. Black
+     * text on a grey page gets a WHITE card rather than a darker one, which is
+     * both legible and what a designer would have drawn anyway.
+     *
+     * What must hold in every case is that the panel is a panel: a colour of
+     * its own, not the page wearing a second name. The original bug failed
+     * this differently — the panel was distinct AND on the wrong side AND
+     * illegible, at 2.17:1.
+     */
+    it(`the panel is never just the page again — ${label}`, () => {
+      for (const roles of [deriveRoles(asColors(hexes)), flipPolarity(deriveRoles(asColors(hexes)))]) {
+        expect(roles.surface.hex.toLowerCase()).not.toBe(roles.background.hex.toLowerCase());
+      }
+    });
+  }
+});

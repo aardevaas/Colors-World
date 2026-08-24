@@ -137,6 +137,81 @@ function neutral(hex: string): RoleColor {
   return { hex, oklch: parseColor(hex) };
 }
 
+/**
+ * The smallest lightness step that reads as a separate panel.
+ *
+ * 0.06 in OKLCH is visible as a raised card without becoming a second
+ * background colour. Small enough that a panel stepped off the page keeps
+ * essentially all of the page's own contrast against text.
+ */
+const SURFACE_STEP_L = 0.06;
+
+/** WCAG 2.x normal-text minimum. Duplicated from role-contrast to avoid a cycle. */
+const TEXT_AA = 4.5;
+
+/**
+ * A panel the text can actually be read on, derived from the page itself.
+ *
+ * `inkOn` already establishes this principle for filled controls: a fill
+ * carries an ink it can support, by construction rather than by luck. A panel
+ * is the same promise and it was not being kept — `surface` took whichever
+ * palette colour happened to be left over after the other roles had claimed
+ * theirs, and with five colours that leftover can be a saturated green. Text
+ * on it measured 2.85:1.
+ *
+ * Stepping from the background TOWARD THE TEXT is what makes this work in both
+ * polarities without a second rule: in a dark interface the text is light, so
+ * the panel lifts off the page; in a light one the text is dark, so it settles
+ * into it. Either way the panel lands on the same side of the page as the ink,
+ * and keeps nearly all of the page's own contrast against it.
+ *
+ * The background's hue and chroma are kept, so the panel is a tint of the page
+ * rather than a grey dropped next to it.
+ */
+function steppedSurface(background: RoleColor, text: RoleColor): RoleColor {
+  const towardText = Math.sign(text.oklch.l - background.oklch.l) || 1;
+
+  const at = (l: number): RoleColor => {
+    const oklch: Oklch = { ...background.oklch, l: clamp01(l) };
+    return { hex: formatHex(oklch), oklch };
+  };
+
+  /*
+   * Toward the text first, then away from it.
+   *
+   * Toward is the conventional card: a panel lifts off a dark page and settles
+   * into a light one, which is what every design system ships. It also COSTS
+   * contrast, because it moves the panel closer to the ink — fine when the
+   * page is near one end of the range, useless when the page is a mid-tone.
+   *
+   * Away from the text is the escape hatch, and it always helps: a panel that
+   * recedes from the ink can only read better than the page does. It looks
+   * less like a card and more like a well, which is the right trade when the
+   * alternative is text nobody can read.
+   */
+  const ladder: number[] = [];
+  for (let step = 1; step <= 8; step++) ladder.push(background.oklch.l + towardText * SURFACE_STEP_L * step);
+  for (let step = 1; step <= 8; step++) ladder.push(background.oklch.l - towardText * SURFACE_STEP_L * step);
+
+  let firstDistinct: RoleColor | null = null;
+  for (const l of ladder) {
+    const candidate = at(l);
+    // A step that clamped against the end of the range is the background again.
+    if (candidate.hex.toLowerCase() === background.hex.toLowerCase()) continue;
+    firstDistinct ??= candidate;
+    if (contrastRatio(text.oklch, candidate.oklch) >= TEXT_AA) return candidate;
+  }
+
+  /*
+   * Nothing on the ladder holds the text, which means the PAGE cannot hold it
+   * either — background and text are too close for anything between them to
+   * work. That is a failing palette rather than a failing panel, `text on
+   * background` is already reporting it, and inventing a panel that passes
+   * would hide the real fault behind a fixed symptom.
+   */
+  return firstDistinct ?? at(background.oklch.l + towardText * SURFACE_STEP_L);
+}
+
 /** How far a colliding fallback is nudged in OKLCH lightness per attempt. */
 const FALLBACK_NUDGE_L = 0.03;
 /**
@@ -286,9 +361,22 @@ function deriveFromPalette(palette: readonly RoleColor[]): RoleAssignment {
   const primary = byChroma[0] !== undefined ? take(byChroma[0]) : claimFallback('primary', claimed);
   const accent = byChroma[1] !== undefined ? take(byChroma[1]) : claimFallback('accent', claimed);
 
-  // Surface is the panel the background carries, so of what is left it should
-  // be the color nearest the background — the smallest step up off the page.
-  const nearestToBackground = [...pool].sort(
+  /*
+   * Surface is the panel the background carries, so of what is left it should
+   * be the colour nearest the background — the smallest step up off the page.
+   *
+   * ONLY IF THE TEXT CAN BE READ ON IT. That qualifier is the whole fix: the
+   * pool at this point is whatever the other five roles did not want, and
+   * "whatever is left" is not a design decision. A five-colour palette handed
+   * this a saturated green and the interface drew black on it at 2.85:1.
+   *
+   * When nothing in the pool qualifies, the panel is derived from the page
+   * rather than borrowed from the palette. A computed tint of the background
+   * is a better panel than a brand colour that cannot hold text, and it leaves
+   * that colour in the pool for `border` — which has a far lower bar to clear.
+   */
+  const legible = pool.filter((c) => contrastRatio(text.oklch, c.oklch) >= TEXT_AA);
+  const nearestToBackground = [...legible].sort(
     (a, b) =>
       Math.abs(a.oklch.l - background.oklch.l) - Math.abs(b.oklch.l - background.oklch.l) ||
       byLightnessThenHex(a, b)
@@ -296,7 +384,7 @@ function deriveFromPalette(palette: readonly RoleColor[]): RoleAssignment {
   const surface =
     nearestToBackground !== undefined
       ? take(nearestToBackground)
-      : claimFallback('surface', claimed);
+      : claimed.claim(steppedSurface(background, text));
 
   // Border is structure, not color: the quietest thing still unclaimed.
   const leastChromatic = [...pool].sort(byChromaThenHex).pop();
@@ -372,9 +460,20 @@ export function rolesToCssVars(roles: RoleAssignment): Record<string, string> {
 /**
  * Swaps the light/dark polarity without touching hue or chroma — the
  * "1-click dark/light flip that doesn't break the brand hue" the spec asks
- * for. Background/text trade lightness, surface and border move with the
- * background, and primary/accent are left alone precisely because they *are*
- * the brand.
+ * for. Background/text trade lightness, and primary/accent are left alone
+ * precisely because they *are* the brand.
+ *
+ * ## The panel is re-derived, not mirrored
+ *
+ * Mirroring `surface` independently of `background` is arithmetically tidy and
+ * visually wrong. Each value flips correctly on its own while the RELATIONSHIP
+ * between them inverts: a panel sitting 0.42 above the page in dark mode ends
+ * up 0.42 below it in light, so the light interface drew a dark green card on
+ * a mid-grey page. Measured on the live book: text on surface 2.17:1.
+ *
+ * So the mirrored panel is kept only if it is still a panel — on the same side
+ * of the page as the ink, and legible. Otherwise it is re-derived from the
+ * flipped page, which is what `steppedSurface` does in the first place.
  */
 export function flipPolarity(roles: RoleAssignment): RoleAssignment {
   // The hex must be recomputed from the mirrored OKLCH, not carried over.
@@ -386,11 +485,20 @@ export function flipPolarity(roles: RoleAssignment): RoleAssignment {
     return { hex: formatHex(flipped), oklch: flipped };
   };
 
+  const background = mirror(roles.background);
+  const text = mirror(roles.text);
+
+  const mirrored = mirror(roles.surface);
+  const towardText = Math.sign(text.oklch.l - background.oklch.l);
+  const towardPanel = Math.sign(mirrored.oklch.l - background.oklch.l);
+  const panelHolds =
+    towardPanel === towardText && contrastRatio(text.oklch, mirrored.oklch) >= TEXT_AA;
+
   return {
     ...roles,
-    background: mirror(roles.background),
-    surface: mirror(roles.surface),
-    text: mirror(roles.text),
+    background,
+    text,
+    surface: panelHolds ? mirrored : steppedSurface(background, text),
     border: mirror(roles.border),
   };
 }
