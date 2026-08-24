@@ -15,6 +15,7 @@
 import { presetById } from '@/lib/typography/font-sources';
 import { get, getByFamily, licenceOf } from '@/lib/typography/font-catalogue';
 import { facesOf, stackFor } from '../typography';
+import { channelRules, floorBreaches } from '../channels';
 import { permissionsFor } from '@/lib/typography/font-licences';
 import { isLargeText, requiredRatio } from '@/lib/typography/legibility';
 import { buildScale } from '@/lib/typography/type-scale';
@@ -585,18 +586,64 @@ export const SECTION_4: readonly BrandComponent[] = [
     section: 4,
     requires: ['type.fallbacks', 'type.minimums'],
     machine: 'M2',
-    storage: 'project',
-    produces: arr(obj({ channel: str(), stack: str(), notes: str() }, ['channel'])),
-    evidence: 'declared',
+    // Computed from the System, not written into a Project. Every fact this
+    // needs — the stack that survives, the floor, the licence — is already
+    // derivable, and as authored prose it said "not set" to an anonymous
+    // visitor forever.
+    storage: 'system',
+    produces: arr(
+      obj({ channel: str(), stack: str(), minBodyPx: num(), holds: str() }, ['channel', 'stack'])
+    ),
+    evidence: 'measured',
     provenance: {
       origin: 'observed', observedAs: [], frequency: 0, sectors: 0, wheeler: false,
+      // priority + toyota only. USWDS states the 16px web floor, which is
+      // `type.minimums`' source and already cited there — claiming it here
+      // would be borrowing another component's evidence for this one.
       grainSources: ['toyota', 'priority'],
-      note: 'Web, email, print and presentation each break typography differently, so real manuals state them separately. Toyota gives leading per channel; Priority names a system alternate specifically for Microsoft and email.',
+      note: 'Web, email, print and presentation each break typography differently, so real manuals state them separately. Toyota gives leading per channel; Priority names a system alternate specifically for Microsoft and email. None of them checks the body size against the floor it just stated, and none answers whether the licence permits print at all.',
     },
-    render: renderAuthored(
-      'type.channels', 'Channel rules', 'Rules',
-      'Not set. Web, email, print and presentation break type in different ways and each needs its own line.'
-    ),
+    render: (state) => {
+      const rules = channelRules(state);
+      const entries: BookEntry[] = rules.map((rule) => {
+        const size =
+          rule.channel.minBodyPx === undefined
+            ? `${rule.bodyPt}pt body`
+            : `${rule.bodyPx}px body against a ${rule.channel.minBodyPx}px floor — ${
+                rule.holds ? 'holds' : 'under it'
+              }`;
+        const licence =
+          rule.printLicence === undefined
+            ? ''
+            : ` ${rule.printLicence.name} ${
+                rule.printLicence.allowed
+                  ? 'permits print use.'
+                  : 'does NOT permit print use — the face cannot go on paper under its own licence.'
+              }`;
+        return {
+          label: rule.channel.name,
+          value: `${size} · ${rule.stack}`,
+          evidence: rule.channel.floorEvidence,
+          note: `${rule.channel.why}${
+            rule.channel.floorSource === undefined ? '' : ` ${rule.channel.floorSource}`
+          }${licence}`,
+        };
+      });
+      return present('type.channels', 'Channel rules', 'measured', entries);
+    },
+    validate: (state): readonly Finding[] =>
+      floorBreaches(channelRules(state)).map((rule) =>
+        finding(
+          'type.channels',
+          // Warn, not fail. A floor is the channel's rule about comfort, not a
+          // conformance criterion — WCAG sets contrast and reflow, never a
+          // pixel size for body text. Grading it as a failure would be
+          // inventing a standard, which is the one thing this book must not do.
+          'warn',
+          `Body type is under the ${rule.channel.name.toLowerCase()} floor.`,
+          { measured: `${rule.bodyPx}px`, expected: `≥ ${rule.channel.minBodyPx}px` }
+        )
+      ),
   },
   {
     id: 'type.misuse',

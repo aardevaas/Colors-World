@@ -31,7 +31,7 @@ describe('what an empty System already has', () => {
     const present = REGISTRY.filter((c) => isPresent(c.id, ANONYMOUS_EMPTY)).map((c) => c.id);
     /*
      * Order is COMPONENT_IDS order, which is book order — see registry/index.ts.
-     * Thirteen of §4's eighteen render from the System's defaults alone, because
+     * Fourteen of §4's eighteen render from the System's defaults alone, because
      * a type system is never empty the way a palette is: there is always a
      * preset, a scale and a line height. That asymmetry is real and the Book
      * should not pretend otherwise.
@@ -50,6 +50,10 @@ describe('what an empty System already has', () => {
       'type.tracking',
       'type.measure',
       'type.minimums',
+      // Renders since 2026-08-24: channel rules are computed rather than
+      // authored, so the stack that survives email, the floors and the print
+      // licence all come from the System instead of a Project nobody has.
+      'type.channels',
       'type.text-spacing',
       'type.misuse',
     ]);
