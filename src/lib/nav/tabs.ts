@@ -8,7 +8,7 @@
  * adding a tab is a one-line change and cannot drift per-page again.
  */
 
-export type TabId = 'library' | 'compose' | 'scales' | 'visualizer' | 'typography' | 'studio';
+export type TabId = 'library' | 'compose' | 'scales' | 'visualizer' | 'typography' | 'brand';
 
 export interface TabRoute {
   readonly id: TabId;
@@ -22,8 +22,15 @@ export interface TabRoute {
 /**
  * Ordered as the work is done, not alphabetically or by age: find a color,
  * make a palette from it, deepen each color into a scale, prove the result on
- * real UI and real type, then assemble it. A person reading the nav should be
+ * real UI and real type, then write it down. A person reading the nav should be
  * able to infer the workflow without being told it.
+ *
+ * `studio` left this list on 2026-08-24 and `brand` took its slot. The Book
+ * replaces the wall as the place work comes together: a wall is for exploring
+ * and a guideline is for deciding, and the product only needs one home for the
+ * second. `/studio` still resolves for anyone holding a bookmark — it is
+ * unlinked, not deleted, and its ~4,000 tested lines come out properly once the
+ * launch is behind us rather than under a deadline.
  */
 export const TABS: readonly TabRoute[] = [
   { id: 'library', href: '/library', label: 'library', built: true },
@@ -31,7 +38,7 @@ export const TABS: readonly TabRoute[] = [
   { id: 'scales', href: '/scales', label: 'scales', built: true },
   { id: 'visualizer', href: '/visualizer', label: 'visualizer', built: true },
   { id: 'typography', href: '/typography', label: 'typography', built: true },
-  { id: 'studio', href: '/studio', label: 'studio', built: true },
+  { id: 'brand', href: '/brand', label: 'brand', built: false },
 ];
 
 /**
@@ -42,13 +49,14 @@ export const TABS: readonly TabRoute[] = [
 export const ROOM_IDS: readonly TabId[] = TABS.map((tab) => tab.id);
 
 /**
- * Routes that predate the five-tab model and still work, but are not tabs.
- * Kept separate rather than mixed into TABS so the primary navigation stays
- * exactly five items — their long-term fate is an open question in ROADMAP.md.
+ * Routes that work but are not tabs — either older than the tab model, or
+ * retired out of it. Kept separate rather than mixed into TABS so the primary
+ * navigation stays exactly six items.
  */
 export const SECONDARY_ROUTES = [
   { href: '/palettes', label: 'palettes' },
   { href: '/assets', label: 'assets' },
+  { href: '/studio', label: 'studio' },
 ] as const;
 
 export function tabById(id: TabId): TabRoute {

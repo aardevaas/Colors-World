@@ -34,7 +34,7 @@ export default async function StudioWallPage() {
   return (
     <div className={styles.shell}>
       <SkipLink />
-      <TabNav current="studio">
+      <TabNav>
         <ShareControl />
         <AccountStatus />
       </TabNav>

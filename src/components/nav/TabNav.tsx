@@ -4,8 +4,14 @@ import { TABS, tabById, type TabId } from '@/lib/nav/tabs';
 import styles from './tab-nav.module.css';
 
 interface TabNavProps {
-  /** Which tab is rendering this — marked as current and never self-linked. */
-  readonly current: TabId;
+  /**
+   * Which tab is rendering this — marked as current and never self-linked.
+   *
+   * Optional because not every page that wants the shell is a tab. `/studio`
+   * was retired from the manifest on 2026-08-24 and still resolves for anyone
+   * holding a bookmark; it renders the nav without claiming a slot in it.
+   */
+  readonly current?: TabId;
   /** Right-hand slot: share controls, account status, whatever the tab needs. */
   readonly children?: ReactNode;
 }
@@ -29,12 +35,13 @@ interface TabNavProps {
  * get to reinvent the markup.
  */
 export function TabNav({ current, children }: TabNavProps) {
-  const currentTab = tabById(current);
+  const currentTab = current === undefined ? null : tabById(current);
 
   return (
     <header className={styles.masthead}>
       <h1 className={styles.wordmark}>
-        Colors World <span className={styles.wordmarkDim}>/ {currentTab.label}</span>
+        Colors World
+        {currentTab !== null && <span className={styles.wordmarkDim}> / {currentTab.label}</span>}
       </h1>
 
       <nav className={styles.navGroup} aria-label="Primary">

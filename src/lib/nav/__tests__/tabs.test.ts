@@ -6,15 +6,19 @@ describe('tab manifest', () => {
     // The count was never the invariant -- the sequence is. A person reading
     // the nav should be able to infer the workflow without being told it:
     // find a color, make a palette from it, deepen each color into a scale,
-    // prove it on real UI and real type, then assemble. Reordering these is a
-    // product decision and should have to come through this test.
+    // prove it on real UI and real type, then write it down. Reordering these
+    // is a product decision and should have to come through this test.
+    //
+    // `studio` left this list on 2026-08-24 and `brand` took its slot: the Book
+    // replaces the wall as the place work comes together. `/studio` still
+    // resolves, as a secondary route.
     expect(TABS.map((t) => t.id)).toEqual([
       'library',
       'compose',
       'scales',
       'visualizer',
       'typography',
-      'studio',
+      'brand',
     ]);
   });
 
@@ -56,9 +60,28 @@ describe('tab manifest', () => {
   // render every tab, so one can never again be built with nowhere to appear.
   // Unbuilt tabs are marked, not omitted.
   it('keeps the built flag on every tab so an unbuilt one can never be dropped', () => {
-    // The sixth tab has now been added, which is exactly the moment this was
-    // written for.
-    expect(TABS.every((t) => typeof t.built === 'boolean')).toBe(true);
-    expect(TABS.filter((t) => !t.built)).toEqual([]);
+    /*
+     * This used to also assert that NOTHING was unbuilt, which was a snapshot
+     * of the state on the day it was written rather than the invariant the
+     * comment above describes. `brand` is deliberately unbuilt today — the Book
+     * ships in days 3-5 of roadmap v9 — and an unbuilt tab appearing here is
+     * the flag doing its job, not a failure.
+     *
+     * The real invariant is that an unbuilt tab is still a full manifest entry,
+     * so TabNav renders it as inert text instead of omitting it. Every field
+     * has to be there for that to work.
+     */
+    for (const tab of TABS) {
+      expect(typeof tab.built, tab.id).toBe('boolean');
+      expect(tab.href, tab.id).toBe(`/${tab.id}`);
+      expect(tab.label.length, tab.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('has brand unbuilt and everything else built, for now', () => {
+    // Deliberately a state assertion, and deliberately separate from the
+    // invariant above: when the Book ships this fails, which is the reminder
+    // to flip the flag.
+    expect(TABS.filter((t) => !t.built).map((t) => t.id)).toEqual(['brand']);
   });
 });

@@ -47,7 +47,6 @@ const TELEPORT_TARGETS: readonly TeleportTarget[] = [
   { room: 'scales', label: 'Deepen it into a ramp', href: '/scales', via: 'dock' },
   { room: 'visualizer', label: 'Try it on real UI', href: '/visualizer', via: 'dock' },
   { room: 'typography', label: 'Set type against it', href: '/typography', via: 'dock' },
-  { room: 'studio', label: 'Pin it to the wall', href: '/studio', via: 'wall' },
 ];
 
 export function LibraryCard({ swatch, semanticMatch, onOpenDrawer }: LibraryCardProps) {

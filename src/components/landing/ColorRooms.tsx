@@ -73,8 +73,8 @@ const ROOM_LINE: Record<TabId, string> = {
     'Proof on real interfaces rather than swatches, audited live as you change it.',
   typography:
     'Because contrast is a property of type, not just of color. The boundary, drawn.',
-  studio:
-    'Where the system stops being yours and becomes something you can hand over.',
+  brand:
+    'The guideline your team follows, written from what you built — and re-measured every time you change it.',
 };
 
 /**
@@ -93,7 +93,7 @@ const ROOM_PATTERN: Record<TabId, string | undefined> = {
   scales: styles.patSteps,
   visualizer: styles.patGrid,
   typography: styles.patRules,
-  studio: styles.patGrain,
+  brand: styles.patGrain,
 };
 
 /**
