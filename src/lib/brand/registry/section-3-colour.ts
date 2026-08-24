@@ -149,11 +149,13 @@ export const SECTION_3: readonly BrandComponent[] = [
       const entries: BookEntry[] = system.palette.map((c, i) => ({
         label: `Colour ${i + 1}`,
         value: c.hex,
+        swatches: [c.hex],
         note: formatOklchCss(c.oklch),
       }));
       entries.push({
         label: 'Anchor',
         value: system.anchorHex ?? 'not set',
+        ...(system.anchorHex === null ? {} : { swatches: [system.anchorHex] }),
         note: 'The colour every scale is built from.',
       });
       return present('colour.palette', 'Palette', 'declared', entries);
@@ -202,6 +204,7 @@ export const SECTION_3: readonly BrandComponent[] = [
         'measured',
         system.palette.map((c) => ({
           label: c.hex,
+          swatches: [c.hex],
           value: `${formatRgb(c.oklch)} · ${formatHsl(c.oklch)}`,
           note: formatOklchCss(c.oklch),
         }))
@@ -299,9 +302,9 @@ export const SECTION_3: readonly BrandComponent[] = [
       if (!hasPalette(system)) return absent('colour.surfaces', 'Surfaces & borders', NO_PALETTE);
       const roles = systemRoles(system);
       return present('colour.surfaces', 'Surfaces & borders', 'measured', [
-        { label: 'Background', value: roles.background.hex },
-        { label: 'Surface', value: roles.surface.hex },
-        { label: 'Border', value: roles.border.hex },
+        { label: 'Background', value: roles.background.hex, swatches: [roles.background.hex] },
+        { label: 'Surface', value: roles.surface.hex, swatches: [roles.surface.hex] },
+        { label: 'Border', value: roles.border.hex, swatches: [roles.border.hex] },
         {
           label: 'Derived by',
           value: 'OKLCH lightness ordering, not hue',
@@ -361,8 +364,8 @@ export const SECTION_3: readonly BrandComponent[] = [
       const roles = systemRoles(system);
       return present('colour.themes', 'Light & dark themes', 'measured', [
         { label: 'Authored in', value: system.mode, evidence: 'declared' },
-        { label: 'Background', value: roles.background.hex },
-        { label: 'Text', value: roles.text.hex },
+        { label: 'Background', value: roles.background.hex, swatches: [roles.background.hex] },
+        { label: 'Text', value: roles.text.hex, swatches: [roles.text.hex] },
         {
           label: 'Opposite polarity',
           value: 'Derived from the same palette',
@@ -771,7 +774,11 @@ export const SECTION_3: readonly BrandComponent[] = [
       }
       const collapses = collapsingPairs(system.palette);
       const entries: BookEntry[] = [
-        { label: 'Categorical series', value: system.palette.map((c) => c.hex).join(' · ') },
+        {
+          label: 'Categorical series',
+          value: system.palette.map((c) => c.hex).join(' · '),
+          swatches: system.palette.map((c) => c.hex),
+        },
         {
           label: 'Colour-vision check',
           value:
@@ -833,6 +840,10 @@ export const SECTION_3: readonly BrandComponent[] = [
       entries.push({
         label: 'Do not mix approved colours',
         value: `${palette[0]!.hex} + ${palette[1]!.hex} → ${formatHex(mixed)}`,
+        // The two approved colours and the one they make. Seeing the third
+        // chip next to the first two IS the rule — a ΔE is an argument, and
+        // this is the evidence for it.
+        swatches: [palette[0]!.hex, palette[1]!.hex, formatHex(mixed)],
         note: `ΔE ${distanceFromPalette(mixed, palette).toFixed(3)} from the nearest colour you approved — it is a new colour, not a blend of two old ones.`,
       });
 
@@ -841,6 +852,7 @@ export const SECTION_3: readonly BrandComponent[] = [
         entries.push({
           label: 'Do not set these together',
           value: `${worst.fg} on ${worst.bg} — ${worst.ratio.toFixed(2)}:1`,
+          swatches: [worst.fg, worst.bg],
           note: 'The lowest-contrast pairing this palette can produce. Below 4.5:1 it fails AA for normal text.',
         });
       }

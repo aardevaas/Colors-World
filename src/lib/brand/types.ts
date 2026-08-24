@@ -135,6 +135,20 @@ export interface BookEntry {
   readonly evidence?: Evidence;
   readonly note?: string;
   /**
+   * Colours to SHOW beside this line, as hex.
+   *
+   * A brand guideline that states `#0A5CFF` and never shows it is a spec
+   * sheet. Every manual in the sample prints swatches, because a hex is not a
+   * colour to anyone reading — it is a lookup key. This is the one piece of
+   * the book that is not words, and it costs nothing: a chip is a div with a
+   * background, so the document stays server-rendered with no client
+   * JavaScript at all.
+   *
+   * Hex rather than a role name or an index, because the renderer must not
+   * have to resolve anything — it paints exactly what the component decided.
+   */
+  readonly swatches?: readonly string[];
+  /**
    * Makes the value a link.
    *
    * Rare on purpose — the book is a document, not a control panel. It exists

@@ -617,6 +617,14 @@
     overflow-wrap: anywhere;
   }
 
+  /* Browsers drop background colours when printing unless told not to, which
+     would turn every swatch into an empty outline — a colour guideline whose
+     colours are absent from the printed copy. */
+  .swatch {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
   /* Controls do nothing on paper. The URL stays: it is what makes a printout
      traceable back to the living document, and the one thing on the sheet that
      is still worth typing out. */
@@ -641,4 +649,26 @@
 
 .entryLink:hover {
   text-decoration-color: var(--text-primary);
+}
+
+/* ---------- swatches ----------
+   The one part of the book that is not words. A chip is a div with a
+   background, so this stays a server component with no client JavaScript. */
+
+.swatches {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+.swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 2px;
+  /* An outline rather than a border: a near-background swatch would otherwise
+     be an invisible rectangle, and "no colour here" is exactly the wrong thing
+     for a palette to say. */
+  outline: 1px solid var(--hairline);
+  outline-offset: -1px;
 }

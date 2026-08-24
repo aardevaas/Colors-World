@@ -50,6 +50,13 @@ function EntryRow({ entry, fallback }: { entry: BookEntry; fallback: Evidence })
     <>
       <dt className={styles.entryKey}>{entry.label}</dt>
       <dd className={styles.entryValue}>
+        {entry.swatches !== undefined && entry.swatches.length > 0 && (
+          <span className={styles.swatches} aria-hidden="true">
+            {entry.swatches.map((hex, i) => (
+              <span key={`${hex}-${i}`} className={styles.swatch} style={{ background: hex }} />
+            ))}
+          </span>
+        )}
         {entry.href === undefined ? (
           <span className={styles.entryText}>{entry.value}</span>
         ) : (
