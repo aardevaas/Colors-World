@@ -198,7 +198,15 @@ Legend — **Have**: shipping · **Part**: partially built · **New**: not start
 | UI state colours (success/warn/error/info) | M2 | roles | **Part** — needs explicit tokens |
 | Light / dark theme mapping | M2 | roles | **Have** |
 | WCAG pairings & ratios | M2 | roles | **Have** — our strongest asset |
-| Neutral & grey scale | M2 | palette | **Have** |
+| Neutral & grey scale → **Surfaces & borders** | M2 | palette | **Have** — *renamed 2026-08-23; see note* |
+
+> **Renamed 2026-08-23.** "Neutral & grey scale" is not what this row can
+> produce. The role model orders by OKLCH lightness, so a palette with no
+> low-chroma member yields a saturated colour as its surface — a green was
+> rendering under a heading that said "greys". The System holds three
+> structural roles (background, surface, border) and no neutral ramp, so the
+> component is `colour.surfaces`, "Surfaces & borders". A true grey ramp is a
+> real brand-book concept and would need a real object behind it.
 
 ### §4 Typography system — *M2*
 | Component | Machine | Needs | State |
@@ -267,7 +275,22 @@ Legend — **Have**: shipping · **Part**: partially built · **New**: not start
 | **Third-party usage rights & approvals** | M6 | logo | New — *NASA's largest section; who may use the mark at all* |
 | Version control & changelog | M6 | — | **Have** — branch/merge/DAG already exist |
 
-**Totals: 9 sections · 65 components. Have 9 · Part 13 · New 43.**
+> **Corrected 2026-08-23, while building the registry.** This line said
+> "65 components. Have 9 · Part 13 · New 43." Counting the table
+> programmatically gives **66 rows** — no duplicates — and a state tally of
+> **Have 7 · Part 10 · New 49**. All three numbers were wrong, and they were
+> quoted onward into `ALIGNMENT-2026-08-23.md` and `ROADMAP.md`.
+>
+> The registry is larger still. Thirteen component ids that the 25-book study
+> actually observed had **no row in this table at all** — including
+> `gov.contact` (8 of 25) and `gov.metrics`, which Part 12 argues at length as
+> the Distinctive Asset Grid and on which the whole governance-whitespace
+> claim rests. One further row, "Third-party usage rights & approvals", covers
+> two ids the research keeps apart and is split. See
+> `src/lib/brand/ids.ts` for the reconciliation, component by component.
+
+**Totals: 9 sections · 66 rows here. Have 7 · Part 10 · New 49.**
+**As built: 66 + 13 placed + 1 split = 80 components.**
 
 The eleven marked *"NASA / IBM / MemorialCare"* were **not in the original list
 and were not mine.** They were found by checking real published brand books —

@@ -106,7 +106,7 @@ reference.
 | # | Call | Why I made it | What it costs if wrong |
 |---|---|---|---|
 | **M1** | **The book is a VIEW, not a container.** Nothing is "put in" it; it renders from state. | Serves the palette-only user without a mode switch. | Large. It is the root architectural decision — everything else assumes it. |
-| **M2** | **No completeness percentage by default.** | 3% of 65 is hostile to your largest user group. | Small. Add later if you disagree. |
+| **M2** | **No completeness percentage by default.** | 3% of 80 is hostile to your largest user group — and the count moved from 65 to 80 while the registry was being built, which is itself the argument. | Small. Add later if you disagree. |
 | **M3** | **Readiness graph, max 3 suggestions** — not a checklist. | Dependency is real designer logic; sixty boxes is not. | Medium — it is the guidance mechanism. |
 | **M4** | **Six machines** (Ingest·Compute·Author·Direct·Template·Govern) as the build unit rather than 65 features. | 65 features is a backlog; 6 machines is an architecture. | Medium. Wrong grouping = wrong module boundaries. |
 | **M5** | **The Book is a persistent rail, not a tab.** Nav ceiling 6→8. | The Harmonic Dock precedent already works this way. | Small — a UI decision, reversible. |
@@ -137,7 +137,7 @@ to find out here than in the registry.
   │     M1 Ingest&Derive · M2 Compute&Verify · M3 Author
   │     M4 Direct · M5 Template · M6 Govern
   │
-  ├─ LAYER 2 · REGISTRY  65 components, each a contract
+  ├─ LAYER 2 · REGISTRY  80 components, each a contract   ← BUILT
   │     id · section · requires[] · machine · produces · evidence
   │     · provenance · render() · validate()
   │
@@ -245,7 +245,13 @@ Two consequences worth restating because they are strategic, not cosmetic:
 
 ## 3 · Where the product stands against its own taxonomy
 
-Of 65 components: **Have 9 · Partial 13 · New 43.**
+> **Corrected 2026-08-23, while building the registry.** This said "65
+> components: Have 9 · Partial 13 · New 43". The spec's taxonomy table holds
+> **66 rows**, tallying **Have 7 · Part 10 · New 49**, and thirteen observed
+> component ids had no row in it at all. The registry as built is **80**
+> components — see `src/lib/brand/ids.ts`.
+
+Of 80 components: **Have 7 · Partial 10 · New 63.**
 
 | Section | State | Comment |
 |---|---|---|

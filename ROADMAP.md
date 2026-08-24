@@ -61,8 +61,13 @@ book, guideline or style guide across 33,506 lines. Six rooms produce *inputs*
 to an artifact that does not exist.
 
 **→ [`docs/BRAND-BOOK-SPEC.md`](docs/BRAND-BOOK-SPEC.md) is now the defining
-document for that artifact:** all 54 components across 9 sections, the
+document for that artifact:** the component taxonomy across 9 sections, the
 readiness graph, and the six machines that build them.
+
+**The registry is built** — `src/lib/brand/` is Layer 2, 80 components as
+contracts with the readiness graph as data. The count is 80 rather than the 54
+this line used to claim or the 65 the spec claimed: see the correction note at
+the end of the spec's Part 5.
 
 Three decisions from it that shape everything below:
 
