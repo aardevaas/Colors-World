@@ -13,6 +13,8 @@
  */
 
 import { presetById } from '@/lib/typography/font-sources';
+import { fontStack, getByFamily, licenceOf } from '@/lib/typography/font-catalogue';
+import { permissionsFor } from '@/lib/typography/font-licences';
 import { isLargeText, requiredRatio } from '@/lib/typography/legibility';
 import { buildScale } from '@/lib/typography/type-scale';
 import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived, str } from '../block';
@@ -266,19 +268,29 @@ export const SECTION_4: readonly BrandComponent[] = [
     },
     render: (state) => {
       const p = presetById(state.system.type.presetId);
-      return present('type.sources', 'Where the faces come from', 'measured', [
-        { label: 'Catalogue', value: p.source },
-        {
-          label: 'How to obtain',
-          value: p.source === 'google' ? 'fonts.google.com — free, self-hostable' : p.source,
-          note: 'Name the source or a contractor pulls the wrong cut six months from now.',
-        },
-        {
-          label: 'Self-hosting',
-          value: 'Available',
-          note: 'Serving the faces yourself removes a third-party request from every page load, which some clients require.',
-        },
-      ]);
+      const entries: BookEntry[] = [];
+      for (const [role, family] of [
+        ['Display', p.display],
+        ['Body', p.body],
+        ['Mono', p.mono],
+      ] as const) {
+        const hit = getByFamily(family);
+        entries.push(
+          hit === null
+            ? {
+                label: role,
+                value: `${family} — not in the open catalogue`,
+                evidence: 'declared',
+                note: 'Served by a single foundry rather than an open catalogue, so its licence terms are not recorded here and it cannot be self-hosted from npm.',
+              }
+            : {
+                label: role,
+                value: family,
+                note: `fontsource/${hit.id} · ${hit.weights.length} weights${hit.variable ? ' · variable' : ''} · self-hostable`,
+              }
+        );
+      }
+      return present('type.sources', 'Where the faces come from', 'measured', entries);
     },
   },
   {
@@ -297,12 +309,56 @@ export const SECTION_4: readonly BrandComponent[] = [
       grainSources: ['priority'],
       note: 'Web embedding, print, product use and resale are FOUR different permissions and not every licence grants all four. Fontsource carries per-family licence data, which is the strongest argument for that catalogue over Google\u2019s API.',
     },
-    render: () =>
-      absent(
-        'type.licensing',
-        'Font licensing',
-        'Not recorded yet. Web, print, product and resale are four separate permissions — the catalogue carries this per family.'
-      ),
+    render: (state) => {
+      const p = presetById(state.system.type.presetId);
+      const families = [p.display, p.body, p.mono];
+      const resolved = families.map((family) => {
+        const hit = getByFamily(family);
+        return { family, licence: hit === null ? null : licenceOf(hit.id) };
+      });
+
+      const known = resolved.filter((r) => r.licence !== null);
+      if (known.length === 0) {
+        return absent(
+          'type.licensing',
+          'Font licensing',
+          'None of the chosen faces are in the open catalogue, so no terms have been checked. Web embedding, print, product use and resale are four separate permissions.'
+        );
+      }
+
+      const entries: BookEntry[] = [];
+      const distinct = [...new Set(known.map((r) => r.licence!.id))];
+
+      /*
+       * A guideline states shared terms ONCE. Repeating the same OFL paragraph
+       * under three families is how a licensing section becomes the page nobody
+       * reads — and 2,052 of the catalogue's 2,096 families are OFL, so shared
+       * is the common case rather than the exception.
+       */
+      for (const id of distinct) {
+        const licence = known.find((r) => r.licence!.id === id)!.licence!;
+        const under = known.filter((r) => r.licence!.id === id).map((r) => r.family);
+        const granted = permissionsFor(licence).filter((x) => x.allowed).map((x) => x.use);
+        const refused = permissionsFor(licence).filter((x) => !x.allowed).map((x) => x.use);
+        entries.push({
+          label: licence.name,
+          value: under.join(' · '),
+          note: `${granted.join(', ')}${refused.length > 0 ? ` — but NOT ${refused.join(', ').toLowerCase()}` : ''}.${licence.attributionRequired ? ' Attribution required.' : ''} ${licence.note}`,
+        });
+      }
+
+      for (const r of resolved) {
+        if (r.licence !== null) continue;
+        entries.push({
+          label: r.family,
+          value: 'Not recorded',
+          evidence: 'declared',
+          note: 'Not in the open catalogue, so its terms have not been checked. Confirm them with the foundry before shipping print or product work.',
+        });
+      }
+
+      return present('type.licensing', 'Font licensing', 'cited', entries);
+    },
   },
   {
     id: 'type.fallbacks',
@@ -320,10 +376,14 @@ export const SECTION_4: readonly BrandComponent[] = [
     },
     render: (state) => {
       const p = presetById(state.system.type.presetId);
+      const stackFor = (family: string, generic: string): string => {
+        const hit = getByFamily(family);
+        return hit === null ? `"${family}", ${generic}` : (fontStack(hit.id) ?? `"${family}", ${generic}`);
+      };
       return present('type.fallbacks', 'Fallback stack', 'measured', [
-        { label: 'Display', value: `"${p.display}", Georgia, serif` },
-        { label: 'Body', value: `"${p.body}", system-ui, -apple-system, sans-serif` },
-        { label: 'Mono', value: `"${p.mono}", ui-monospace, monospace` },
+        { label: 'Display', value: stackFor(p.display, 'Georgia, serif') },
+        { label: 'Body', value: stackFor(p.body, 'system-ui, -apple-system, sans-serif') },
+        { label: 'Mono', value: stackFor(p.mono, 'ui-monospace, monospace') },
         {
           label: 'Email',
           value: 'Arial, Helvetica, sans-serif',
@@ -346,15 +406,31 @@ export const SECTION_4: readonly BrandComponent[] = [
       grainSources: ['toyota', 'priority', 'regus', 'cedarville'],
       note: 'Toyota states weight per role AND per condition: "Book for text 10pt or larger on light backgrounds; Regular for 10pt or smaller when reversed on dark." Weight is not one number.',
     },
-    render: (state) =>
-      present('type.weights', 'Weights', 'declared', [
-        { label: 'Body', value: String(state.system.type.weight), evidence: 'measured' },
-        {
-          label: 'Reversed on dark',
-          value: 'Not set',
-          note: 'Text reversed out of a dark ground reads lighter than it is. Most manuals step the weight up.',
-        },
-      ]),
+    render: (state) => {
+      const p = presetById(state.system.type.presetId);
+      const body = getByFamily(p.body);
+      const entries: BookEntry[] = [
+        { label: 'Body weight', value: String(state.system.type.weight), evidence: 'measured' },
+      ];
+      if (body !== null) {
+        entries.push({
+          label: 'Available',
+          value: body.variable
+            ? `${body.weights[0]}–${body.weights[body.weights.length - 1]} on an axis`
+            : body.weights.join(' · '),
+          note: body.variable
+            ? 'A variable font carries its weights on a continuous axis, so any value in that range is a real cut rather than a browser faking one.'
+            : `${body.weights.length} real cuts. Anything else the browser synthesises, which is not the same typeface.`,
+        });
+      }
+      entries.push({
+        label: 'Reversed on dark',
+        value: 'Not set',
+        evidence: 'declared',
+        note: 'Text reversed out of a dark ground reads lighter than it is. Most manuals step the weight up.',
+      });
+      return present('type.weights', 'Weights', 'declared', entries);
+    },
   },
   {
     id: 'type.lineheight',

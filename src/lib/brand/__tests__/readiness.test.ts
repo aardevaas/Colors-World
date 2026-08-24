@@ -31,7 +31,7 @@ describe('what an empty System already has', () => {
     const present = REGISTRY.filter((c) => isPresent(c.id, ANONYMOUS_EMPTY)).map((c) => c.id);
     /*
      * Order is COMPONENT_IDS order, which is book order — see registry/index.ts.
-     * Twelve of §4's eighteen render from the System's defaults alone, because
+     * Thirteen of §4's eighteen render from the System's defaults alone, because
      * a type system is never empty the way a palette is: there is always a
      * preset, a scale and a line height. That asymmetry is real and the Book
      * should not pretend otherwise.
@@ -39,6 +39,9 @@ describe('what an empty System already has', () => {
     expect(present).toEqual([
       'type.families',
       'type.sources',
+      // Renders since 2026-08-24: the catalogue carries a per-family licence,
+      // so the guideline states terms instead of shrugging at them.
+      'type.licensing',
       'type.fallbacks',
       'type.weights',
       'type.metrics',
