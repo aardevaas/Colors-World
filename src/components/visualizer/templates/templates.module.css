@@ -469,3 +469,122 @@
 .tabIconActive {
   background: var(--ui-primary);
 }
+
+/* ── Email ─────────────────────────────────────────────────────
+   Set in the fallback stack on purpose: most clients strip webfonts, so this
+   is the one template that shows what actually arrives rather than what was
+   designed. See EmailTemplate's own note. */
+
+.email {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.1rem;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+.emailChrome {
+  width: min(100%, 34rem);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.emailFrom {
+  font-weight: 700;
+}
+
+.emailDate {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The 600-ish pixel sheet every email is really built on. */
+.emailSheet {
+  width: min(100%, 34rem);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.emailSubject {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.emailBody {
+  margin: 0;
+  /* Email is the channel that most often gets set too small — 14px is the
+     floor §4's channel rules state, and this sits just above it. */
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 62ch;
+  opacity: 0.9;
+}
+
+.emailCta {
+  align-self: flex-start;
+  background: var(--ui-primary);
+  color: var(--ui-background);
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.emailRule {
+  height: 1px;
+  background: var(--ui-border);
+}
+
+.signature {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* The one piece of brand colour a signature is allowed. */
+.signatureAccent {
+  width: 3px;
+  align-self: stretch;
+  min-height: 2.1rem;
+  background: var(--ui-accent);
+  border-radius: 2px;
+}
+
+.signatureText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.signatureName {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.signatureRole {
+  font-size: 0.76rem;
+  opacity: 0.8;
+}
+
+.emailFooter {
+  width: min(100%, 34rem);
+  margin: 0;
+  font-size: 0.68rem;
+  opacity: 0.6;
+}

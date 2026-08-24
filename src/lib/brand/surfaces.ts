@@ -179,6 +179,28 @@ const MOBILE: Surface = {
 };
 
 /**
+ * An email — the one surface that shows the system as it ARRIVES.
+ *
+ * Every fill here is flat: no gradients, no translucency, nothing to derive.
+ * That is itself characteristic of the channel, which is built out of tables
+ * and solid colour because that is all it can rely on.
+ */
+const EMAIL: Surface = {
+  id: 'email',
+  name: 'Email',
+  channel: 'email',
+  measuredAt: MEASURED_AT,
+  measuredViewport: VIEWPORT,
+  regions: [
+    { role: 'background', x: 0, y: 0, w: 1, h: 1 },
+    { role: 'surface', x: 0.201, y: 0.063, w: 0.598, h: 0.372 },
+    { role: 'primary', x: 0.227, y: 0.256, w: 0.169, h: 0.053 },
+    { role: 'border', x: 0.227, y: 0.326, w: 0.546, h: 0.001 },
+    { role: 'accent', x: 0.227, y: 0.344, w: 0.003, h: 0.057 },
+  ],
+};
+
+/**
  * The reference set, in the order the guideline reports them.
  *
  * Deliberately ordered most brand colour first, because the interesting
@@ -190,7 +212,7 @@ const MOBILE: Surface = {
  * every surface added here is another layout the ratio is checked against, and
  * adding one is data, not code.
  */
-export const REFERENCE_SURFACES: readonly Surface[] = [DASHBOARD, COMMERCE, EDITORIAL, MOBILE];
+export const REFERENCE_SURFACES: readonly Surface[] = [DASHBOARD, COMMERCE, EDITORIAL, MOBILE, EMAIL];
 
 export function surfaceById(id: string): Surface | undefined {
   return REFERENCE_SURFACES.find((s) => s.id === id);

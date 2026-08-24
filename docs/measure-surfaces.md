@@ -51,7 +51,7 @@ const r3 = (n) => Math.round(n * 1000) / 1000;
 const out = {};
 
 for (const b of [...d.querySelectorAll('button')].filter((b) =>
-  ['SaaS dashboard','Product card','Editorial hero','Mobile screen'].includes(b.textContent.trim()))) {
+  ['SaaS dashboard','Product card','Editorial hero','Mobile screen','Email'].includes(b.textContent.trim()))) {
   b.click();
   await new Promise((r) => setTimeout(r, 400));
   const frame = d.querySelector('[class*=templates_frame]');
@@ -113,6 +113,20 @@ return out;
    `surfaces.test.ts` — recompute them, do not copy them from the harness
    above, because the harness sums flat area and the engine composites alpha.
    The two agree only for surfaces with no gradients or translucency.
+
+## A known under-count: CSS borders
+
+The harness reads `background-color`, so a `border: 1px solid var(--ui-border)`
+is not captured — only a div actually filled with the border role is. On the
+email sheet that is roughly 0.2% of the frame unattributed to `border` and
+left with whatever is underneath.
+
+It is left that way deliberately. Capturing borders means resolving four edges
+per element as four thin rectangles, each of which then has to composite in
+the right order against its own box, for a quantity that never reaches half a
+percent. If a template ever leans on borders as a real colour surface — heavy
+rules, a keyline grid — that trade changes and this note is the reason to
+revisit it.
 
 ## What the test does and does not catch
 

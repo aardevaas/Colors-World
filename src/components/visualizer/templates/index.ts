@@ -17,8 +17,9 @@ import { DashboardTemplate } from './DashboardTemplate';
 import { CommerceTemplate } from './CommerceTemplate';
 import { EditorialTemplate } from './EditorialTemplate';
 import { MobileTemplate } from './MobileTemplate';
+import { EmailTemplate } from './EmailTemplate';
 
-export type TemplateId = 'dashboard' | 'commerce' | 'editorial' | 'mobile';
+export type TemplateId = 'dashboard' | 'commerce' | 'editorial' | 'mobile' | 'email';
 
 export interface TemplateEntry {
   readonly id: TemplateId;
@@ -58,6 +59,12 @@ export const TEMPLATES: readonly TemplateEntry[] = [
     label: 'Mobile screen',
     stresses: 'off-states and small type',
     Component: MobileTemplate,
+  },
+  {
+    id: 'email',
+    label: 'Email',
+    stresses: 'the palette in the fallback face, which is what actually arrives',
+    Component: EmailTemplate,
   },
 ];
 
