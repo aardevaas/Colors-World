@@ -298,3 +298,123 @@
   gap: 0.85rem;
   min-width: 0;
 }
+
+/* ---------- export ----------
+   A way out of the room that is not "Apply to System". Structurally the same
+   disclosure as /scales' export vault, so the two rooms behave alike; sized
+   for a palette rather than a whole ramp system. */
+
+.exportBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.exportToggle {
+  font: inherit;
+  font-size: var(--text-small, 0.8125rem);
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: var(--surface-raised, #1e1b19);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms) var(--ease-out-expo, ease),
+    border-color var(--duration-fast, 150ms) var(--ease-out-expo, ease);
+}
+
+.exportToggle:hover {
+  border-color: var(--hairline-bright, var(--text-tertiary));
+  background: var(--surface-panel, #17171a);
+}
+
+.exportBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 44rem;
+}
+
+.exportTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.exportTab {
+  font: inherit;
+  font-size: var(--text-micro, 0.7rem);
+  letter-spacing: 0.04em;
+  padding: 0.28rem 0.6rem;
+  border-radius: 6px;
+  border: var(--rule-width, 1px) solid transparent;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.exportTab[data-active='true'] {
+  border-color: var(--hairline);
+  background: var(--surface-raised, #1e1b19);
+  color: var(--text-primary);
+}
+
+/* The preview scrolls inside itself; a long CSS block must never make the
+   room scroll sideways. */
+.exportCode {
+  margin: 0;
+  max-height: 15rem;
+  overflow: auto;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: var(--surface-panel, #17171a);
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-micro, 0.7rem);
+  line-height: 1.65;
+  color: var(--text-secondary);
+  white-space: pre;
+  tab-size: 2;
+}
+
+.exportActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.exportAction {
+  font: inherit;
+  font-size: var(--text-micro, 0.7rem);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: var(--rule-width, 1px) solid var(--hairline);
+  background: var(--surface-raised, #1e1b19);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.exportAction:hover {
+  border-color: var(--hairline-bright, var(--text-tertiary));
+}
+
+/* The hex under each swatch copies itself. It was the one piece of the room
+   people actually wanted to take away and it was not selectable text. */
+.hexCopy {
+  font: inherit;
+  font-family: var(--font-dock-mono), var(--font-mono), monospace;
+  font-size: var(--text-micro, 0.7rem);
+  padding: 0.1rem 0.25rem;
+  border: var(--rule-width, 1px) solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.hexCopy:hover {
+  border-color: var(--hairline);
+  color: var(--text-primary);
+}

@@ -15,6 +15,7 @@ import {
 } from '@/lib/harmony/solver';
 import { useSystem } from '@/lib/system/system-context';
 import { HarmonyWheel } from './HarmonyWheel';
+import { PaletteExport } from './PaletteExport';
 import styles from './palette-composer.module.css';
 
 /**
@@ -318,7 +319,15 @@ export function PaletteComposer() {
                       {isLocked ? '◉' : ''}
                     </span>
                   </button>
-                  <span className={styles.hex}>{color.hex.toUpperCase()}</span>
+                  <button
+                    type="button"
+                    className={styles.hexCopy}
+                    onClick={() => void navigator.clipboard?.writeText(color.hex.toUpperCase())}
+                    aria-label={`Copy ${color.hex.toUpperCase()}`}
+                    title="Copy"
+                  >
+                    {color.hex.toUpperCase()}
+                  </button>
                   <span className={styles.origin}>{color.origin}</span>
                 </li>
               );
@@ -342,6 +351,10 @@ export function PaletteComposer() {
               </span>
             )}
           </div>
+
+          {/* The room's second exit. Before this there was exactly one — "Apply
+              to System" — which made a destination behave like a waypoint. */}
+          <PaletteExport palette={draft} />
 
           {audit !== null && (
             /*
