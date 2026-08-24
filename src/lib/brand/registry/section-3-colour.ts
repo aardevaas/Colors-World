@@ -30,7 +30,9 @@ import {
 } from '@/lib/color-engine';
 import { absent, arr, finding, num, obj, present, renderAuthored, renderDerived, str } from '../block';
 import { hasPalette, paletteColors, systemRoles } from '../colour';
-import type { RoleColor } from '@/lib/roles/semantic-roles';
+import { asPercent, coverage } from '../proportions';
+import { REFERENCE_SURFACES } from '../surfaces';
+import type { RoleColor, SemanticRole } from '@/lib/roles/semantic-roles';
 import type { BookEntry, BrandComponent, Finding } from '../types';
 
 /** WCAG 1.4.3 AA for normal text. The one threshold this section defends. */
@@ -476,11 +478,15 @@ export const SECTION_3: readonly BrandComponent[] = [
     id: 'colour.proportions',
     name: 'Colour proportions',
     section: 3,
-    requires: ['colour.tiers'],
+    // The palette, not the tiers. These proportions are measured by ROLE off
+    // real layouts, so they are computable the moment a palette exists —
+    // requiring a hierarchy first would tell the readiness graph this is
+    // blocked when it is already sitting there, computed.
+    requires: ['colour.palette'],
     machine: 'M2',
     storage: 'system',
     produces: arr(
-      obj({ tier: str(), minPct: num(), maxPct: num(), measuredPct: num() }, ['tier', 'minPct'])
+      obj({ surface: str(), role: str(), measuredPct: num() }, ['surface', 'role', 'measuredPct'])
     ),
     evidence: 'measured',
     provenance: {
@@ -492,34 +498,45 @@ export const SECTION_3: readonly BrandComponent[] = [
       grainSources: ['irba', 'regus', 'monash'],
       note: 'THE primitive nobody has. IRBA states primary 50% / secondary 20% / accent 20%. Regus states 60% white / 20% black / 10% red / 5% / 5%. Monash mandates a minimum 25% primary across all audiences. All three state a ratio; none of the three can check whether a given layout obeys it. "This surface is 8% primary against your 25% floor" is arithmetic.',
     },
-    render: renderDerived<readonly { tier: string; minPct: number; maxPct?: number; measuredPct?: number }[]>(
-      'colour.proportions',
-      'Colour proportions',
-      'measured',
-      'No ratio set. State how much of a surface each tier should occupy and every layout becomes checkable.',
-      (rows) =>
-        rows.map((r) => ({
-          label: r.tier,
-          value:
-            r.measuredPct === undefined
-              ? `target ${r.minPct}%${r.maxPct ? `–${r.maxPct}%` : ' minimum'}`
-              : `${r.measuredPct.toFixed(1)}% against a ${r.minPct}% floor`,
-          ...(r.measuredPct === undefined ? { evidence: 'declared' as const } : {}),
-        }))
-    ),
-    validate: (state): readonly Finding[] => {
-      const rows = state.project?.data['colour.proportions'] as
-        | readonly { tier: string; minPct: number; measuredPct?: number }[]
-        | undefined;
-      if (!rows) return [];
-      return rows
-        .filter((r) => r.measuredPct !== undefined && r.measuredPct < r.minPct)
-        .map((r) =>
-          finding('colour.proportions', 'warn', `${r.tier} is under its stated floor on this surface.`, {
-            measured: `${r.measuredPct!.toFixed(1)}%`,
-            expected: `≥ ${r.minPct}%`,
-          })
-        );
+    render: (state) => {
+      const { system } = state;
+      if (!hasPalette(system)) return absent('colour.proportions', 'Colour proportions', NO_PALETTE);
+
+      const measured = REFERENCE_SURFACES.map((surface) => ({
+        surface,
+        cover: coverage(surface),
+      }));
+
+      const entries: BookEntry[] = measured.map(({ surface, cover }) => ({
+        label: surface.name,
+        value: (Object.entries(cover) as [SemanticRole, number][])
+          .sort((a, b) => b[1] - a[1])
+          .map(([role, fraction]) => `${role} ${asPercent(fraction)}`)
+          .join(' · '),
+      }));
+
+      // The spread is the finding hiding in the table. A system almost always
+      // hits its intended ratio on the layout it was designed against and
+      // misses it by an order of magnitude somewhere nobody checked, and that
+      // gap is invisible until the surfaces are read side by side.
+      const primaries = measured.map(({ cover }) => cover.primary ?? 0);
+      const low = Math.min(...primaries);
+      const high = Math.max(...primaries);
+
+      entries.push({
+        label: 'Primary spread',
+        value: `${asPercent(low)} – ${asPercent(high)}`,
+        note: `Across ${REFERENCE_SURFACES.length} reference surfaces. State a floor and every one of them becomes checkable — which is the thing IRBA, Regus and Monash all ask for and none can do.`,
+      });
+
+      entries.push({
+        label: 'How measured',
+        value: `Declared geometry, ${REFERENCE_SURFACES[0]!.measuredViewport}`,
+        evidence: 'measured',
+        note: 'Rectangle areas composited front to back off the rendered templates, not sampled pixels — so gradients and translucent layers count for what they actually contribute rather than all or nothing.',
+      });
+
+      return present('colour.proportions', 'Colour proportions', 'measured', entries);
     },
   },
   {
