@@ -354,7 +354,14 @@ idempotent layer and the truth.
   declared and survives a round trip through a shared link. §9 is 1 of 12.
   **Changelog is NOT done and needs an account** — remembering previous
   versions needs somewhere to keep them.
-- Accessibility pass, responsive pass, production build in a throwaway copy.
+- ~~Accessibility pass, responsive pass.~~ **DONE 2026-08-24** (`1074c5b`).
+  The library card was a real tab stop with `outline: none` — 49 of them per
+  page, no indication of position. Ring restored, inset, ~8.9:1. Also the
+  scale-name input's 1px/30% "indicator", and two `<h1>`s on /brand.
+  Responsive re-verified at 320/375/768 across six rooms: no overflow anywhere.
+  **Not fixed:** `.noteBody:focus { outline: none }` in studio-wall — retired
+  from the nav, so out of every keyboard path.
+- Production build in a throwaway copy — done on every commit this session.
 
 #### Also done 2026-08-24, outside the phase plan
 
