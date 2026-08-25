@@ -188,12 +188,18 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
     // `setScale`/`setScaleGlobals` are stable dispatch wrappers; including
     // them would re-run this on every provider render for no benefit.
     //
-    // Deliberately NOT depending on `system.scales.byHex`: this effect writes
-    // there, and depending on its own output is the other half of the loop
-    // described above. It reads the current value fresh from the closure to
-    // decide whether a write is needed at all.
+    // Deliberately depends on NOTHING it writes. This effect is the one
+    // direction that is allowed: Builder state flows out to the System, and
+    // never the reverse. `system.scales` appears only inside the body, read
+    // fresh from the closure to decide whether a write is needed at all.
+    //
+    // `system.scales.steps`/`.gamut` were in this array and converged by
+    // luck rather than by design — the System reducer happens to store them
+    // verbatim, so a write makes the comparison equal on the next pass. The
+    // day anything clamps or normalises on the way in, the two sides would
+    // never agree and this becomes the same loop the sliders produced.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.scales, state.stepCount, state.gamut, system.scales.steps, system.scales.gamut]);
+  }, [state.scales, state.stepCount, state.gamut]);
 
   const primaryEntry = useMemo(
     () => state.scales.find((entry) => entry.hex === state.primaryHex) ?? state.scales[0],
