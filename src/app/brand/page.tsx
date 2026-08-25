@@ -52,7 +52,8 @@ export default async function BrandPage({ searchParams }: PageProps) {
   return (
     <div className={styles.shell}>
       <SkipLink />
-      <TabNav current="brand">
+      {/* The guideline supplies its own <h1>; the wordmark steps down. */}
+      <TabNav current="brand" pageHasOwnHeading>
         <AccountStatus />
       </TabNav>
       <SystemUrlBridge />

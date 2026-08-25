@@ -224,9 +224,18 @@
   padding: 0.15rem 0;
 }
 
+/* The underline is the design's own focus cue and it stays — but a 1px rule at
+   30% opacity is not a focus INDICATOR, it is a hint. WCAG 2.4.11 asks for
+   something a person can actually locate, so the outline comes back for
+   keyboard visitors while the pointer keeps the quiet treatment. */
 .scaleNameInput:focus {
   outline: none;
   border-bottom-color: oklch(100% 0 0 / 0.3);
+}
+
+.scaleNameInput:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .scaleAnchorSwatch {

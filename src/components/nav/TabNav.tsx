@@ -12,6 +12,18 @@ interface TabNavProps {
    * holding a bookmark; it renders the nav without claiming a slot in it.
    */
   readonly current?: TabId;
+  /**
+   * True when the page supplies its own `<h1>`.
+   *
+   * The wordmark is the page heading everywhere else, because in most rooms
+   * there is nothing more important to announce than which room you are in.
+   * The guideline is the exception: its own title IS the document, and two
+   * `<h1>`s on one page leaves a screen reader with no single answer to
+   * "what is this page". The wordmark steps down to a plain paragraph rather
+   * than the document title stepping down to an `<h2>` — demoting the content
+   * to make room for the chrome would be the wrong way round.
+   */
+  readonly pageHasOwnHeading?: boolean;
   /** Right-hand slot: share controls, account status, whatever the tab needs. */
   readonly children?: ReactNode;
 }
@@ -34,15 +46,26 @@ interface TabNavProps {
  * overrides `--tab-nav-font` and the color hooks in its own scope; it does not
  * get to reinvent the markup.
  */
-export function TabNav({ current, children }: TabNavProps) {
+/**
+ * The wordmark, as a heading or as plain text.
+ *
+ * Same element, same class, same styling either way — only the tag changes,
+ * because the only thing at stake is what a screen reader calls the page.
+ */
+function Wordmark({ asHeading, children }: { readonly asHeading: boolean; readonly children: ReactNode }) {
+  const Tag = asHeading ? 'h1' : 'p';
+  return <Tag className={styles.wordmark}>{children}</Tag>;
+}
+
+export function TabNav({ current, pageHasOwnHeading = false, children }: TabNavProps) {
   const currentTab = current === undefined ? null : tabById(current);
 
   return (
     <header className={styles.masthead}>
-      <h1 className={styles.wordmark}>
+      <Wordmark asHeading={!pageHasOwnHeading}>
         Colors World
         {currentTab !== null && <span className={styles.wordmarkDim}> / {currentTab.label}</span>}
-      </h1>
+      </Wordmark>
 
       <nav className={styles.navGroup} aria-label="Primary">
         {TABS.map((tab) => {
