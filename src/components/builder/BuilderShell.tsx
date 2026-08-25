@@ -131,25 +131,46 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
    *
    * Depending on the CONTENT removes the question. A palette of the same
    * hexes in the same order produces the same key no matter how many times
-   * the provider re-renders, so the effect simply does not fire, and the
-   * cycle has nowhere to start.
+   * the provider re-renders, so the effect simply does not fire.
+   *
+   * ## And it must NOT depend on the settings it writes
+   *
+   * This is the loop, and dragging a slider was how it showed up. The chain
+   * ran: slider moves → builder state changes → the effect below writes it to
+   * the System → the System's settings change → THIS effect fires →
+   * `applyScaleSettings` overwrites the builder entry from the System.
+   *
+   * That last step is the damage. `applyScaleSettings` resets any value the
+   * System does not carry to its default (`?? 1`, `?? 0`, `?? null`), so a
+   * sync arriving mid-drag does not merely echo — it clobbers the edit that
+   * is still in flight. One value at a time survived it; a drag is a stream
+   * of them, and each write raced the sync-back until React counted fifty
+   * nested updates and stopped. The chroma slider dragged to 1.6 ended up
+   * back at 1, which is exactly that default being reasserted.
+   *
+   * The System is authoritative for curve work at LOAD, not forever. Once the
+   * room is open the Builder owns those values, and the System is downstream
+   * of it. So this fires on palette membership and anchor — the cases where
+   * the System genuinely knows something the Builder does not: following a
+   * link, or a colour arriving from another room — and never on the settings
+   * it produced itself.
    */
   const paletteKey = system.palette.map((color) => color.hex).join(',');
-  const settingsKey = JSON.stringify(system.scales.byHex);
 
   useEffect(() => {
     dispatch({
       type: 'syncFromDock',
       items: system.palette.map((color) => ({ hex: color.hex, oklch: color.oklch })),
       primaryAnchorHex: system.anchorHex,
-      // Authoritative: following a link has to reproduce its author's curves
+      // Authoritative here precisely because this only fires when the palette
+      // itself changed: following a link has to reproduce its author's curves
       // exactly, including the ones they never drew.
       settings: system.scales.byHex,
     });
     // `system` itself is read fresh from the render closure each time this
-    // fires; the keys decide WHEN it fires, not what it reads.
+    // fires; the key decides WHEN it fires, not what it reads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paletteKey, system.anchorHex, settingsKey]);
+  }, [paletteKey, system.anchorHex]);
 
   // Curve work back out to the System, so a shared link carries it. Guarded by
   // comparison rather than by dependency-array cleverness: the reducer returns
@@ -167,12 +188,12 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
     // `setScale`/`setScaleGlobals` are stable dispatch wrappers; including
     // them would re-run this on every provider render for no benefit.
     //
-    // `settingsKey` rather than `system.scales`, for the same reason as above:
-    // this effect WRITES to system.scales, so depending on its identity means
-    // depending on its own output. Keying on content means a write that
-    // changes nothing does not summon the effect that produced it.
+    // Deliberately NOT depending on `system.scales.byHex`: this effect writes
+    // there, and depending on its own output is the other half of the loop
+    // described above. It reads the current value fresh from the closure to
+    // decide whether a write is needed at all.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.scales, state.stepCount, state.gamut, settingsKey, system.scales.steps, system.scales.gamut]);
+  }, [state.scales, state.stepCount, state.gamut, system.scales.steps, system.scales.gamut]);
 
   const primaryEntry = useMemo(
     () => state.scales.find((entry) => entry.hex === state.primaryHex) ?? state.scales[0],
