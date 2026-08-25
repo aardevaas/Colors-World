@@ -112,6 +112,31 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
   // customizes the ones the System already has. Per-scale
   // curves/intensity/name persist in the reducer (see builderReducer's
   // syncFromDock) across every re-sync.
+  /*
+   * KEYED ON CONTENT, NOT IDENTITY — and that is the whole point of these two
+   * lines.
+   *
+   * This used to depend on `system.palette` and `system.scales.byHex`
+   * directly, with a comment saying a new array identity on every provider
+   * render was fine because the sync is idempotent. It is idempotent, and it
+   * was still the hazard React names by default when this kind of loop
+   * happens: "one of the dependencies changes on every render."
+   *
+   * The sync is one half of a two-way street — the System writes back
+   * whatever the Builder holds (see the effect below), and that write returns
+   * here a moment later. Two hand-written equality guards stood between that
+   * and an infinite loop: `scalesAreEqual` in the reducer, and `sameSettings`
+   * further down. Both look right; one of them let a loop through on a real
+   * machine that I could not reproduce on mine.
+   *
+   * Depending on the CONTENT removes the question. A palette of the same
+   * hexes in the same order produces the same key no matter how many times
+   * the provider re-renders, so the effect simply does not fire, and the
+   * cycle has nowhere to start.
+   */
+  const paletteKey = system.palette.map((color) => color.hex).join(',');
+  const settingsKey = JSON.stringify(system.scales.byHex);
+
   useEffect(() => {
     dispatch({
       type: 'syncFromDock',
@@ -121,12 +146,10 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
       // exactly, including the ones they never drew.
       settings: system.scales.byHex,
     });
-    // system.palette is a new array identity on every provider render; the
-    // sync itself is cheap and idempotent (createScaleEntry only runs for
-    // genuinely new hexes), so re-running on every System change is correct
-    // and intentional rather than a dependency to prune.
+    // `system` itself is read fresh from the render closure each time this
+    // fires; the keys decide WHEN it fires, not what it reads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [system.palette, system.anchorHex, system.scales.byHex]);
+  }, [paletteKey, system.anchorHex, settingsKey]);
 
   // Curve work back out to the System, so a shared link carries it. Guarded by
   // comparison rather than by dependency-array cleverness: the reducer returns
@@ -143,8 +166,13 @@ export function BuilderShell({ accountSlot, initialSpecs = null }: BuilderShellP
     }
     // `setScale`/`setScaleGlobals` are stable dispatch wrappers; including
     // them would re-run this on every provider render for no benefit.
+    //
+    // `settingsKey` rather than `system.scales`, for the same reason as above:
+    // this effect WRITES to system.scales, so depending on its identity means
+    // depending on its own output. Keying on content means a write that
+    // changes nothing does not summon the effect that produced it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.scales, state.stepCount, state.gamut, system.scales]);
+  }, [state.scales, state.stepCount, state.gamut, settingsKey, system.scales.steps, system.scales.gamut]);
 
   const primaryEntry = useMemo(
     () => state.scales.find((entry) => entry.hex === state.primaryHex) ?? state.scales[0],
